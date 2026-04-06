@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--config", "_opensquad/config/playwright.config.json"]
+    },
+    "paper": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://127.0.0.1:29979/mcp"]
+    }
+  }
+}

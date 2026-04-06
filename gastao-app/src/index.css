@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --color-brand-orange: #FF6B35;
+  --color-brand-orange-light: #FFF0E9;
+  --color-brand-orange-dark: #E5561F;
+  --color-brand-green: #4CAF50;
+  --color-brand-green-light: #E8F5E9;
+  --color-brand-green-dark: #388E3C;
+  --color-brand-beige: #D4A574;
+  --color-brand-warm-gray: #6B6B6B;
+  --color-brand-dark: #2C2C2C;
+  --color-brand-bg: #F8F5F0;
+  --color-brand-sidebar: #1A1A1A;
+  --color-brand-red: #E53935;
+  --color-brand-red-light: #FFEBEE;
+  --color-brand-yellow: #F9A825;
+  --color-brand-yellow-light: #FFF8E1;
+
+  --font-sans: 'Poppins', system-ui, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F8F5F0;
+  color: #2C2C2C;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4A574;
+  border-radius: 3px;
+}
