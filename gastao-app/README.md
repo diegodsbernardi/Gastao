@@ -45,7 +45,7 @@ Entre no **SQL Editor** do Supabase dashboard e execute os arquivos em `supabase
 
 | # | Arquivo | O que faz |
 |---|---------|-----------|
-| 000 | `000_setup.sql` *(não incluso — veja nota)* | Tabelas base: `restaurantes`, `profiles`, `membros`, helper `get_my_restaurant_id()` |
+| 000 | `000_schema_base.sql` | Schema base: `restaurantes`, `profiles`, `membros`, `ingredients`, `recipes`, `recipe_ingredients`, `sales`, helper `get_my_restaurant_id()`, trigger `handle_new_user` |
 | 001 | `001_equipe.sql` | Convites, `get_my_membership`, `create_restaurant`, `accept_invite`, `get_restaurant_members` |
 | 002 | `002_ingredient_use_in_recipes.sql` | Função auxiliar do módulo de insumos |
 | 003 | `003_nfe.sql` | Tabelas de NFe e matching de itens |
@@ -58,7 +58,7 @@ Entre no **SQL Editor** do Supabase dashboard e execute os arquivos em `supabase
 | 010 | `010_checklists.sql` | **NOVO** — Checklists operacionais (templates, runs, RPCs) |
 | 011 | `011_feedbacks.sql` | **NOVO** — Feedbacks do dono/gerente para o time |
 
-> **Nota sobre 000:** a migration zero (setup base de `restaurantes`, `profiles`, `membros` e o helper `get_my_restaurant_id()`) veio do ambiente anterior (TOCS) e não foi extraída como arquivo ainda. Antes de rodar 001, garanta que essas tabelas e o helper existem no seu projeto — se for começar do zero, precisará criá-las primeiro. Uma tarefa de seguimento é gerar essa migration inicial a partir do schema atual.
+> **Nota sobre 000:** a migration `000_schema_base.sql` foi extraída do schema TOCS via `pg_catalog` em 2026-04-09. Inclui correção de drift na tabela `sales` (colunas `sold_at`, `unit_price`, `total_value` que o código espera mas o TOCS legado não tinha).
 
 ### 4. Edge Functions (opcional — necessário para NFe)
 
@@ -178,7 +178,6 @@ npm run preview   # preview do build
 
 ## Roadmap curto
 
-- [ ] Extrair migration `000_setup.sql` a partir do schema atual
 - [ ] Integrar Checklists e Feedbacks no Dashboard (pendências do dia, feedbacks não lidos)
 - [ ] Push notifications (PWA) pra feedbacks urgentes e checklists atrasados
 - [ ] Relatórios: histórico de checklists concluídos × pendentes, heatmap por funcionário

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Poppins é carregada via <link> em index.html (Ytre é proprietária e deve ser adicionada manualmente depois) */
+
 /*
  * Gastão — tema global
  * Tokens vêm do manual de identidade visual (Bibliografia/).
@@ -35,9 +37,6 @@
   --font-sans:    'Poppins', system-ui, -apple-system, sans-serif;
   --font-display: 'Ytre', 'Poppins', system-ui, -apple-system, sans-serif;
 }
-
-/* Carrega Poppins do Google Fonts — Ytre é proprietária e deve ser adicionada manualmente depois */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   html {
