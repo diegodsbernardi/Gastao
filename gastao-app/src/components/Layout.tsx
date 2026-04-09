@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     Menu, Home, ShoppingBag, LogOut, Package, Users, X,
-    FileText, UtensilsCrossed, ChefHat, BarChart3,
+    FileText, UtensilsCrossed, ChefHat, BarChart3, ClipboardList, MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -25,6 +25,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 { to: '/ingredients', Icon: Package,         label: 'Insumos',        show: isDonoOrGerente },
                 { to: '/preparos',    Icon: ChefHat,         label: 'Preparos',        show: true },
                 { to: '/recipes',     Icon: UtensilsCrossed, label: 'Fichas Técnicas', show: true },
+            ],
+        },
+        {
+            label: 'Operação',
+            show: true,
+            items: [
+                { to: '/checklists', Icon: ClipboardList, label: 'Checklists', show: true },
+                { to: '/feedbacks',  Icon: MessageCircle, label: 'Feedbacks',  show: true },
             ],
         },
         {
