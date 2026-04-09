@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Sessão 2: Equipe & Onboarding
+-- Gastão — Sessão 2: Equipe & Onboarding
 -- Execute no Supabase SQL Editor (Dashboard → SQL Editor)
 -- Pré-requisitos: restaurantes, membros, profiles e
 --   get_my_restaurant_id() já existem do setup da Sessão 1.

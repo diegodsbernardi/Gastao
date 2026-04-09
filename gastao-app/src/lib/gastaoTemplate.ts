@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 
 /**
- * TOCS CRM - Template de Importação Padrão
+ * Gastão - Template de Importação Padrão
  * 
  * Estrutura das abas e colunas esperadas pelo sistema.
  * Só altere os DADOS, nunca renomeie as colunas ou abas.
@@ -53,7 +53,7 @@ export const TEMPLATE_STRUCTURE = {
 
 export type SheetName = keyof typeof TEMPLATE_STRUCTURE;
 
-/** Generates and triggers download of the blank TOCS template */
+/** Generates and triggers download of the blank Gastão template */
 export const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
 
@@ -67,11 +67,11 @@ export const downloadTemplate = () => {
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
     }
 
-    XLSX.writeFile(wb, 'TOCS_Template_Importacao.xlsx');
+    XLSX.writeFile(wb, 'Gastao_Template_Importacao.xlsx');
 };
 
-/** Parses a workbook using the strict TOCS template structure */
-export const parseTocsTemplate = (
+/** Parses a workbook using the strict Gastão template structure */
+export const parseGastaoTemplate = (
     workbook: XLSX.WorkBook
 ): { sheet: SheetName; rows: Record<string, any>[] }[] => {
     const results: { sheet: SheetName; rows: Record<string, any>[] }[] = [];

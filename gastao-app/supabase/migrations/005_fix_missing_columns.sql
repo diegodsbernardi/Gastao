@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Migration 005: Colunas ausentes
+-- Gastão — Migration 005: Colunas ausentes
 -- Resolve: "Could not find the 'category' column of 'recipes'"
 -- Execute no Supabase SQL Editor
 -- =============================================================

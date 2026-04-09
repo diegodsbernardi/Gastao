@@ -399,7 +399,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
                 <div>
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center">
-                        <UtensilsCrossed className="w-5 h-5 sm:w-6 sm:h-6 mr-2.5 text-indigo-500" />
+                        <UtensilsCrossed className="w-5 h-5 sm:w-6 sm:h-6 mr-2.5 text-primary-500" />
                         {categoryFilter ?? 'Fichas Técnicas'}
                     </h1>
                     <p className="text-slate-500 mt-1 hidden sm:block">
@@ -419,7 +419,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                         )}
                         <button
                             onClick={() => { setShowNewModal(true); if (categoryFilter) setNewCategory(categoryFilter); }}
-                            className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-sm text-sm"
+                            className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 shadow-sm text-sm"
                         >
                             <Plus className="w-4 h-4 mr-1.5 shrink-0" />
                             {categoryFilter ? `Novo(a) ${categoryFilter}` : 'Nova Ficha'}
@@ -448,7 +448,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                         placeholder="Buscar fichas..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                     />
                 </div>
             </div>
@@ -469,17 +469,17 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                     return (
                         <div
                             key={ficha.id}
-                            className={`bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col transition-colors ${selectedIds.includes(ficha.id) ? 'ring-2 ring-indigo-500 border-indigo-300' : 'border-slate-200'}`}
+                            className={`bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col transition-colors ${selectedIds.includes(ficha.id) ? 'ring-2 ring-primary-500 border-primary-300' : 'border-slate-200'}`}
                         >
                             {/* Card header */}
-                            <div className={`p-5 border-b border-slate-100 flex justify-between items-start ${selectedIds.includes(ficha.id) ? 'bg-indigo-50/40' : 'bg-slate-50'}`}>
+                            <div className={`p-5 border-b border-slate-100 flex justify-between items-start ${selectedIds.includes(ficha.id) ? 'bg-primary-50/40' : 'bg-slate-50'}`}>
                                 <div className="flex items-start gap-3">
                                     {canEdit && (
                                         <input
                                             type="checkbox"
                                             checked={selectedIds.includes(ficha.id)}
                                             onChange={e => setSelectedIds(e.target.checked ? [...selectedIds, ficha.id] : selectedIds.filter(i => i !== ficha.id))}
-                                            className="mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                                            className="mt-1 rounded border-slate-300 text-primary-600 focus:ring-primary-500 w-4 h-4 cursor-pointer"
                                         />
                                     )}
                                     <div className="flex-1 min-w-0">
@@ -490,10 +490,10 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     type="text"
                                                     value={editInfoName}
                                                     onChange={e => setEditInfoName(e.target.value)}
-                                                    className="w-full px-2 py-1 border border-indigo-300 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                    className="w-full px-2 py-1 border border-primary-300 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary-500 outline-none"
                                                 />
                                                 <div className="flex gap-2">
-                                                    <select value={editInfoCategory} onChange={e => setEditInfoCategory(e.target.value)} className="flex-1 px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                                    <select value={editInfoCategory} onChange={e => setEditInfoCategory(e.target.value)} className="flex-1 px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-primary-500">
                                                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                                     </select>
                                                     <input
@@ -502,12 +502,12 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                         onChange={e => setEditInfoPrice(e.target.value === '' ? '' : Number(e.target.value))}
                                                         onFocus={e => e.target.select()}
                                                         placeholder="Preço"
-                                                        className="w-24 px-2 py-1 border border-slate-300 rounded-lg text-xs text-right focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                        className="w-24 px-2 py-1 border border-slate-300 rounded-lg text-xs text-right focus:ring-2 focus:ring-primary-500 outline-none"
                                                     />
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => setEditingInfoId(null)} className="px-3 py-1 text-xs text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
-                                                    <button onClick={handleSaveInfo} disabled={savingInfo || !editInfoName.trim()} className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                                    <button onClick={handleSaveInfo} disabled={savingInfo || !editInfoName.trim()} className="px-3 py-1 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
                                                         {savingInfo ? '...' : 'Salvar'}
                                                     </button>
                                                 </div>
@@ -521,7 +521,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     {canEdit && (
                                                         <button
                                                             onClick={() => { setEditingInfoId(ficha.id); setEditInfoName(ficha.product_name); setEditInfoPrice(ficha.sale_price); setEditInfoCategory(ficha.category ?? 'Lanche'); }}
-                                                            className="p-1 text-slate-300 hover:text-indigo-500 rounded transition-colors mb-1"
+                                                            className="p-1 text-slate-300 hover:text-primary-500 rounded transition-colors mb-1"
                                                         >
                                                             <Edit className="w-3.5 h-3.5" />
                                                         </button>
@@ -632,7 +632,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                             {/* Footer */}
                             {canEdit && (
                                 <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
-                                    <button onClick={() => openEdit(ficha)} className="flex items-center text-xs text-indigo-600 font-medium hover:text-indigo-800">
+                                    <button onClick={() => openEdit(ficha)} className="flex items-center text-xs text-primary-600 font-medium hover:text-primary-800">
                                         <Edit className="w-3.5 h-3.5 mr-1" />
                                         Editar composição
                                     </button>
@@ -662,13 +662,13 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                     value={newName}
                                     onChange={e => setNewName(e.target.value)}
                                     placeholder="Ex: X-Tudo, Combo Simples"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
-                                    <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
+                                    <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
                                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
@@ -679,7 +679,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         value={newPrice}
                                         onChange={e => setNewPrice(e.target.value === '' ? '' : Number(e.target.value))}
                                         placeholder="0.00"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                             </div>
@@ -689,7 +689,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                             <button
                                 onClick={handleCreate}
                                 disabled={savingNew || !newName.trim()}
-                                className="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm shadow-sm"
+                                className="px-5 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 text-sm shadow-sm"
                             >
                                 {savingNew ? 'Criando...' : 'Criar Ficha'}
                             </button>
@@ -1049,7 +1049,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                     <button
                                         onClick={handleSaveComposition}
                                         disabled={savingEdit}
-                                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50"
+                                        className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold shadow-sm disabled:opacity-50"
                                     >
                                         {savingEdit ? 'Salvando...' : 'Salvar'}
                                     </button>

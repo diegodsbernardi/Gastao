@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Migration 009: Corrige trigger de criação de usuário
+-- Gastão — Migration 009: Corrige trigger de criação de usuário
 -- Resolve: "profiles_role_check" violada ao criar usuário
 -- Execute no Supabase SQL Editor
 -- =============================================================

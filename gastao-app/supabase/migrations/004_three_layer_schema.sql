@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Sessão 4: Schema 3 Camadas (Fichas Técnicas)
+-- Gastão — Sessão 4: Schema 3 Camadas (Fichas Técnicas)
 -- Execute no Supabase SQL Editor (Dashboard → SQL Editor)
 -- Pré-requisitos: migrations 001, 002 e 003 já executadas.
 -- =============================================================

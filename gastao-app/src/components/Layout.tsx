@@ -14,7 +14,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const userInitial = user?.email?.[0]?.toUpperCase() ?? 'U';
-    const primary = brandColor ?? '#2563eb';
+    const primary = brandColor ?? '#FF6B35';
 
     // ── Grupos de navegação ───────────────────────────────────────────────────
     const navGroups = [
@@ -61,7 +61,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <Link
                     to={to}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${active
+                    className={`flex items-center gap-3 px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${active
                         ? 'font-semibold'
                         : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
                         }`}
@@ -166,7 +166,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <button
                     onClick={() => setMobileOpen(false)}
                     aria-label="Fechar menu"
-                    className="absolute top-3.5 right-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    className="absolute top-3.5 right-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                     <X className="w-4 h-4" />
                 </button>
@@ -178,7 +178,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <header className="h-14 bg-white border-b border-slate-100 flex items-center px-4 md:px-6 justify-between shrink-0">
                     <button
                         onClick={() => setMobileOpen(true)}
-                        className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                        className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                         aria-label="Abrir menu"
                     >
                         <Menu className="w-5 h-5" />
@@ -206,7 +206,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                         <Link
                             key={to}
                             to={to}
-                            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
                             style={active ? { color: primary } : undefined}
                         >
                             <Icon className={`w-5 h-5 ${active ? '' : 'text-slate-500'}`} />
@@ -220,7 +220,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                     <button
                         onClick={() => setMobileOpen(true)}
                         aria-label="Ver mais opções"
-                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
                     >
                         <Menu className="w-5 h-5" />
                         <span className="text-xs font-medium leading-none">Mais</span>

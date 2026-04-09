@@ -1,5 +1,5 @@
 // =============================================================
-// TOCS CRM — Tipos centralizados
+// Gastão — Tipos centralizados
 // Reflete o modelo de 3 camadas das fichas técnicas:
 //   Insumo Base → Preparo → Ficha Final
 // =============================================================

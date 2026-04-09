@@ -153,7 +153,7 @@ export const Sales = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center">
-                        <ShoppingBag className="w-6 h-6 mr-3 text-indigo-500" />
+                        <ShoppingBag className="w-6 h-6 mr-3 text-primary-500" />
                         Vendas e Entradas
                     </h1>
                     <p className="text-slate-500 mt-1">Registre vendas e acompanhe o faturamento com baixa automática de estoque.</p>
@@ -168,7 +168,7 @@ export const Sales = () => {
                     <div className="md:col-span-1">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Produto</label>
                         <div
-                            className="relative flex items-center w-full px-3 py-2 border border-slate-300 rounded-lg bg-white cursor-text focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-shadow"
+                            className="relative flex items-center w-full px-3 py-2 border border-slate-300 rounded-lg bg-white cursor-text focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition-shadow"
                             onClick={() => setIsRecipeDropdownOpen(true)}
                         >
                             <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
@@ -206,7 +206,7 @@ export const Sales = () => {
                                                 setRecipeSearch('');
                                                 setIsRecipeDropdownOpen(false);
                                             }}
-                                            className="px-4 py-3 hover:bg-indigo-50 cursor-pointer flex justify-between items-center border-b border-slate-50 last:border-0 transition-colors"
+                                            className="px-4 py-3 hover:bg-primary-50 cursor-pointer flex justify-between items-center border-b border-slate-50 last:border-0 transition-colors"
                                         >
                                             <span className="font-medium text-slate-700 text-sm">{r.product_name}</span>
                                             <span className="text-xs text-slate-400 font-medium">R$ {r.sale_price.toFixed(2)}</span>
@@ -227,7 +227,7 @@ export const Sales = () => {
                             placeholder="1"
                             min="0.001"
                             step="1"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                         />
                     </div>
 
@@ -241,7 +241,7 @@ export const Sales = () => {
                             <button
                                 onClick={handleSaveSale}
                                 disabled={savingSale || !selectedRecipeId || quantitySold === '' || Number(quantitySold) <= 0}
-                                className="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm whitespace-nowrap"
+                                className="px-5 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm whitespace-nowrap"
                             >
                                 {savingSale ? 'Registrando...' : 'Registrar Venda'}
                             </button>
@@ -264,7 +264,7 @@ export const Sales = () => {
                             key={f}
                             onClick={() => setDateFilter(f)}
                             className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${dateFilter === f
-                                ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200'
+                                ? 'bg-white text-primary-700 shadow-sm ring-1 ring-slate-200'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/50'
                                 }`}
                         >

@@ -78,7 +78,7 @@ function StatusBadgeItem({ status }: { status: NfeItem['status'] }) {
         pendente:    'bg-slate-100 text-slate-500',
         vinculado:   'bg-green-100 text-green-700',
         ignorado:    'bg-slate-100 text-slate-400',
-        novo_insumo: 'bg-blue-100 text-blue-700',
+        novo_insumo: 'bg-primary-100 text-primary-700',
     };
     const labels = { pendente: 'Pendente', vinculado: 'Vinculado', ignorado: 'Ignorado', novo_insumo: 'Novo insumo' };
     return (
@@ -198,7 +198,7 @@ function ModalCriarInsumo({
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Nome do insumo</label>
                         <input
-                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                             value={name}
                             onChange={e => setName(e.target.value)}
                             required
@@ -208,7 +208,7 @@ function ModalCriarInsumo({
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
                             <input
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={unitType}
                                 onChange={e => setUnitType(e.target.value.toUpperCase())}
                             />
@@ -216,7 +216,7 @@ function ModalCriarInsumo({
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
                             <select
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={type}
                                 onChange={e => setType(e.target.value)}
                             >
@@ -236,7 +236,7 @@ function ModalCriarInsumo({
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={avgCost}
                                 onChange={e => setAvgCost(e.target.value)}
                             />
@@ -247,7 +247,7 @@ function ModalCriarInsumo({
                                 type="number"
                                 step="0.001"
                                 min="0"
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={stockQty}
                                 onChange={e => setStockQty(e.target.value)}
                             />
@@ -264,7 +264,7 @@ function ModalCriarInsumo({
                         <button
                             type="submit"
                             disabled={saving}
-                            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                         >
                             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                             Criar e vincular
@@ -398,7 +398,7 @@ function ItemRow({
                             <button
                                 onClick={() => setShowCriarModal(true)}
                                 disabled={isProcessing}
-                                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
+                                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50 disabled:opacity-50 transition-colors"
                             >
                                 <Plus className="w-3 h-3" />
                                 Criar
@@ -480,7 +480,7 @@ function ItemRow({
                         <button
                             onClick={() => setShowCriarModal(true)}
                             disabled={isProcessing}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-50"
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50 disabled:opacity-50"
                         >
                             <Plus className="w-3 h-3" />
                             Criar insumo
@@ -569,7 +569,7 @@ function UploadView({ onUploaded }: { onUploaded: (notaId: string) => void }) {
                 onClick={() => inputRef.current?.click()}
                 className={`
                     border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors
-                    ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:border-slate-400 bg-white'}
+                    ${isDragging ? 'border-primary-500 bg-primary-50' : 'border-slate-300 hover:border-slate-400 bg-white'}
                 `}
             >
                 <input
@@ -579,7 +579,7 @@ function UploadView({ onUploaded }: { onUploaded: (notaId: string) => void }) {
                     className="hidden"
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
                 />
-                <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-blue-500' : 'text-slate-400'}`} />
+                <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-primary-500' : 'text-slate-400'}`} />
                 {file ? (
                     <div>
                         <p className="font-medium text-slate-700">{file.name}</p>
@@ -597,7 +597,7 @@ function UploadView({ onUploaded }: { onUploaded: (notaId: string) => void }) {
             {file && !uploading && (
                 <button
                     onClick={handleProcess}
-                    className="mt-4 w-full py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+                    className="mt-4 w-full py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors"
                 >
                     Processar nota fiscal
                 </button>
@@ -605,7 +605,7 @@ function UploadView({ onUploaded }: { onUploaded: (notaId: string) => void }) {
 
             {uploading && (
                 <div className="mt-4 flex items-center justify-center gap-3 py-4">
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                    <Loader2 className="w-5 h-5 animate-spin text-primary-600" />
                     <span className="text-sm text-slate-600">{uploadStep}</span>
                 </div>
             )}
@@ -704,7 +704,7 @@ function ReviewView({
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
             </div>
         );
     }
@@ -759,14 +759,14 @@ function ReviewView({
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                        className="h-full bg-primary-500 rounded-full transition-all duration-300"
                         style={{ width: total > 0 ? `${(vinculados / total) * 100}%` : '0%' }}
                     />
                 </div>
                 {!readOnly && podConfirmarTodas && (
                     <button
                         onClick={handleConfirmarTodas}
-                        className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                        className="mt-3 text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1.5"
                     >
                         <Check className="w-4 h-4" />
                         Confirmar todas as sugestões da IA ({pendentes} itens)
@@ -820,7 +820,7 @@ function ReviewView({
                 <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 -mx-4 md:-mx-6 lg:-mx-8 mt-6">
                     <button
                         onClick={() => setShowConfirmDialog(true)}
-                        className="w-full md:w-auto md:px-8 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+                        className="w-full md:w-auto md:px-8 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors"
                     >
                         Confirmar nota ({vinculados} {vinculados === 1 ? 'item' : 'itens'} atualiza{vinculados === 1 ? 'rá' : 'rão'} o estoque)
                     </button>
@@ -832,8 +832,8 @@ function ReviewView({
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                                <AlertCircle className="w-5 h-5 text-blue-600" />
+                            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                                <AlertCircle className="w-5 h-5 text-primary-600" />
                             </div>
                             <div>
                                 <h3 className="font-semibold text-slate-800">Confirmar nota fiscal?</h3>
@@ -853,7 +853,7 @@ function ReviewView({
                             <button
                                 onClick={handleConfirmarNota}
                                 disabled={confirmando}
-                                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                             >
                                 {confirmando && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Confirmar
@@ -893,7 +893,7 @@ function ListaView({
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
             </div>
         );
     }
@@ -907,7 +907,7 @@ function ListaView({
                 </div>
                 <button
                     onClick={onImportar}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm"
                 >
                     <Upload className="w-4 h-4" />
                     Importar NF-e
@@ -923,7 +923,7 @@ function ListaView({
                     </p>
                     <button
                         onClick={onImportar}
-                        className="mt-4 px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+                        className="mt-4 px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors"
                     >
                         Importar NF-e
                     </button>

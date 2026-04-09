@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Migration 008: Adiciona unit_type à tabela recipes
+-- Gastão — Migration 008: Adiciona unit_type à tabela recipes
 -- Resolve: BUG-2 — "Unidade de saída" nunca era persistida nos preparos
 -- Execute no Supabase SQL Editor
 -- =============================================================

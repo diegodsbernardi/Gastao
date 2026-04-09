@@ -14,7 +14,7 @@ interface Membro {
 }
 
 const PERFIL_CONFIG = {
-    dono:        { label: 'Dono',        color: 'text-blue-700 bg-blue-100',   Icon: Crown  },
+    dono:        { label: 'Dono',        color: 'text-primary-700 bg-primary-100',   Icon: Crown  },
     gerente:     { label: 'Gerente',     color: 'text-amber-700 bg-amber-100', Icon: Shield },
     funcionario: { label: 'Funcionário', color: 'text-slate-600 bg-slate-100', Icon: User   },
 } as const;
@@ -105,7 +105,7 @@ export const Equipe = () => {
                 {isDono && (
                     <button
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
                     >
                         <UserPlus className="w-4 h-4" />
                         Convidar
@@ -117,7 +117,7 @@ export const Equipe = () => {
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-16">
-                        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                        <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
                     </div>
                 ) : membros.length === 0 ? (
                     <div className="text-center py-16">
@@ -153,7 +153,7 @@ export const Equipe = () => {
                                     <tr key={membro.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                                                <div className="w-8 h-8 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
                                                     {(membro.nome || membro.email)[0].toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
@@ -234,7 +234,7 @@ export const Equipe = () => {
                                     </p>
                                     <button
                                         onClick={closeModal}
-                                        className="mt-5 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                                        className="mt-5 px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
                                     >
                                         Fechar
                                     </button>
@@ -251,7 +251,7 @@ export const Equipe = () => {
                                             value={inviteEmail}
                                             onChange={e => setInviteEmail(e.target.value)}
                                             placeholder="funcionario@email.com"
-                                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 placeholder-slate-400"
+                                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-slate-900 placeholder-slate-400"
                                             required
                                             autoFocus
                                         />
@@ -271,7 +271,7 @@ export const Equipe = () => {
                                                         onClick={() => setInvitePerfil(p)}
                                                         className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
                                                             invitePerfil === p
-                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                                ? 'border-primary-500 bg-primary-50 text-primary-700'
                                                                 : 'border-slate-200 text-slate-600 hover:border-slate-300'
                                                         }`}
                                                     >
@@ -306,7 +306,7 @@ export const Equipe = () => {
                                         <button
                                             type="submit"
                                             disabled={isInviting || !inviteEmail.trim()}
-                                            className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+                                            className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
                                         >
                                             {isInviting
                                                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>

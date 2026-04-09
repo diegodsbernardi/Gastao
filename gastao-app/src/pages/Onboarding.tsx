@@ -25,6 +25,7 @@ export const Onboarding = () => {
         const { error: rpcError } = await supabase.rpc('create_restaurant', {
             p_nome: nome.trim(),
             p_cnpj: cnpj.trim() || null,
+            p_brand_color: '#FF6B35', // cor-mãe Gastão; pode ser editada depois em Configurações
         });
 
         if (rpcError) {
@@ -38,24 +39,24 @@ export const Onboarding = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-primary-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
 
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-                        <Package className="w-8 h-8 text-white" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-500 rounded-2xl mb-4 shadow-lg shadow-primary-200">
+                        <ChefHat className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">Bem-vindo ao TOCS CRM</h1>
-                    <p className="text-slate-500 mt-1">Vamos configurar o seu restaurante</p>
+                    <h1 className="text-2xl font-bold text-ink">Primeiro, me conta do seu restaurante</h1>
+                    <p className="text-warm-gray mt-1">Em menos de um minuto você já começa a controlar seu CMV.</p>
                 </div>
 
                 {/* Card */}
-                <div className="bg-white rounded-2xl shadow-lg p-8">
-                    <div className="flex items-start gap-3 mb-6 p-4 bg-blue-50 rounded-xl">
-                        <ChefHat className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                        <p className="text-sm text-blue-700">
-                            Você será o <strong>dono</strong> deste restaurante e poderá convidar sua equipe depois.
+                <div className="bg-white rounded-2xl shadow-lg p-8 border-t-4 border-primary-500">
+                    <div className="flex items-start gap-3 mb-6 p-4 bg-primary-50 rounded-xl">
+                        <Package className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
+                        <p className="text-sm text-primary-800">
+                            Você entra como <strong>dono</strong>. Depois a gente puxa sua equipe junto.
                         </p>
                     </div>
 
@@ -69,7 +70,7 @@ export const Onboarding = () => {
                                 value={nome}
                                 onChange={e => setNome(e.target.value)}
                                 placeholder="Ex: Burguer do João"
-                                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 placeholder-slate-400"
+                                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 placeholder-slate-400"
                                 required
                                 autoFocus
                             />
@@ -85,7 +86,7 @@ export const Onboarding = () => {
                                 value={cnpj}
                                 onChange={e => setCnpj(e.target.value)}
                                 placeholder="00.000.000/0000-00"
-                                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 placeholder-slate-400"
+                                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-slate-900 placeholder-slate-400"
                             />
                         </div>
 
@@ -98,15 +99,15 @@ export const Onboarding = () => {
                         <button
                             type="submit"
                             disabled={isLoading || !nome.trim()}
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                            className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                         >
                             {isLoading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Criando restaurante...
+                                    Preparando as coisas...
                                 </>
                             ) : (
-                                'Criar Restaurante'
+                                'Começar'
                             )}
                         </button>
                     </form>

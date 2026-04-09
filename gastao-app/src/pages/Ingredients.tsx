@@ -259,7 +259,7 @@ export const Ingredients = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
                 <div>
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center">
-                        <PackageSearch className="w-5 h-5 sm:w-6 sm:h-6 mr-2.5 text-indigo-500" />
+                        <PackageSearch className="w-5 h-5 sm:w-6 sm:h-6 mr-2.5 text-primary-500" />
                         Insumos e Embalagens
                     </h1>
                     <p className="text-slate-500 mt-1 hidden sm:block">Gerencie a matéria-prima do seu restaurante e acompanhe o Custo Médio.</p>
@@ -288,7 +288,7 @@ export const Ingredients = () => {
                         <Settings2 className="w-4 h-4 mr-1.5 shrink-0" />
                         Categorias
                     </button>
-                    <button onClick={() => setShowNewModal(true)} className="w-full sm:w-auto flex items-center justify-center px-4 py-2 text-sm bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                    <button onClick={() => setShowNewModal(true)} className="w-full sm:w-auto flex items-center justify-center px-4 py-2 text-sm bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
                         <Plus className="w-4 h-4 mr-1.5 shrink-0" />
                         Novo Insumo
                     </button>
@@ -322,8 +322,8 @@ export const Ingredients = () => {
                             ))}
                         </div>
                         <div className="flex gap-2">
-                            <input type="text" value={newCatNameBase} onChange={e => setNewCatNameBase(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateCategory('insumo_base')} placeholder="Ex: Frios, Temperos..." className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
-                            <button onClick={() => handleCreateCategory('insumo_base')} disabled={savingCat || !newCatNameBase.trim()} className="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">+ Add</button>
+                            <input type="text" value={newCatNameBase} onChange={e => setNewCatNameBase(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateCategory('insumo_base')} placeholder="Ex: Frios, Temperos..." className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+                            <button onClick={() => handleCreateCategory('insumo_base')} disabled={savingCat || !newCatNameBase.trim()} className="px-3 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">+ Add</button>
                         </div>
                     </div>
                     {/* Categorias Item Pronto */}
@@ -341,7 +341,7 @@ export const Ingredients = () => {
                             ))}
                         </div>
                         <div className="flex gap-2">
-                            <input type="text" value={newCatNameDireto} onChange={e => setNewCatNameDireto(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateCategory('insumo_direto')} placeholder="Ex: Pães, Bebidas, Molhos..." className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            <input type="text" value={newCatNameDireto} onChange={e => setNewCatNameDireto(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateCategory('insumo_direto')} placeholder="Ex: Pães, Bebidas, Molhos..." className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
                             <button onClick={() => handleCreateCategory('insumo_direto')} disabled={savingCat || !newCatNameDireto.trim()} className="px-3 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50">+ Add</button>
                         </div>
                     </div>
@@ -357,7 +357,7 @@ export const Ingredients = () => {
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex-shrink-0 ${activeTab === tab
-                                            ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200'
+                                            ? 'bg-white text-primary-700 shadow-sm ring-1 ring-slate-200'
                                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/50'
                                         }`}
                                 >
@@ -373,7 +373,7 @@ export const Ingredients = () => {
                                     placeholder="Buscar insumos..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
+                                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-shadow"
                                 />
                             </div>
                             <span className="text-sm font-medium text-slate-500 whitespace-nowrap">
@@ -422,7 +422,7 @@ export const Ingredients = () => {
                                         setEditCost(item.avg_cost_per_unit);
                                         setEditStock(item.stock_quantity);
                                     }}
-                                    className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                                 >
                                     <Pencil className="w-4 h-4" />
                                 </button>
@@ -453,7 +453,7 @@ export const Ingredients = () => {
                                         type="checkbox"
                                         checked={ingredients.length > 0 && selectedIds.length === ingredients.length}
                                         onChange={(e) => setSelectedIds(e.target.checked ? ingredients.map(i => i.id) : [])}
-                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                                     />
                                 </th>
                                 <th className="p-4 font-bold">Nome do Insumo</th>
@@ -480,7 +480,7 @@ export const Ingredients = () => {
                                 </tr>
                             ) : (
                                 filteredIngredients.map((item) => (
-                                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-indigo-50/50' : ''}`}>
+                                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-primary-50/50' : ''}`}>
                                         <td className="p-4 text-center">
                                             <input
                                                 type="checkbox"
@@ -489,7 +489,7 @@ export const Ingredients = () => {
                                                     if (e.target.checked) setSelectedIds([...selectedIds, item.id]);
                                                     else setSelectedIds(selectedIds.filter(id => id !== item.id));
                                                 }}
-                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                                             />
                                         </td>
                                         <td className="p-4">
@@ -526,7 +526,7 @@ export const Ingredients = () => {
                                                         setEditCost(item.avg_cost_per_unit);
                                                         setEditStock(item.stock_quantity);
                                                     }}
-                                                    className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                                                    className="text-slate-400 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors"
                                                     title="Editar Insumo"
                                                 >
                                                     <Pencil className="w-4 h-4" />
@@ -573,19 +573,19 @@ export const Ingredients = () => {
                                     value={newName}
                                     onChange={e => setNewName(e.target.value)}
                                     placeholder="Ex: Farinha de Trigo"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
-                                    <select value={newTipo} onChange={e => { setNewTipo(e.target.value as IngredientTipo); setNewCategoria(''); }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
+                                    <select value={newTipo} onChange={e => { setNewTipo(e.target.value as IngredientTipo); setNewCategoria(''); }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
                                         {TIPO_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
-                                    <select value={newUnit} onChange={e => setNewUnit(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
+                                    <select value={newUnit} onChange={e => setNewUnit(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
                                         {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
                                     </select>
                                 </div>
@@ -593,7 +593,7 @@ export const Ingredients = () => {
                             {newTipo !== 'embalagem' && (
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
-                                    <select value={newCategoria} onChange={e => setNewCategoria(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
+                                    <select value={newCategoria} onChange={e => setNewCategoria(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
                                         <option value="">Sem categoria</option>
                                         {(newTipo === 'insumo_base' ? allCategoriesBase : allCategoriesDireto).map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
@@ -607,7 +607,7 @@ export const Ingredients = () => {
                                         value={newCost}
                                         onChange={e => setNewCost(e.target.value === '' ? '' : Number(e.target.value))}
                                         placeholder="0.00"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div>
@@ -617,7 +617,7 @@ export const Ingredients = () => {
                                         value={newStock}
                                         onChange={e => setNewStock(e.target.value === '' ? '' : Number(e.target.value))}
                                         placeholder="0"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                             </div>
@@ -630,7 +630,7 @@ export const Ingredients = () => {
                             <button
                                 onClick={handleCreateIngredient}
                                 disabled={savingNew || !newName.trim()}
-                                className="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
+                                className="px-5 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
                             >
                                 {savingNew ? 'Salvando...' : 'Salvar Insumo'}
                             </button>
@@ -656,19 +656,19 @@ export const Ingredients = () => {
                                     type="text"
                                     value={editName}
                                     onChange={e => setEditName(e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
-                                    <select value={editTipo} onChange={e => { setEditTipo(e.target.value as IngredientTipo); setEditCategoria(''); }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
+                                    <select value={editTipo} onChange={e => { setEditTipo(e.target.value as IngredientTipo); setEditCategoria(''); }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
                                         {TIPO_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
-                                    <select value={editUnit} onChange={e => setEditUnit(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
+                                    <select value={editUnit} onChange={e => setEditUnit(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
                                         {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
                                     </select>
                                 </div>
@@ -676,7 +676,7 @@ export const Ingredients = () => {
                             {editTipo !== 'embalagem' && (
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
-                                    <select value={editCategoria} onChange={e => setEditCategoria(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
+                                    <select value={editCategoria} onChange={e => setEditCategoria(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
                                         <option value="">Sem categoria</option>
                                         {(editTipo === 'insumo_base' ? allCategoriesBase : allCategoriesDireto).map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
@@ -690,7 +690,7 @@ export const Ingredients = () => {
                                         value={editCost}
                                         onChange={e => setEditCost(e.target.value === '' ? '' : Number(e.target.value))}
                                         onFocus={e => e.target.select()}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div>
@@ -700,7 +700,7 @@ export const Ingredients = () => {
                                         value={editStock}
                                         onChange={e => setEditStock(e.target.value === '' ? '' : Number(e.target.value))}
                                         onFocus={e => e.target.select()}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                             </div>
@@ -713,7 +713,7 @@ export const Ingredients = () => {
                             <button
                                 onClick={handleEditIngredient}
                                 disabled={savingEdit || !editName.trim()}
-                                className="px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
+                                className="px-5 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
                             >
                                 {savingEdit ? 'Salvando...' : 'Salvar Alterações'}
                             </button>
@@ -777,7 +777,7 @@ export const Ingredients = () => {
                                     const addedQty = Number(stockEntryQty);
                                     const newAvg = ((currentQty * stockEntryIngredient.avg_cost_per_unit) + (addedQty * Number(stockEntryCost))) / (currentQty + addedQty);
                                     return (
-                                        <p className="mt-2 text-xs text-blue-600">
+                                        <p className="mt-2 text-xs text-primary-600">
                                             Novo custo médio: <strong>R$ {fmtMoney(newAvg)}</strong>
                                             <span className="text-slate-400 ml-1">(era R$ {fmtMoney(stockEntryIngredient.avg_cost_per_unit)})</span>
                                         </p>

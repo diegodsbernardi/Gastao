@@ -1,5 +1,5 @@
 // =============================================================
-// TOCS CRM — Cálculo de custo centralizado
+// Gastão — Cálculo de custo centralizado
 // Lógica da hierarquia 3 camadas:
 //   Insumo Base → Preparo → Ficha Final
 // =============================================================

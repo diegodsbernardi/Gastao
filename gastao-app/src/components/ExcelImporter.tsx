@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { downloadTemplate, parseTocsTemplate, TEMPLATE_STRUCTURE, SheetName } from '../lib/tocsTemplate';
+import { downloadTemplate, parseGastaoTemplate, TEMPLATE_STRUCTURE, SheetName } from '../lib/gastaoTemplate';
 import { Loader2, UploadCloud, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
 
 const cellNum = (v: any): number => {
@@ -39,7 +39,7 @@ export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
 
             addLog(`📋 Abas detectadas: ${workbook.SheetNames.join(', ')}`);
 
-            const parsed = parseTocsTemplate(workbook);
+            const parsed = parseGastaoTemplate(workbook);
             let totalImported = 0;
 
             // Fetch existing names to prevent duplicates
@@ -106,15 +106,15 @@ export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
     };
 
     return (
-        <div className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-xl p-6 space-y-4">
+        <div className="bg-slate-50 border-2 border-dashed border-primary-200 rounded-xl p-6 space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h3 className="font-bold text-slate-900 flex items-center text-lg">
-                        <UploadCloud className="w-5 h-5 mr-2 text-indigo-500" />
+                        <UploadCloud className="w-5 h-5 mr-2 text-primary-500" />
                         Importação via Template Padrão
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
-                        Use o template oficial do TOCS CRM. Preencha os dados e importe.
+                        Use o template oficial do Gastão. Preencha os dados e importe.
                     </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
@@ -134,7 +134,7 @@ export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
                             <input type="file" accept=".xlsx,.xls" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center text-sm shadow-sm"
+                                className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center text-sm shadow-sm"
                             >
                                 <UploadCloud className="w-4 h-4 mr-2" />
                                 Importar Planilha
@@ -165,7 +165,7 @@ export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
                 <div className="bg-slate-900 rounded-lg p-4 text-xs font-mono text-green-400 h-56 overflow-y-auto shadow-inner leading-relaxed">
                     {logs.map((l, i) => <div key={i}>{l}</div>)}
                     {loading && (
-                        <div className="flex items-center text-indigo-400 mt-2">
+                        <div className="flex items-center text-primary-400 mt-2">
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
                         </div>
                     )}

@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setRestauranteId(m.restaurante_id);
                 setPerfil(m.perfil as Perfil);
                 setNomeRestaurante(m.restaurante_nome);
-                setBrandColor(m.brand_color ?? '#2563eb');
+                setBrandColor(m.brand_color ?? '#FF6B35');
                 setLogoUrl(m.logo_url ?? null);
                 return;
             }
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         setRestauranteId(m.restaurante_id);
                         setPerfil(m.perfil as Perfil);
                         setNomeRestaurante(m.restaurante_nome);
-                        setBrandColor(m.brand_color ?? '#2563eb');
+                        setBrandColor(m.brand_color ?? '#FF6B35');
                         setLogoUrl(m.logo_url ?? null);
                         return;
                     }

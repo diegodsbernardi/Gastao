@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Migration 007: RLS policies para ingredients,
+-- Gastão — Migration 007: RLS policies para ingredients,
 -- recipes, recipe_ingredients
 -- Resolve: "new row violates row-level security policy"
 -- Execute no Supabase SQL Editor

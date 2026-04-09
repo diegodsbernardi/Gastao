@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Sessão 3: NF-e Import System
+-- Gastão — Sessão 3: NF-e Import System
 -- Execute no Supabase SQL Editor (Dashboard → SQL Editor)
 -- Pré-requisitos: restaurantes, ingredients e
 --   get_my_restaurant_id() já existem.

@@ -39,14 +39,14 @@ export const Login = () => {
         <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center flex-col items-center">
-                    <div className="bg-blue-600 p-3 rounded-xl">
+                    <div className="bg-primary-600 p-3 rounded-xl">
                         <ChefHat className="w-10 h-10 text-white" />
                     </div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
-                        Acesso Restrito
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-ink">
+                        Bem-vindo de volta
                     </h2>
-                    <p className="mt-2 text-center text-sm text-slate-600">
-                        Gestão inteligente de CMV e Estoque
+                    <p className="mt-2 text-center text-sm text-warm-gray">
+                        Inteligência operacional para seu restaurante
                     </p>
                 </div>
 
@@ -65,7 +65,7 @@ export const Login = () => {
                                         autoComplete="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                                     />
                                 </div>
                             </div>
@@ -76,7 +76,7 @@ export const Login = () => {
                                         Senha
                                     </label>
                                     <div className="text-sm">
-                                        <Link to="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
+                                        <Link to="/reset-password" className="font-medium text-primary-600 hover:text-primary-500">
                                             Esqueci a senha?
                                         </Link>
                                     </div>
@@ -89,13 +89,13 @@ export const Login = () => {
                                         autoComplete="current-password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="appearance-none block w-full px-3 py-2 pr-10 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        className="appearance-none block w-full px-3 py-2 pr-10 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(v => !v)}
                                         aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-r-xl"
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-r-xl"
                                     >
                                         {showPassword
                                             ? <EyeOff className="w-4 h-4" />
@@ -115,7 +115,7 @@ export const Login = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar na Conta'}
                                 </button>
@@ -124,7 +124,7 @@ export const Login = () => {
 
                         <div className="mt-6 text-center">
                             <p className="text-sm text-slate-600">
-                                Ainda não possui conta? <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">Criar Restaurante</Link>
+                                Ainda não possui conta? <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">Criar Restaurante</Link>
                             </p>
                         </div>
                     </div>

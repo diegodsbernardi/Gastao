@@ -174,16 +174,16 @@ export const Dashboard = () => {
     const header = (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-                <h1 className="text-2xl font-bold text-slate-900">Visão Geral do Restaurante</h1>
-                <p className="text-slate-500 text-sm mt-0.5">
-                    {isCurrentMonth ? 'Mês atual' : 'Período histórico'}
+                <h1 className="text-2xl font-bold text-ink">Como está o seu restaurante hoje</h1>
+                <p className="text-warm-gray text-sm mt-0.5">
+                    {isCurrentMonth ? 'Dados do mês atual' : 'Visão histórica deste mês'}
                 </p>
             </div>
             <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1 py-1 shadow-sm self-start sm:self-auto">
                 <button
                     onClick={goToPrev}
                     aria-label="Mês anterior"
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                     <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -194,7 +194,7 @@ export const Dashboard = () => {
                     onClick={goToNext}
                     disabled={isCurrentMonth}
                     aria-label="Próximo mês"
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                     <ChevronRight className="w-4 h-4" />
                 </button>
@@ -245,7 +245,7 @@ export const Dashboard = () => {
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
                     <div className="flex items-center justify-between">
                         <h2 className="text-slate-500 font-medium text-sm">Receita do Mês</h2>
-                        <span className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                        <span className="p-2 bg-primary-50 text-primary-600 rounded-lg">
                             <TrendingUp className="w-5 h-5" />
                         </span>
                     </div>
@@ -282,7 +282,7 @@ export const Dashboard = () => {
             <div className="mt-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-bold text-slate-900 flex items-center">
-                        <UtensilsCrossed className="w-5 h-5 mr-2 text-indigo-500" />
+                        <UtensilsCrossed className="w-5 h-5 mr-2 text-primary-500" />
                         Top Produtos — {MESES[selMonth]} {selYear}
                     </h2>
                 </div>
@@ -298,7 +298,7 @@ export const Dashboard = () => {
                         {topProducts.map((p) => (
                             <div key={p.recipe_id} className="py-4 flex items-center justify-between group">
                                 <div>
-                                    <p className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">{p.product_name}</p>
+                                    <p className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors">{p.product_name}</p>
                                     <p className="text-sm text-slate-500 mt-0.5">
                                         CMV: <span className={p.sale_price <= 0 ? 'text-slate-400 font-medium' : p.cmv < 30 ? 'text-green-600 font-medium' : p.cmv < 40 ? 'text-amber-600 font-medium' : 'text-red-600 font-medium'}>{p.sale_price > 0 ? `${p.cmv.toFixed(1)}%` : '—'}</span>
                                         {' • '}Custo: R$ {p.food_cost.toFixed(2)}

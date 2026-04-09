@@ -1,5 +1,5 @@
 -- =============================================================
--- TOCS CRM — Migration 006: Fix colunas da tabela ingredients
+-- Gastão — Migration 006: Fix colunas da tabela ingredients
 -- Resolve: "Could not find the 'avg_cost_per_unit' column"
 -- Execute no Supabase SQL Editor
 -- =============================================================

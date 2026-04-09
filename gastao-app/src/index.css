@@ -1,18 +1,57 @@
 @import "tailwindcss";
 
+/*
+ * Gastão — tema global
+ * Tokens vêm do manual de identidade visual (Bibliografia/).
+ * Espelhado em TS em src/lib/theme.ts.
+ */
 @theme {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-900: #1e3a8a;
-  
-  --font-sans: 'Inter', system-ui, sans-serif;
+  /* Paleta primária — laranja "Orange #FF6B35" */
+  --color-primary-50:  #FFF4EE;
+  --color-primary-100: #FFE2D1;
+  --color-primary-200: #FFC09B;
+  --color-primary-300: #FF9D65;
+  --color-primary-400: #FF854A;
+  --color-primary-500: #FF6B35;
+  --color-primary-600: #E55A20;
+  --color-primary-700: #BF4A1A;
+  --color-primary-800: #8F3712;
+  --color-primary-900: #66260A;
+
+  /* Verde de resultado "Green #4CAF50" */
+  --color-success-50:  #E8F5E9;
+  --color-success-100: #C8E6C9;
+  --color-success-500: #4CAF50;
+  --color-success-600: #43A047;
+  --color-success-700: #388E3C;
+
+  /* Neutros da marca */
+  --color-ink:        #2C2C2C; /* texto principal */
+  --color-warm-gray:  #6B6B6B;
+  --color-beige:      #D4A574;
+  --color-cream:      #FAF6EE;
+
+  /* Tipografia — Poppins (Ytre é tipografia proprietária; fica como fallback para o design final) */
+  --font-sans:    'Poppins', system-ui, -apple-system, sans-serif;
+  --font-display: 'Ytre', 'Poppins', system-ui, -apple-system, sans-serif;
 }
 
-/* Custom base styles */
+/* Carrega Poppins do Google Fonts — Ytre é proprietária e deve ser adicionada manualmente depois */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
 @layer base {
+  html {
+    font-family: var(--font-sans);
+  }
   body {
-    @apply bg-slate-50 text-slate-900;
+    /* Fundo creme "papel natural" do manual, texto Dark Gray */
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 }
