@@ -19,10 +19,19 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     // ── Grupos de navegação ───────────────────────────────────────────────────
     const navGroups = [
         {
+            label: 'Financeiro',
+            show: canViewDashboard,
+            items: [
+                { to: '/',              Icon: BarChart3,   label: 'Dashboard',    show: true },
+                { to: '/sales',         Icon: ShoppingBag, label: 'Vendas',       show: canViewSales },
+                { to: '/notas-fiscais', Icon: FileText,    label: 'Notas Fiscais', show: true },
+            ],
+        },
+        {
             label: 'Produção',
             show: true,
             items: [
-                { to: '/ingredients', Icon: Package,         label: 'Insumos',        show: isDonoOrGerente },
+                { to: '/ingredients', Icon: Package,         label: 'Insumos',         show: isDonoOrGerente },
                 { to: '/preparos',    Icon: ChefHat,         label: 'Preparos',        show: true },
                 { to: '/recipes',     Icon: UtensilsCrossed, label: 'Fichas Técnicas', show: true },
             ],
@@ -32,23 +41,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             show: true,
             items: [
                 { to: '/checklists', Icon: ClipboardList, label: 'Checklists', show: true },
-                { to: '/feedbacks',  Icon: MessageCircle, label: 'Feedbacks',  show: true },
-            ],
-        },
-        {
-            label: 'Financeiro',
-            show: canViewDashboard,
-            items: [
-                { to: '/', Icon: BarChart3, label: 'Dashboard', show: true },
-                { to: '/sales', Icon: ShoppingBag, label: 'Vendas', show: canViewSales },
-                { to: '/notas-fiscais', Icon: FileText, label: 'Notas Fiscais', show: true },
             ],
         },
         {
             label: 'Gestão',
-            show: canViewEquipe,
+            show: true,
             items: [
-                { to: '/equipe', Icon: Users, label: 'Equipe', show: true },
+                { to: '/feedbacks', Icon: MessageCircle, label: 'Feedbacks', show: true },
+                { to: '/equipe',    Icon: Users,         label: 'Equipe',    show: canViewEquipe },
             ],
         },
     ];
