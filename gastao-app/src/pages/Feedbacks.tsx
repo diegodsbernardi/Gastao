@@ -1,33 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-    MessageCircle, Plus, Loader2, X, ThumbsUp, Info, AlertTriangle,
-    Eye, EyeOff, Send, Check,
+    MessageCircle, Plus, Loader2, X, Check, ArrowLeft,
+    CalendarRange, Sparkles, Target, ListChecks, CalendarClock,
+    ShieldCheck, Edit3, Trash2, AlertCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { toast } from 'sonner';
 
-type Tipo = 'elogio' | 'orientacao' | 'alerta';
-
-interface Inbox {
+// ─── Tipos ────────────────────────────────────────────────────────────────
+interface Feedback {
     id: string;
-    tipo: Tipo;
-    titulo: string;
-    mensagem: string;
-    criado_em: string;
+    funcionario_id: string;
+    funcionario_nome: string;
+    funcionario_email: string;
+    autor_id: string;
     autor_nome: string;
-    lido: boolean;
-}
-
-interface Sent {
-    id: string;
-    tipo: Tipo;
-    titulo: string;
-    mensagem: string;
+    periodo_inicio: string;       // 'YYYY-MM-DD'
+    periodo_fim: string;
+    pontos_positivos: string;
+    pontos_melhoria: string;
+    plano_acao: string;
+    proximo_encontro: string | null;
+    acknowledged_at: string | null;
     criado_em: string;
-    total_recipients: number;
-    total_reads: number;
+    atualizado_em: string;
+    sou_autor: boolean;
+    sou_funcionario: boolean;
 }
 
 interface Membro {
@@ -38,389 +38,689 @@ interface Membro {
     perfil: string;
 }
 
-const TIPO_CONFIG: Record<Tipo, {
-    label: string;
-    Icon: React.ElementType;
-    badgeClass: string;
-    borderClass: string;
-}> = {
-    elogio:     { label: 'Elogio',     Icon: ThumbsUp,      badgeClass: 'bg-success-100 text-success-700', borderClass: 'bg-success-500' },
-    orientacao: { label: 'Orientação', Icon: Info,          badgeClass: 'bg-primary-100 text-primary-700', borderClass: 'bg-primary-500' },
-    alerta:     { label: 'Alerta',     Icon: AlertTriangle, badgeClass: 'bg-red-100 text-red-700',         borderClass: 'bg-red-500' },
+type View = 'list' | 'detail' | 'form';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+const fmtDate = (iso: string | null | undefined) => {
+    if (!iso) return '—';
+    const d = new Date(iso + (iso.length === 10 ? 'T00:00:00' : ''));
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const fmtDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) +
-        ' · ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const fmtPeriodo = (inicio: string, fim: string) => `${fmtDate(inicio)} → ${fmtDate(fim)}`;
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const lastMonthISO = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().slice(0, 10);
+};
+const nextMonthISO = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    return d.toISOString().slice(0, 10);
 };
 
+// ─── Componente principal ─────────────────────────────────────────────────
 export const Feedbacks = () => {
     const { user } = useAuth();
     const { isDonoOrGerente } = usePermissions();
 
-    const [tab, setTab] = useState<'inbox' | 'sent'>('inbox');
-    const [inbox, setInbox] = useState<Inbox[]>([]);
-    const [sent, setSent] = useState<Sent[]>([]);
+    const [view, setView] = useState<View>('list');
+    const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Modal: enviar feedback
-    const [showCreate, setShowCreate] = useState(false);
     const [members, setMembers] = useState<Membro[]>([]);
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [newTipo, setNewTipo] = useState<Tipo>('orientacao');
-    const [newTitulo, setNewTitulo] = useState('');
-    const [newMensagem, setNewMensagem] = useState('');
-    const [sending, setSending] = useState(false);
+
+    // Detail
+    const [activeId, setActiveId] = useState<string | null>(null);
+    const active = useMemo(() => feedbacks.find(f => f.id === activeId) ?? null, [feedbacks, activeId]);
+
+    // Form (criar OU editar)
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [funcionarioId, setFuncionarioId] = useState<string>('');
+    const [periodoInicio, setPeriodoInicio] = useState<string>(lastMonthISO());
+    const [periodoFim, setPeriodoFim] = useState<string>(todayISO());
+    const [pontosPositivos, setPontosPositivos] = useState('');
+    const [pontosMelhoria, setPontosMelhoria] = useState('');
+    const [planoAcao, setPlanoAcao] = useState('');
+    const [proximoEncontro, setProximoEncontro] = useState<string>(nextMonthISO());
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        loadData();
+        loadAll();
     }, []);
 
-    const loadData = async () => {
+    const loadAll = async () => {
         setLoading(true);
-        const [inboxRes, sentRes] = await Promise.all([
-            supabase.rpc('get_my_feedbacks'),
-            isDonoOrGerente ? supabase.rpc('get_sent_feedbacks') : Promise.resolve({ data: [] }),
+        const [{ data: fbData, error: fbErr }, { data: memData }] = await Promise.all([
+            supabase.rpc('list_feedbacks'),
+            supabase.rpc('get_restaurant_members'),
         ]);
-        setInbox((inboxRes.data ?? []) as Inbox[]);
-        setSent((sentRes.data ?? []) as Sent[]);
+        if (fbErr) toast.error('Erro carregando fichas', { description: fbErr.message });
+        setFeedbacks((fbData ?? []) as Feedback[]);
+        setMembers((memData ?? []) as Membro[]);
         setLoading(false);
     };
 
-    const openFeedback = async (fb: Inbox) => {
-        if (!fb.lido) {
-            await supabase.rpc('mark_feedback_read', { p_feedback_id: fb.id });
-            setInbox(prev => prev.map(i => i.id === fb.id ? { ...i, lido: true } : i));
-        }
+    // ── Form helpers ──
+    const resetForm = () => {
+        setEditingId(null);
+        setFuncionarioId('');
+        setPeriodoInicio(lastMonthISO());
+        setPeriodoFim(todayISO());
+        setPontosPositivos('');
+        setPontosMelhoria('');
+        setPlanoAcao('');
+        setProximoEncontro(nextMonthISO());
     };
 
-    const openCreateModal = async () => {
-        setShowCreate(true);
-        if (members.length === 0) {
-            const { data } = await supabase.rpc('get_restaurant_members');
-            const list = ((data ?? []) as Membro[]).filter(m => m.usuario_id !== user?.id);
-            setMembers(list);
-        }
+    const openCreate = () => {
+        resetForm();
+        setView('form');
     };
 
-    const toggleRecipient = (id: string) => {
-        const copy = new Set(selectedIds);
-        if (copy.has(id)) copy.delete(id);
-        else copy.add(id);
-        setSelectedIds(copy);
+    const openEdit = (fb: Feedback) => {
+        setEditingId(fb.id);
+        setFuncionarioId(fb.funcionario_id);
+        setPeriodoInicio(fb.periodo_inicio);
+        setPeriodoFim(fb.periodo_fim);
+        setPontosPositivos(fb.pontos_positivos);
+        setPontosMelhoria(fb.pontos_melhoria);
+        setPlanoAcao(fb.plano_acao);
+        setProximoEncontro(fb.proximo_encontro ?? '');
+        setView('form');
     };
 
-    const selectAllRecipients = () => {
-        setSelectedIds(new Set(members.map(m => m.usuario_id)));
-    };
-
-    const sendFeedback = async () => {
-        if (!newTitulo.trim() || !newMensagem.trim()) {
-            toast.error('Preenche título e mensagem.');
+    const submitForm = async () => {
+        if (!editingId && !funcionarioId) {
+            toast.error('Escolhe o funcionário avaliado.');
             return;
         }
-        if (selectedIds.size === 0) {
-            toast.error('Escolhe pelo menos uma pessoa.');
+        if (!periodoInicio || !periodoFim) {
+            toast.error('Defina o período avaliado.');
+            return;
+        }
+        if (periodoFim < periodoInicio) {
+            toast.error('A data final do período não pode ser antes da inicial.');
             return;
         }
 
-        setSending(true);
-        const { error } = await supabase.rpc('send_feedback', {
-            p_tipo: newTipo,
-            p_titulo: newTitulo.trim(),
-            p_mensagem: newMensagem.trim(),
-            p_recipients: Array.from(selectedIds),
-        });
+        setSaving(true);
+        const payload = {
+            p_periodo_inicio: periodoInicio,
+            p_periodo_fim: periodoFim,
+            p_pontos_positivos: pontosPositivos.trim(),
+            p_pontos_melhoria: pontosMelhoria.trim(),
+            p_plano_acao: planoAcao.trim(),
+            p_proximo_encontro: proximoEncontro || null,
+        };
+
+        const { error } = editingId
+            ? await supabase.rpc('update_feedback', { p_id: editingId, ...payload })
+            : await supabase.rpc('create_feedback', { p_funcionario_id: funcionarioId, ...payload });
 
         if (error) {
-            toast.error('Não consegui enviar.', { description: error.message });
-            setSending(false);
+            toast.error('Não consegui salvar.', { description: error.message });
+            setSaving(false);
             return;
         }
 
-        toast.success('Feedback enviado.');
-        setShowCreate(false);
-        setNewTitulo('');
-        setNewMensagem('');
-        setNewTipo('orientacao');
-        setSelectedIds(new Set());
-        setSending(false);
-        loadData();
+        toast.success(editingId ? 'Ficha atualizada.' : 'Ficha criada.');
+        setSaving(false);
+        resetForm();
+        await loadAll();
+        setView('list');
     };
 
-    const unreadCount = inbox.filter(i => !i.lido).length;
+    // ── Detail actions ──
+    const acknowledge = async (fb: Feedback) => {
+        const { error } = await supabase.rpc('acknowledge_feedback', { p_id: fb.id });
+        if (error) {
+            toast.error('Não consegui marcar como ciente.', { description: error.message });
+            return;
+        }
+        toast.success('Ciência registrada.');
+        await loadAll();
+    };
 
+    const remove = async (fb: Feedback) => {
+        if (!confirm('Apagar essa ficha?')) return;
+        const { error } = await supabase.rpc('delete_feedback', { p_id: fb.id });
+        if (error) {
+            toast.error('Não consegui deletar.', { description: error.message });
+            return;
+        }
+        toast.success('Ficha apagada.');
+        setActiveId(null);
+        await loadAll();
+        setView('list');
+    };
+
+    // ─── Render ──────────────────────────────────────────────────
+    if (loading) {
+        return (
+            <div className="flex justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+            </div>
+        );
+    }
+
+    // VIEW: form (criar/editar)
+    if (view === 'form') {
+        return (
+            <FormView
+                editingId={editingId}
+                isDonoOrGerente={isDonoOrGerente}
+                members={members}
+                myUserId={user?.id}
+                funcionarioId={funcionarioId}
+                setFuncionarioId={setFuncionarioId}
+                periodoInicio={periodoInicio}
+                setPeriodoInicio={setPeriodoInicio}
+                periodoFim={periodoFim}
+                setPeriodoFim={setPeriodoFim}
+                pontosPositivos={pontosPositivos}
+                setPontosPositivos={setPontosPositivos}
+                pontosMelhoria={pontosMelhoria}
+                setPontosMelhoria={setPontosMelhoria}
+                planoAcao={planoAcao}
+                setPlanoAcao={setPlanoAcao}
+                proximoEncontro={proximoEncontro}
+                setProximoEncontro={setProximoEncontro}
+                saving={saving}
+                onCancel={() => { resetForm(); setView(activeId ? 'detail' : 'list'); }}
+                onSubmit={submitForm}
+            />
+        );
+    }
+
+    // VIEW: detail
+    if (view === 'detail' && active) {
+        return (
+            <DetailView
+                fb={active}
+                onBack={() => { setActiveId(null); setView('list'); }}
+                onEdit={() => openEdit(active)}
+                onDelete={() => remove(active)}
+                onAck={() => acknowledge(active)}
+            />
+        );
+    }
+
+    // VIEW: list (default)
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold text-ink">Feedbacks</h1>
                     <p className="text-warm-gray text-sm mt-0.5">
-                        Alinhamento direto com o time — sem grupo de WhatsApp bagunçado.
+                        Fichas de feedback 1:1 — registro do que foi conversado e o plano daqui pra frente.
                     </p>
                 </div>
                 {isDonoOrGerente && (
                     <button
-                        onClick={openCreateModal}
+                        onClick={openCreate}
                         className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-2 self-start sm:self-auto"
                     >
                         <Plus className="w-4 h-4" />
-                        Enviar feedback
+                        Nova ficha
                     </button>
                 )}
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm w-fit">
-                <button
-                    onClick={() => setTab('inbox')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
-                        tab === 'inbox' ? 'bg-primary-50 text-primary-700' : 'text-warm-gray hover:text-ink'
-                    }`}
-                >
-                    Recebidos
-                    {unreadCount > 0 && (
-                        <span className="bg-primary-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                            {unreadCount}
-                        </span>
-                    )}
-                </button>
-                {isDonoOrGerente && (
-                    <button
-                        onClick={() => setTab('sent')}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                            tab === 'sent' ? 'bg-primary-50 text-primary-700' : 'text-warm-gray hover:text-ink'
-                        }`}
-                    >
-                        Enviados
-                    </button>
-                )}
-            </div>
-
-            {loading ? (
-                <div className="flex justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-                </div>
-            ) : tab === 'inbox' ? (
-                inbox.length === 0 ? (
-                    <EmptyState
-                        icon={MessageCircle}
-                        title="Nenhum feedback por aqui"
-                        description="Quando o dono ou gerente enviar algo pra você, aparece aqui."
-                    />
-                ) : (
-                    <div className="space-y-3">
-                        {inbox.map(fb => {
-                            const cfg = TIPO_CONFIG[fb.tipo];
-                            const Icon = cfg.Icon;
-                            return (
-                                <div
-                                    key={fb.id}
-                                    onClick={() => openFeedback(fb)}
-                                    className={`bg-white rounded-2xl border shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md ${
-                                        fb.lido ? 'border-slate-200' : 'border-primary-300'
-                                    }`}
-                                >
-                                    <div className={`h-1 ${cfg.borderClass}`} />
-                                    <div className="p-5">
-                                        <div className="flex items-start gap-3">
-                                            <div className={`p-2 rounded-lg ${cfg.badgeClass} shrink-0`}>
-                                                <Icon className="w-4 h-4" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <h3 className={`font-bold text-ink ${!fb.lido ? 'text-primary-700' : ''}`}>
-                                                        {fb.titulo}
-                                                    </h3>
-                                                    {!fb.lido && (
-                                                        <span className="w-2 h-2 bg-primary-500 rounded-full shrink-0" />
-                                                    )}
-                                                </div>
-                                                <p className="text-sm text-warm-gray mt-1 whitespace-pre-wrap">{fb.mensagem}</p>
-                                                <p className="text-xs text-slate-400 mt-3">
-                                                    De {fb.autor_nome} · {fmtDate(fb.criado_em)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )
+            {feedbacks.length === 0 ? (
+                <EmptyState
+                    icon={MessageCircle}
+                    title="Nenhuma ficha por aqui ainda"
+                    description={
+                        isDonoOrGerente
+                            ? 'Crie a primeira ficha de feedback depois da próxima conversa 1:1.'
+                            : 'Quando um gestor registrar um feedback seu, ele aparece aqui.'
+                    }
+                />
             ) : (
-                // SENT
-                sent.length === 0 ? (
-                    <EmptyState
-                        icon={Send}
-                        title="Você ainda não enviou feedbacks"
-                        description="Elogie, oriente ou alerte o time. A gente guarda o histórico."
-                    />
-                ) : (
-                    <div className="space-y-3">
-                        {sent.map(fb => {
-                            const cfg = TIPO_CONFIG[fb.tipo];
-                            const Icon = cfg.Icon;
-                            const allRead = fb.total_reads === fb.total_recipients;
-                            return (
-                                <div key={fb.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className={`h-1 ${cfg.borderClass}`} />
-                                    <div className="p-5">
-                                        <div className="flex items-start gap-3">
-                                            <div className={`p-2 rounded-lg ${cfg.badgeClass} shrink-0`}>
-                                                <Icon className="w-4 h-4" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="font-bold text-ink">{fb.titulo}</h3>
-                                                <p className="text-sm text-warm-gray mt-1 whitespace-pre-wrap">{fb.mensagem}</p>
-                                                <div className="flex items-center gap-4 mt-3 text-xs">
-                                                    <span className="text-slate-400">{fmtDate(fb.criado_em)}</span>
-                                                    <span className={`flex items-center gap-1 font-medium ${allRead ? 'text-success-600' : 'text-warm-gray'}`}>
-                                                        {allRead ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                                        {fb.total_reads}/{fb.total_recipients} leram
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )
-            )}
-
-            {/* Modal: enviar */}
-            {showCreate && (
-                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col">
-                        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                            <h2 className="font-bold text-lg text-ink">Enviar feedback</h2>
-                            <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600 p-1">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-5 space-y-4 overflow-y-auto">
-                            <div>
-                                <label className="block text-sm font-semibold text-ink mb-2">Tipo</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {(['elogio', 'orientacao', 'alerta'] as Tipo[]).map(t => {
-                                        const cfg = TIPO_CONFIG[t];
-                                        const Icon = cfg.Icon;
-                                        const active = newTipo === t;
-                                        return (
-                                            <button
-                                                key={t}
-                                                type="button"
-                                                onClick={() => setNewTipo(t)}
-                                                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                                                    active
-                                                        ? 'bg-primary-600 text-white'
-                                                        : 'bg-slate-100 text-warm-gray hover:bg-slate-200'
-                                                }`}
-                                            >
-                                                <Icon className="w-4 h-4" />
-                                                {cfg.label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-ink mb-1">Título</label>
-                                <input
-                                    type="text"
-                                    value={newTitulo}
-                                    onChange={e => setNewTitulo(e.target.value)}
-                                    placeholder="Resumo curto"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-ink mb-1">Mensagem</label>
-                                <textarea
-                                    value={newMensagem}
-                                    onChange={e => setNewMensagem(e.target.value)}
-                                    rows={4}
-                                    placeholder="Fala o que precisa ser falado."
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
-                                />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-semibold text-ink">Destinatários</label>
-                                    <button
-                                        type="button"
-                                        onClick={selectAllRecipients}
-                                        className="text-xs text-primary-600 font-semibold hover:text-primary-700"
-                                    >
-                                        Selecionar todos
-                                    </button>
-                                </div>
-                                {members.length === 0 ? (
-                                    <p className="text-sm text-warm-gray">Nenhum outro membro no restaurante ainda.</p>
-                                ) : (
-                                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                                        {members.map(m => {
-                                            const selected = selectedIds.has(m.usuario_id);
-                                            return (
-                                                <button
-                                                    key={m.id}
-                                                    type="button"
-                                                    onClick={() => toggleRecipient(m.usuario_id)}
-                                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
-                                                        selected
-                                                            ? 'bg-primary-50 border-primary-300'
-                                                            : 'bg-white border-slate-200 hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
-                                                        selected ? 'bg-primary-600 border-primary-600' : 'border-slate-300'
-                                                    }`}>
-                                                        {selected && <Check className="w-3 h-3 text-white" />}
-                                                    </div>
-                                                    <div className="min-w-0 flex-1 text-left">
-                                                        <p className="text-sm font-medium text-ink truncate">{m.nome}</p>
-                                                        <p className="text-xs text-warm-gray truncate">{m.email}</p>
-                                                    </div>
-                                                    <span className="text-xs text-slate-400 capitalize">{m.perfil}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="p-5 border-t border-slate-100 flex items-center justify-end gap-2">
-                            <button
-                                onClick={() => setShowCreate(false)}
-                                className="px-4 py-2 text-warm-gray hover:text-ink font-medium"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={sendFeedback}
-                                disabled={sending}
-                                className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
-                            >
-                                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                Enviar
-                            </button>
-                        </div>
-                    </div>
+                <div className="space-y-3">
+                    {feedbacks.map(fb => (
+                        <FeedbackCard
+                            key={fb.id}
+                            fb={fb}
+                            onClick={() => { setActiveId(fb.id); setView('detail'); }}
+                        />
+                    ))}
                 </div>
             )}
         </div>
     );
 };
 
-const EmptyState = ({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) => (
+// ─── Card de ficha (lista) ─────────────────────────────────────────────────
+const FeedbackCard = ({ fb, onClick }: { fb: Feedback; onClick: () => void }) => {
+    const acked = !!fb.acknowledged_at;
+    return (
+        <button
+            onClick={onClick}
+            className={`w-full text-left bg-white rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md ${
+                acked ? 'border-success-200' : 'border-primary-200'
+            }`}
+        >
+            <div className={`h-1 ${acked ? 'bg-success-500' : 'bg-primary-500'}`} />
+            <div className="p-5">
+                <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg shrink-0 ${
+                        acked ? 'bg-success-100 text-success-700' : 'bg-primary-100 text-primary-700'
+                    }`}>
+                        {acked ? <ShieldCheck className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <h3 className="font-bold text-ink truncate">{fb.funcionario_nome}</h3>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                acked
+                                    ? 'bg-success-50 text-success-700'
+                                    : 'bg-primary-50 text-primary-700'
+                            }`}>
+                                {acked ? 'Ciente' : 'Aguardando ciência'}
+                            </span>
+                        </div>
+                        <p className="text-sm text-warm-gray mt-0.5 flex items-center gap-1.5">
+                            <CalendarRange className="w-3.5 h-3.5" />
+                            {fmtPeriodo(fb.periodo_inicio, fb.periodo_fim)}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                            <span>Por {fb.autor_nome}</span>
+                            {fb.proximo_encontro && (
+                                <span className="flex items-center gap-1">
+                                    <CalendarClock className="w-3 h-3" />
+                                    Próx: {fmtDate(fb.proximo_encontro)}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </button>
+    );
+};
+
+// ─── Tela de detalhe ──────────────────────────────────────────────────────
+const DetailView = ({
+    fb, onBack, onEdit, onDelete, onAck,
+}: {
+    fb: Feedback;
+    onBack: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
+    onAck: () => void;
+}) => {
+    const acked = !!fb.acknowledged_at;
+    const canEdit = fb.sou_autor && !acked;
+    const canAck = fb.sou_funcionario && !acked;
+
+    return (
+        <div className="max-w-3xl mx-auto space-y-5">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={onBack}
+                    className="p-2 rounded-lg hover:bg-slate-100 text-warm-gray hover:text-ink"
+                    aria-label="Voltar"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex-1">
+                    <h1 className="text-2xl font-bold text-ink">{fb.funcionario_nome}</h1>
+                    <p className="text-warm-gray text-sm">
+                        Ficha de feedback · por {fb.autor_nome}
+                    </p>
+                </div>
+                {canEdit && (
+                    <>
+                        <button
+                            onClick={onEdit}
+                            className="p-2 rounded-lg hover:bg-slate-100 text-warm-gray hover:text-ink"
+                            title="Editar"
+                        >
+                            <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={onDelete}
+                            className="p-2 rounded-lg hover:bg-red-50 text-warm-gray hover:text-red-600"
+                            title="Apagar"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </>
+                )}
+            </div>
+
+            {/* Status banner */}
+            <div className={`rounded-xl border p-4 flex items-start gap-3 ${
+                acked
+                    ? 'bg-success-50 border-success-200 text-success-800'
+                    : 'bg-primary-50 border-primary-200 text-primary-800'
+            }`}>
+                {acked ? <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
+                <div className="text-sm">
+                    {acked ? (
+                        <>
+                            <strong>Ciente.</strong>{' '}
+                            {fb.funcionario_nome} confirmou em{' '}
+                            {new Date(fb.acknowledged_at!).toLocaleDateString('pt-BR')} às{' '}
+                            {new Date(fb.acknowledged_at!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
+                        </>
+                    ) : (
+                        <>
+                            <strong>Aguardando ciência.</strong>{' '}
+                            {fb.sou_funcionario
+                                ? 'Quando você confirmar, a ficha fica registrada e não pode mais ser editada.'
+                                : `Aguardando ${fb.funcionario_nome} marcar como ciente.`}
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Período */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="flex items-center gap-2 text-warm-gray text-sm font-semibold uppercase tracking-wide">
+                    <CalendarRange className="w-4 h-4" />
+                    Período avaliado
+                </div>
+                <p className="text-ink font-semibold mt-1.5 text-lg">
+                    {fmtPeriodo(fb.periodo_inicio, fb.periodo_fim)}
+                </p>
+            </div>
+
+            {/* Seções de conteúdo */}
+            <Section
+                Icon={Sparkles}
+                tone="success"
+                title="Pontos positivos"
+                content={fb.pontos_positivos}
+                placeholder="Nenhum elogio registrado."
+            />
+            <Section
+                Icon={Target}
+                tone="amber"
+                title="Pontos de melhoria"
+                content={fb.pontos_melhoria}
+                placeholder="Nenhum ponto de melhoria registrado."
+            />
+            <Section
+                Icon={ListChecks}
+                tone="primary"
+                title="Plano de ação"
+                content={fb.plano_acao}
+                placeholder="Nenhum plano de ação registrado."
+            />
+
+            {/* Próximo encontro */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="flex items-center gap-2 text-warm-gray text-sm font-semibold uppercase tracking-wide">
+                    <CalendarClock className="w-4 h-4" />
+                    Próximo encontro
+                </div>
+                <p className="text-ink font-semibold mt-1.5 text-lg">
+                    {fb.proximo_encontro ? fmtDate(fb.proximo_encontro) : 'Não agendado'}
+                </p>
+            </div>
+
+            {/* Botão de ack */}
+            {canAck && (
+                <div className="sticky bottom-4 z-10">
+                    <button
+                        onClick={onAck}
+                        className="w-full bg-success-600 hover:bg-success-700 text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-lg"
+                    >
+                        <Check className="w-5 h-5" />
+                        Marcar como ciente
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Seção de conteúdo (positivos, melhoria, plano) ──────────────────────
+const Section = ({
+    Icon, tone, title, content, placeholder,
+}: {
+    Icon: React.ElementType;
+    tone: 'success' | 'amber' | 'primary';
+    title: string;
+    content: string;
+    placeholder: string;
+}) => {
+    const toneClasses = {
+        success: { iconBg: 'bg-success-100 text-success-700' },
+        amber:   { iconBg: 'bg-amber-100 text-amber-700' },
+        primary: { iconBg: 'bg-primary-100 text-primary-700' },
+    }[tone];
+    const isEmpty = !content.trim();
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div className="flex items-center gap-2.5">
+                <div className={`p-2 rounded-lg ${toneClasses.iconBg}`}>
+                    <Icon className="w-4 h-4" />
+                </div>
+                <h2 className="font-bold text-ink">{title}</h2>
+            </div>
+            {isEmpty ? (
+                <p className="text-sm text-slate-400 italic mt-3">{placeholder}</p>
+            ) : (
+                <p className="text-ink whitespace-pre-wrap mt-3 leading-relaxed">{content}</p>
+            )}
+        </div>
+    );
+};
+
+// ─── Tela de criação/edição ──────────────────────────────────────────────
+const FormView = ({
+    editingId, isDonoOrGerente, members, myUserId,
+    funcionarioId, setFuncionarioId,
+    periodoInicio, setPeriodoInicio,
+    periodoFim, setPeriodoFim,
+    pontosPositivos, setPontosPositivos,
+    pontosMelhoria, setPontosMelhoria,
+    planoAcao, setPlanoAcao,
+    proximoEncontro, setProximoEncontro,
+    saving, onCancel, onSubmit,
+}: {
+    editingId: string | null;
+    isDonoOrGerente: boolean;
+    members: Membro[];
+    myUserId: string | undefined;
+    funcionarioId: string;
+    setFuncionarioId: (v: string) => void;
+    periodoInicio: string;
+    setPeriodoInicio: (v: string) => void;
+    periodoFim: string;
+    setPeriodoFim: (v: string) => void;
+    pontosPositivos: string;
+    setPontosPositivos: (v: string) => void;
+    pontosMelhoria: string;
+    setPontosMelhoria: (v: string) => void;
+    planoAcao: string;
+    setPlanoAcao: (v: string) => void;
+    proximoEncontro: string;
+    setProximoEncontro: (v: string) => void;
+    saving: boolean;
+    onCancel: () => void;
+    onSubmit: () => void;
+}) => {
+    if (!isDonoOrGerente) {
+        return (
+            <EmptyState
+                icon={AlertCircle}
+                title="Sem permissão"
+                description="Apenas dono e gerente podem criar fichas de feedback."
+            />
+        );
+    }
+
+    return (
+        <div className="max-w-3xl mx-auto space-y-5">
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={onCancel}
+                    className="p-2 rounded-lg hover:bg-slate-100 text-warm-gray hover:text-ink"
+                    aria-label="Cancelar"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+                <div>
+                    <h1 className="text-2xl font-bold text-ink">
+                        {editingId ? 'Editar ficha' : 'Nova ficha de feedback'}
+                    </h1>
+                    <p className="text-warm-gray text-sm">
+                        Registro de uma conversa 1:1 que aconteceu.
+                    </p>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                {/* Funcionário (só na criação) */}
+                {!editingId && (
+                    <div>
+                        <label className="block text-sm font-semibold text-ink mb-1.5">
+                            Funcionário avaliado
+                        </label>
+                        <select
+                            value={funcionarioId}
+                            onChange={e => setFuncionarioId(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white"
+                        >
+                            <option value="">— Escolha quem foi avaliado —</option>
+                            {members.map(m => (
+                                <option key={m.usuario_id} value={m.usuario_id}>
+                                    {m.nome} ({m.perfil}){m.usuario_id === myUserId ? ' · você' : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-warm-gray mt-1">
+                            Pode escolher você mesmo — é normal registrar auto-feedbacks.
+                        </p>
+                    </div>
+                )}
+
+                {/* Período */}
+                <div>
+                    <label className="block text-sm font-semibold text-ink mb-1.5">
+                        Período avaliado
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <p className="text-xs text-warm-gray mb-1">Início</p>
+                            <input
+                                type="date"
+                                value={periodoInicio}
+                                onChange={e => setPeriodoInicio(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <p className="text-xs text-warm-gray mb-1">Fim</p>
+                            <input
+                                type="date"
+                                value={periodoFim}
+                                onChange={e => setPeriodoFim(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Pontos positivos */}
+                <FormTextarea
+                    Icon={Sparkles}
+                    label="Pontos positivos (elogios)"
+                    placeholder="O que foi bem feito? O que merece reconhecimento?"
+                    value={pontosPositivos}
+                    onChange={setPontosPositivos}
+                />
+
+                {/* Pontos de melhoria */}
+                <FormTextarea
+                    Icon={Target}
+                    label="Pontos de melhoria"
+                    placeholder="O que precisa evoluir? Seja direto e construtivo."
+                    value={pontosMelhoria}
+                    onChange={setPontosMelhoria}
+                />
+
+                {/* Plano de ação */}
+                <FormTextarea
+                    Icon={ListChecks}
+                    label="Plano de ação de melhoria"
+                    placeholder="Quais ações concretas vocês combinaram?"
+                    value={planoAcao}
+                    onChange={setPlanoAcao}
+                />
+
+                {/* Próximo encontro */}
+                <div>
+                    <label className="block text-sm font-semibold text-ink mb-1.5 flex items-center gap-1.5">
+                        <CalendarClock className="w-4 h-4 text-warm-gray" />
+                        Próximo encontro
+                    </label>
+                    <input
+                        type="date"
+                        value={proximoEncontro}
+                        onChange={e => setProximoEncontro(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                    />
+                    <p className="text-xs text-warm-gray mt-1">Opcional — deixe em branco se não tiver definido.</p>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2">
+                <button
+                    onClick={onCancel}
+                    className="px-4 py-2 text-warm-gray hover:text-ink font-medium"
+                >
+                    Cancelar
+                </button>
+                <button
+                    onClick={onSubmit}
+                    disabled={saving}
+                    className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2"
+                >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    {editingId ? 'Salvar alterações' : 'Criar ficha'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const FormTextarea = ({
+    Icon, label, placeholder, value, onChange,
+}: {
+    Icon: React.ElementType;
+    label: string;
+    placeholder: string;
+    value: string;
+    onChange: (v: string) => void;
+}) => (
+    <div>
+        <label className="block text-sm font-semibold text-ink mb-1.5 flex items-center gap-1.5">
+            <Icon className="w-4 h-4 text-warm-gray" />
+            {label}
+        </label>
+        <textarea
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            rows={4}
+            placeholder={placeholder}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
+        />
+    </div>
+);
+
+const EmptyState = ({
+    icon: Icon, title, description,
+}: { icon: React.ElementType; title: string; description: string }) => (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
         <Icon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
         <p className="font-semibold text-ink">{title}</p>
