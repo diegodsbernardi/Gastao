@@ -138,7 +138,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 clearMembro();
 
             } else if (event === 'TOKEN_REFRESHED' && s) {
-                setSession(s);
+                // Atualiza sessão silenciosamente via ref para não causar re-render
+                // que desmontaria modais abertos (ex: importador de fichas)
+                setSession(prev => {
+                    if (prev?.access_token === s.access_token) return prev;
+                    return s;
+                });
             }
         });
 

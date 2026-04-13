@@ -7,4 +7,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Supabase URL ou Anon Key não configurados no .env.local');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        // Não refresha o token automaticamente quando a aba volta ao foco
+        // Evita re-renders que desmontam modais abertos
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+    },
+});

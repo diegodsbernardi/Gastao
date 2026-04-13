@@ -16,6 +16,7 @@ import { NotasFiscais } from './pages/NotasFiscais';
 import { Preparos } from './pages/Preparos';
 import { Checklists } from './pages/Checklists';
 import { Feedbacks } from './pages/Feedbacks';
+import { ImportarFichaTecnica } from './pages/ImportarFichaTecnica';
 import { AuthProvider, useAuth, Perfil } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -98,6 +99,14 @@ function AppRoutes() {
                                 }
                             />
                             <Route path="/preparos" element={<Preparos />} />
+                            <Route
+                                path="/importar"
+                                element={
+                                    <RoleRoute allowed={['dono', 'gerente']}>
+                                        <ImportarFichaTecnica />
+                                    </RoleRoute>
+                                }
+                            />
                             <Route path="/checklists" element={<Checklists />} />
                             <Route path="/feedbacks" element={<Feedbacks />} />
                             <Route

@@ -151,17 +151,34 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     }, [preparos, preparoIngs]);
 
     // Custo total de cada ficha final — memoizado
+    // Suporta combos: fichas finais podem conter outras fichas finais como sub-itens
     const fichaCostMap = useMemo(() => {
         const map: Record<string, number> = {};
-        fichas.forEach(f => {
-            const ingCost = (fichaIngs[f.id] ?? []).reduce(
-                (acc, i) => acc + i.ingredients.avg_cost_per_unit * i.quantity_needed, 0
-            );
-            const subCost = (fichaSubs[f.id] ?? []).reduce(
-                (acc, s) => acc + (preparoCostPerUnit[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0
-            );
-            map[f.id] = ingCost + subCost;
-        });
+
+        // Mapa unificado: preparos + fichas já calculadas
+        const recipeCostMap = { ...preparoCostPerUnit };
+
+        // Múltiplas passadas para resolver dependências (combo que usa outra ficha)
+        // Máximo 5 iterações para evitar ciclos
+        for (let pass = 0; pass < 5; pass++) {
+            let changed = false;
+            fichas.forEach(f => {
+                const ingCost = (fichaIngs[f.id] ?? []).reduce(
+                    (acc, i) => acc + i.ingredients.avg_cost_per_unit * i.quantity_needed, 0
+                );
+                const subCost = (fichaSubs[f.id] ?? []).reduce(
+                    (acc, s) => acc + (recipeCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0
+                );
+                const newCost = ingCost + subCost;
+                if (map[f.id] !== newCost) {
+                    map[f.id] = newCost;
+                    recipeCostMap[f.id] = newCost; // disponibiliza para combos que usam esta ficha
+                    changed = true;
+                }
+            });
+            if (!changed) break;
+        }
+
         return map;
     }, [fichas, fichaIngs, fichaSubs, preparoCostPerUnit]);
 
@@ -266,14 +283,14 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
 
     const handleAddPreparo = () => {
         if (!selPrepId || selPrepQty === '' || Number(selPrepQty) <= 0) return;
-        const prep = preparos.find(p => p.id === selPrepId);
-        if (!prep) return;
+        const recipe = allRecipesForPicker.find(p => p.id === selPrepId);
+        if (!recipe) return;
         setEditSubItems(prev => [...prev, {
             id: Math.random().toString(),
             recipe_id: editingId!,
-            sub_recipe_id: prep.id,
+            sub_recipe_id: recipe.id,
             quantity_needed: Number(selPrepQty),
-            sub_recipe: prep,
+            sub_recipe: recipe,
         }]);
         setSelPrepId(''); setPrepSearch(''); setSelPrepQty('');
     };
@@ -361,14 +378,26 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
 
     // ─── cálculos do modal ────────────────────────────────────────────────────
     const editingFicha = fichas.find(f => f.id === editingId);
+    // Mapa unificado de custo: preparos + fichas finais (para combos)
+    const unifiedCostMap = useMemo(() => {
+        return { ...preparoCostPerUnit, ...fichaCostMap };
+    }, [preparoCostPerUnit, fichaCostMap]);
+
     const editTotalCost = useMemo(() => {
         const ing = editIngItems.reduce((acc, i) => acc + i.ingredients.avg_cost_per_unit * i.quantity_needed, 0);
-        const sub = editSubItems.reduce((acc, s) => acc + (preparoCostPerUnit[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0);
+        const sub = editSubItems.reduce((acc, s) => acc + (unifiedCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0);
         return ing + sub;
-    }, [editIngItems, editSubItems, preparoCostPerUnit]);
+    }, [editIngItems, editSubItems, unifiedCostMap]);
 
     // dropdowns filtrados
-    const filteredPrepDropdown = preparos
+    // Combina preparos + fichas finais para o dropdown de sub-receitas (permite combos)
+    const allRecipesForPicker = useMemo(() => {
+        const editing = editingId;
+        return [...preparos, ...fichas]
+            .filter(r => r.id !== editing); // não pode adicionar a si mesmo
+    }, [preparos, fichas, editingId]);
+
+    const filteredPrepDropdown = allRecipesForPicker
         .filter(p => !editSubItems.some(s => s.sub_recipe_id === p.id))
         .filter(p => p.product_name.toLowerCase().includes(prepSearch.toLowerCase()));
 
@@ -846,7 +875,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         onClick={() => setAddTab('preparo')}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${addTab === 'preparo' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
-                                        <ChefHat className="w-3.5 h-3.5" /> Preparo
+                                        <ChefHat className="w-3.5 h-3.5" /> Receita
                                     </button>
                                     <button
                                         onClick={() => setAddTab('insumo')}
@@ -870,8 +899,8 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 <ChefHat className="w-4 h-4 text-slate-400 shrink-0" />
                                                 <input
                                                     type="text"
-                                                    placeholder={selPrepId ? preparos.find(p => p.id === selPrepId)?.product_name : 'Buscar preparo...'}
-                                                    value={selPrepId ? (preparos.find(p => p.id === selPrepId)?.product_name ?? '') : prepSearch}
+                                                    placeholder={selPrepId ? allRecipesForPicker.find(p => p.id === selPrepId)?.product_name : 'Buscar receita ou preparo...'}
+                                                    value={selPrepId ? (allRecipesForPicker.find(p => p.id === selPrepId)?.product_name ?? '') : prepSearch}
                                                     onChange={e => { setPrepSearch(e.target.value); setSelPrepId(''); setPrepDropdown(true); }}
                                                     onFocus={() => setPrepDropdown(true)}
                                                     onBlur={() => setTimeout(() => setPrepDropdown(false), 150)}
@@ -895,7 +924,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                                 className="px-4 py-2.5 hover:bg-amber-50 cursor-pointer flex justify-between items-center border-b border-slate-50 last:border-0"
                                                             >
                                                                 <span className="text-sm font-medium text-slate-700">{p.product_name}</span>
-                                                                <span className="text-xs text-amber-600 font-semibold">R$ {fmtMoney(preparoCostPerUnit[p.id] ?? 0)}/un</span>
+                                                                <span className="text-xs text-amber-600 font-semibold">
+                                                                    {p.tipo === 'ficha_final' ? `R$ ${fmtMoney(fichaCostMap[p.id] ?? 0)}` : `R$ ${fmtMoney(preparoCostPerUnit[p.id] ?? 0)}/un`}
+                                                                </span>
                                                             </div>
                                                         ))
                                                     }
@@ -1059,6 +1090,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                     </div>
                 </div>
             )}
+
         </div>
     );
 };
