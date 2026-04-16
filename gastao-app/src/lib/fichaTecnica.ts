@@ -309,14 +309,31 @@ export async function interpretarFichaTecnica(
 
     const data = fnData as Omit<InterpretationResult, '_selected'>;
 
+    // Deduplicate by name (keep first occurrence, which usually has better data)
+    const seenIngNames = new Set<string>();
+    const dedupedIngs = data.ingredients.filter((ing) => {
+        const key = ing.name.toLowerCase().trim();
+        if (seenIngNames.has(key)) return false;
+        seenIngNames.add(key);
+        return true;
+    });
+
+    const seenRecNames = new Set<string>();
+    const dedupedRecs = data.recipes.filter((rec) => {
+        const key = rec.product_name.toLowerCase().trim();
+        if (seenRecNames.has(key)) return false;
+        seenRecNames.add(key);
+        return true;
+    });
+
     // Add _selected flag (deselect duplicates by default)
     return {
         ...data,
-        ingredients: data.ingredients.map((ing) => ({
+        ingredients: dedupedIngs.map((ing) => ({
             ...ing,
             _selected: !ing.is_duplicate,
         })),
-        recipes: data.recipes.map((rec) => ({
+        recipes: dedupedRecs.map((rec) => ({
             ...rec,
             _selected: !rec.is_duplicate,
         })),
