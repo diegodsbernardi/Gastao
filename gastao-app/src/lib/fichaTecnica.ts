@@ -84,10 +84,16 @@ export async function parseExcelSheets(file: File): Promise<SheetData[]> {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
 
-    return workbook.SheetNames.map((name) => {
+    const rawSheets: { name: string; aoa: unknown[][] }[] = workbook.SheetNames.map((name) => {
         const ws = workbook.Sheets[name];
         const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        return { name, aoa };
+    });
 
+    // Pre-process: detect and convert block-format sheets (fichas operacionais / montagem)
+    const processed = preprocessBlockSheets(rawSheets);
+
+    return processed.map(({ name, aoa }) => {
         if (!aoa.length || !aoa[0]) {
             return { name, headers: [], sample_rows: [], all_rows: [] };
         }
@@ -104,6 +110,152 @@ export async function parseExcelSheets(file: File): Promise<SheetData[]> {
             all_rows: dataRows,
         };
     }).filter((s) => s.all_rows.length > 0 && s.headers.some((h) => h.length > 0));
+}
+
+// ── Pre-processor: convert block-format sheets to tabular ────────────────
+
+const SKIP_INGREDIENTS = new Set([
+    'ingredientes', 'etiquetas', 'sem glúten', 'sem lactose', 'sem ovo',
+    'fit', 'low carb', 'gourmet', 'kids', 'vegetariano', 'vegano',
+    'shelflife / validade', 'armazenamento:', 'ficha técnica operacional',
+    'ficha de montagem', '',
+]);
+
+interface ParsedBlock {
+    name: string;
+    code: string;
+    category: string;
+    ingredients: { name: string; qty: number; unit: string }[];
+}
+
+type BlockSheetType = 'preparo' | 'montagem';
+
+function detectSheetType(aoa: unknown[][]): BlockSheetType | null {
+    // Scan first 10 rows for type marker, but also check deeper (some sheets have it at L32+)
+    for (let i = 0; i < Math.min(40, aoa.length); i++) {
+        const row = aoa[i];
+        if (!row) continue;
+        for (const cell of row) {
+            const val = String(cell ?? '').trim();
+            if (val === 'FICHA TÉCNICA OPERACIONAL') return 'preparo';
+            if (val === 'FICHA DE MONTAGEM') return 'montagem';
+        }
+    }
+    return null;
+}
+
+function parseBlocks(aoa: unknown[][], type: BlockSheetType): ParsedBlock[] {
+    const blocks: ParsedBlock[] = [];
+    let current: ParsedBlock | null = null;
+    let collectingIngredients = false;
+
+    // Column layout differs:
+    // Preparo:  col2=name, col4=UND, col5=QTD
+    // Montagem: col2=name, col4=QTD, col5=UND
+    const qtyCol = type === 'montagem' ? 4 : 5;
+    const undCol = type === 'montagem' ? 5 : 4;
+
+    for (let i = 0; i < aoa.length; i++) {
+        const row = aoa[i] as unknown[];
+        if (!row) continue;
+
+        const col3 = String(row[3] ?? '').trim();
+        const col5 = String(row[5] ?? '').trim();
+
+        // Detect block start: "Receita" or "Cód. :" in col 3
+        if ((col3 === 'Receita' || col3 === 'Cód. :') && col5) {
+            if (current && current.ingredients.length > 0) blocks.push(current);
+            current = {
+                name: col5,
+                code: String(row[4] ?? '').trim(),
+                category: '',
+                ingredients: [],
+            };
+            collectingIngredients = false;
+            continue;
+        }
+
+        // Detect category (montagem format): "CATEGORIA" in col 3
+        if (current && col3 === 'CATEGORIA' && row[4]) {
+            current.category = String(row[4]).trim();
+            continue;
+        }
+
+        // Detect ingredient header row: "INGREDIENTES" in col 2
+        const col2 = String(row[2] ?? '').trim();
+        if (col2 === 'INGREDIENTES') {
+            collectingIngredients = true;
+            continue;
+        }
+
+        // Detect block end markers
+        if (col2.toLowerCase() === 'etiquetas' || col2 === 'FICHA TÉCNICA OPERACIONAL' || col2 === 'FICHA DE MONTAGEM') {
+            collectingIngredients = false;
+            continue;
+        }
+
+        // Collect ingredients
+        if (current && collectingIngredients && col2 && !SKIP_INGREDIENTS.has(col2.toLowerCase())) {
+            const unit = String(row[undCol] ?? '').trim();
+            const qty = parseFloat(String(row[qtyCol] ?? '0').replace(',', '.'));
+
+            if (qty > 0 && unit) {
+                current.ingredients.push({ name: col2, qty, unit });
+            }
+        }
+    }
+
+    if (current && current.ingredients.length > 0) blocks.push(current);
+    return blocks;
+}
+
+function preprocessBlockSheets(
+    sheets: { name: string; aoa: unknown[][] }[]
+): { name: string; aoa: unknown[][] }[] {
+    const result: { name: string; aoa: unknown[][] }[] = [];
+    const preparoBlocks: ParsedBlock[] = [];
+    const montagemBlocks: ParsedBlock[] = [];
+
+    for (const sheet of sheets) {
+        const type = detectSheetType(sheet.aoa);
+
+        if (type === 'preparo') {
+            const blocks = parseBlocks(sheet.aoa, type);
+            preparoBlocks.push(...blocks);
+            // Don't add the original sheet — it will be replaced by the virtual one
+        } else if (type === 'montagem') {
+            const blocks = parseBlocks(sheet.aoa, type);
+            montagemBlocks.push(...blocks);
+        } else {
+            result.push(sheet);
+        }
+    }
+
+    // Convert preparo blocks to a virtual tabular sheet: compositions format
+    if (preparoBlocks.length > 0) {
+        const headers = ['Preparo', 'Ingrediente', 'Qtd', 'Und'];
+        const rows: unknown[][] = [];
+        for (const block of preparoBlocks) {
+            for (const ing of block.ingredients) {
+                rows.push([block.name, ing.name, ing.qty, ing.unit]);
+            }
+        }
+        result.push({ name: '_Preparos (auto)', aoa: [headers, ...rows] });
+    }
+
+    // Convert montagem blocks to a virtual tabular sheet: fichas finais + compositions
+    if (montagemBlocks.length > 0) {
+        const headers = ['Prato', 'Categoria', 'Ingrediente', 'Qtd', 'Und'];
+        const rows: unknown[][] = [];
+        for (const block of montagemBlocks) {
+            for (const ing of block.ingredients) {
+                rows.push([block.name, block.category, ing.name, ing.qty, ing.unit]);
+            }
+        }
+        result.push({ name: '_Fichas Montagem (auto)', aoa: [headers, ...rows] });
+    }
+
+    return result;
 }
 
 // ── Step 2: Interpret with AI ─────────────────────────────────────────────
