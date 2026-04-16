@@ -103,7 +103,7 @@ export async function parseExcelSheets(file: File): Promise<SheetData[]> {
             sample_rows: dataRows.slice(0, 5),
             all_rows: dataRows,
         };
-    }).filter((s) => s.all_rows.length > 0);
+    }).filter((s) => s.all_rows.length > 0 && s.headers.some((h) => h.length > 0));
 }
 
 // ── Step 2: Interpret with AI ─────────────────────────────────────────────
