@@ -252,27 +252,37 @@ Regras para column_map:
 - Indices de coluna comecam em 0
 - Campos nao aplicaveis devem ser null`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 8192,
-      temperature: 0,
-      messages: [
-        { role: "user", content: userPrompt },
-      ],
-      system: systemPrompt,
-    }),
-  });
+  // Retry up to 3 times on 429/529 (overloaded/rate-limited)
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8192,
+        temperature: 0,
+        messages: [
+          { role: "user", content: userPrompt },
+        ],
+        system: systemPrompt,
+      }),
+    });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Erro na API Claude (${res.status}): ${errText}`);
+    if (res.ok || (res.status !== 429 && res.status !== 529)) break;
+
+    // Wait before retry: 2s, 4s, 8s
+    const waitMs = 2000 * Math.pow(2, attempt);
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
+
+  if (!res!.ok) {
+    const errText = await res!.text();
+    throw new Error(`Erro na API Claude (${res!.status}): ${errText}`);
   }
 
   const data = await res.json();

@@ -319,7 +319,7 @@ export const Preparos = () => {
                                         {/* Custo por unidade — métrica principal */}
                                         <div className="text-right">
                                             <p className="text-xs text-slate-400">Custo / un</p>
-                                            <p className="text-base font-bold text-amber-600">R$ {fmtMoney(perUnit)}</p>
+                                            <p className="text-base font-bold text-amber-600">{fmtMoney(perUnit)}</p>
                                         </div>
                                         <button
                                             onClick={() => handleDelete(preparo.id)}
@@ -343,7 +343,7 @@ export const Preparos = () => {
                                                         <span>{fmtQty(item.quantity_needed, item.ingredients.unit_type)} {item.ingredients.unit_type}</span>
                                                         <ArrowRight className="w-3 h-3 text-slate-300" />
                                                         <span className="font-semibold text-slate-700">
-                                                            R$ {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
+                                                            {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
                                                         </span>
                                                     </div>
                                                 </li>
@@ -355,7 +355,7 @@ export const Preparos = () => {
                                 {/* Footer */}
                                 <div className="px-5 py-3 border-t border-slate-100 flex justify-between items-center bg-slate-50">
                                     <span className="text-xs text-slate-500">
-                                        Custo total: <strong className="text-slate-700">R$ {fmtMoney(total)}</strong>
+                                        Custo total: <strong className="text-slate-700">{fmtMoney(total)}</strong>
                                     </span>
                                     <button
                                         onClick={() => openEditModal(preparo)}
@@ -435,7 +435,7 @@ export const Preparos = () => {
                                         />
                                         <span className="text-xs text-slate-400 w-6 font-medium">{item.ingredients.unit_type}</span>
                                         <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                            R$ {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
+                                            {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
                                         </span>
                                         <button onClick={() => setNewItems(newItems.filter((_, i) => i !== idx))} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -499,7 +499,7 @@ export const Preparos = () => {
                                 {newItems.length > 0 && (
                                     <span className="text-sm text-slate-500">
                                         Custo: <strong className="text-amber-600">
-                                            R$ {fmtMoney(newItems.reduce((a, i) => a + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0) / (Number(newYield) || 1))}
+                                            {fmtMoney(newItems.reduce((a, i) => a + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0) / (Number(newYield) || 1))}
                                         </strong> /un
                                     </span>
                                 )}
@@ -597,7 +597,7 @@ export const Preparos = () => {
                                             <span className="text-xs text-slate-400 w-6 font-medium">{item.ingredients.unit_type}</span>
                                         )}
                                         <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                            R$ {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
+                                            {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
                                         </span>
                                         <button
                                             onClick={() => setEditItems(editItems.filter((_, i) => i !== idx))}
@@ -680,10 +680,10 @@ export const Preparos = () => {
                             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 sm:rounded-b-2xl flex justify-between items-center shrink-0">
                                 <div className="text-sm">
                                     <span className="text-slate-500">Custo total: </span>
-                                    <strong className="text-slate-900">R$ {fmtMoney(editTotalCost)}</strong>
+                                    <strong className="text-slate-900">{fmtMoney(editTotalCost)}</strong>
                                     <span className="text-slate-400 mx-2">·</span>
                                     <span className="text-slate-500">Por unidade: </span>
-                                    <strong className="text-amber-600">R$ {fmtMoney(editCostPerUnit)}</strong>
+                                    <strong className="text-amber-600">{fmtMoney(editCostPerUnit)}</strong>
                                 </div>
                                 <div className="flex gap-2">
                                     <button onClick={() => setEditingId(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg text-sm font-medium">Cancelar</button>

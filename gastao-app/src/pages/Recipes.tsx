@@ -558,8 +558,8 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </div>
                                                 {canViewCosts && (
                                                     <div className="flex gap-4 text-sm">
-                                                        <span className="text-slate-500">Venda: <strong className="text-slate-900">R$ {ficha.sale_price.toFixed(2)}</strong></span>
-                                                        <span className="text-slate-500">Custo: <strong className="text-red-600">R$ {cost.toFixed(2)}</strong></span>
+                                                        <span className="text-slate-500">Venda: <strong className="text-slate-900">{fmtMoney(ficha.sale_price)}</strong></span>
+                                                        <span className="text-slate-500">Custo: <strong className="text-red-600">{fmtMoney(cost)}</strong></span>
                                                     </div>
                                                 )}
                                                 {viewMode === 'operacao' && (
@@ -600,7 +600,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     <div className="flex items-center gap-3 text-slate-500">
                                                         <span>{s.quantity_needed} un</span>
                                                         <span className="font-semibold text-slate-700">
-                                                            R$ {((preparoCostPerUnit[s.sub_recipe_id] ?? 0) * s.quantity_needed).toFixed(2)}
+                                                            {fmtMoney((preparoCostPerUnit[s.sub_recipe_id] ?? 0) * s.quantity_needed)}
                                                         </span>
                                                     </div>
                                                 </li>
@@ -622,7 +622,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     <div className="flex items-center gap-3 text-slate-500">
                                                         <span>{fmtQty(i.quantity_needed, i.ingredients.unit_type)} {i.ingredients.unit_type}</span>
                                                         <span className="font-semibold text-slate-700">
-                                                            R$ {((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed).toFixed(2)}
+                                                            {fmtMoney((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed)}
                                                         </span>
                                                     </div>
                                                 </li>
@@ -644,7 +644,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     <div className="flex items-center gap-3 text-slate-500">
                                                         <span>{fmtQty(i.quantity_needed, i.ingredients.unit_type)} {i.ingredients.unit_type}</span>
                                                         <span className="font-semibold text-slate-700">
-                                                            R$ {((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed).toFixed(2)}
+                                                            {fmtMoney((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed)}
                                                         </span>
                                                     </div>
                                                 </li>
@@ -771,7 +771,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <span className="text-xs text-slate-400 w-6">un</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                                    R$ {((preparoCostPerUnit[item.sub_recipe_id] ?? 0) * item.quantity_needed).toFixed(2)}
+                                                    {fmtMoney((preparoCostPerUnit[item.sub_recipe_id] ?? 0) * item.quantity_needed)}
                                                 </span>
                                                 <button
                                                     onClick={() => setEditSubItems(editSubItems.filter((_, i) => i !== idx))}
@@ -809,7 +809,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <span className="text-xs text-slate-400 w-6">{item.ingredients.unit_type}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                                    R$ {(item.ingredients.avg_cost_per_unit * item.quantity_needed).toFixed(2)}
+                                                    {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}
@@ -847,7 +847,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <span className="text-xs text-slate-400 w-6">{item.ingredients.unit_type}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                                    R$ {(item.ingredients.avg_cost_per_unit * item.quantity_needed).toFixed(2)}
+                                                    {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}
@@ -925,7 +925,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                             >
                                                                 <span className="text-sm font-medium text-slate-700">{p.product_name}</span>
                                                                 <span className="text-xs text-amber-600 font-semibold">
-                                                                    {p.tipo === 'ficha_final' ? `R$ ${fmtMoney(fichaCostMap[p.id] ?? 0)}` : `R$ ${fmtMoney(preparoCostPerUnit[p.id] ?? 0)}/un`}
+                                                                    {p.tipo === 'ficha_final' ? fmtMoney(fichaCostMap[p.id] ?? 0) : `${fmtMoney(preparoCostPerUnit[p.id] ?? 0)}/un`}
                                                                 </span>
                                                             </div>
                                                         ))
@@ -1068,7 +1068,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                             {/* Footer */}
                             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 sm:rounded-b-2xl flex justify-between items-center shrink-0">
                                 <div className="text-sm text-slate-500">
-                                    Custo total: <strong className="text-slate-900 text-base">R$ {editTotalCost.toFixed(2)}</strong>
+                                    Custo total: <strong className="text-slate-900 text-base">{fmtMoney(editTotalCost)}</strong>
                                     {editingFicha.sale_price > 0 && (
                                         <span className={`ml-3 font-bold ${editTotalCost / editingFicha.sale_price < 0.3 ? 'text-green-600' : editTotalCost / editingFicha.sale_price < 0.4 ? 'text-amber-600' : 'text-red-600'}`}>
                                             CMV {(editTotalCost / editingFicha.sale_price * 100).toFixed(1)}%

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { ShoppingBag, Search, X } from 'lucide-react';
+import { fmtMoney } from '../lib/format';
 
 interface RecipeOption {
     id: string;
@@ -209,7 +210,7 @@ export const Sales = () => {
                                             className="px-4 py-3 hover:bg-primary-50 cursor-pointer flex justify-between items-center border-b border-slate-50 last:border-0 transition-colors"
                                         >
                                             <span className="font-medium text-slate-700 text-sm">{r.product_name}</span>
-                                            <span className="text-xs text-slate-400 font-medium">R$ {r.sale_price.toFixed(2)}</span>
+                                            <span className="text-xs text-slate-400 font-medium">{fmtMoney(r.sale_price)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -236,7 +237,7 @@ export const Sales = () => {
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço Unitário</label>
                         <div className="flex items-center gap-3">
                             <div className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 font-semibold">
-                                R$ {unitPrice.toFixed(2)}
+                                {fmtMoney(unitPrice)}
                             </div>
                             <button
                                 onClick={handleSaveSale}
@@ -248,7 +249,7 @@ export const Sales = () => {
                         </div>
                         {estimatedTotal > 0 && (
                             <p className="mt-2 text-xs text-slate-500">
-                                Total estimado: <strong className="text-slate-900">R$ {estimatedTotal.toFixed(2)}</strong>
+                                Total estimado: <strong className="text-slate-900">{fmtMoney(estimatedTotal)}</strong>
                             </p>
                         )}
                     </div>
@@ -277,7 +278,7 @@ export const Sales = () => {
                 <div className="px-5 py-3 bg-slate-50/70 border-b border-slate-100 flex justify-between items-center text-sm">
                     <span className="text-slate-500">{sales.length} venda{sales.length !== 1 ? 's' : ''}</span>
                     <span className="font-semibold text-slate-900">
-                        Total: <span className="text-green-700">R$ {totalRevenue.toFixed(2)}</span>
+                        Total: <span className="text-green-700">{fmtMoney(totalRevenue)}</span>
                     </span>
                 </div>
 
@@ -314,8 +315,8 @@ export const Sales = () => {
                                         <td className="p-4 text-slate-500 text-sm">{formatDateTime(sale.sold_at)}</td>
                                         <td className="p-4 font-medium text-slate-900">{recipesMap[sale.recipe_id] ?? '—'}</td>
                                         <td className="p-4 text-right text-slate-600">{sale.quantity_sold}</td>
-                                        <td className="p-4 text-right text-slate-600">R$ {sale.unit_price.toFixed(2)}</td>
-                                        <td className="p-4 text-right font-semibold text-green-700">R$ {sale.total_value.toFixed(2)}</td>
+                                        <td className="p-4 text-right text-slate-600">{fmtMoney(sale.unit_price)}</td>
+                                        <td className="p-4 text-right font-semibold text-green-700">{fmtMoney(sale.total_value)}</td>
                                     </tr>
                                 ))
                             )}

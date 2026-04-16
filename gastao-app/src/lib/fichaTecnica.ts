@@ -135,6 +135,8 @@ interface ParsedBlock {
     code: string;
     category: string;
     ingredients: { name: string; qty: number; unit: string }[];
+    yield_quantity: number;
+    yield_unit: string;
 }
 
 type BlockSheetType = 'preparo' | 'montagem';
@@ -179,6 +181,8 @@ function parseBlocks(aoa: unknown[][], type: BlockSheetType): ParsedBlock[] {
                 code: String(row[4] ?? '').trim(),
                 category: '',
                 ingredients: [],
+                yield_quantity: 1,
+                yield_unit: 'un',
             };
             collectingIngredients = false;
             continue;
@@ -187,6 +191,20 @@ function parseBlocks(aoa: unknown[][], type: BlockSheetType): ParsedBlock[] {
         // Detect category (montagem format): "CATEGORIA" in col 3
         if (current && col3 === 'CATEGORIA' && row[4]) {
             current.category = String(row[4]).trim();
+            continue;
+        }
+
+        // Detect yield/rendimento row
+        if (current && (col3 === 'Qntd Rendimento' || col3 === 'RENDIMENTO' || col3.toLowerCase().startsWith('qntd rendimento'))) {
+            const yieldQty = parseFloat(String(row[4] ?? row[5] ?? '1').replace(',', '.'));
+            if (yieldQty > 0) current.yield_quantity = yieldQty;
+            const yieldUnit = String(row[5] ?? row[6] ?? '').trim();
+            if (yieldUnit && !/^\d/.test(yieldUnit)) current.yield_unit = yieldUnit.toLowerCase();
+            continue;
+        }
+        if (current && col3 === 'Und Rendimento') {
+            const yUnit = String(row[4] ?? row[5] ?? '').trim();
+            if (yUnit) current.yield_unit = yUnit.toLowerCase();
             continue;
         }
 
@@ -242,28 +260,50 @@ function preprocessBlockSheets(
         }
     }
 
-    // Convert preparo blocks to a virtual tabular sheet: compositions format
+    // Convert preparo blocks to TWO virtual sheets:
+    // 1. Recipes sheet (preparos with yield)
+    // 2. Compositions sheet (linking preparos to ingredients)
     if (preparoBlocks.length > 0) {
-        const headers = ['Preparo', 'Ingrediente', 'Qtd', 'Und'];
-        const rows: unknown[][] = [];
+        // Recipes virtual sheet for preparos
+        const recHeaders = ['Produto', 'Tipo', 'Rendimento', 'Und Rendimento'];
+        const recRows: unknown[][] = [];
+        for (const block of preparoBlocks) {
+            recRows.push([block.name, 'preparo', block.yield_quantity, block.yield_unit]);
+        }
+        result.push({ name: '_Preparos Receitas (auto)', aoa: [recHeaders, ...recRows] });
+
+        // Compositions virtual sheet
+        const compHeaders = ['Preparo', 'Ingrediente', 'Qtd', 'Und'];
+        const compRows: unknown[][] = [];
         for (const block of preparoBlocks) {
             for (const ing of block.ingredients) {
-                rows.push([block.name, ing.name, ing.qty, ing.unit]);
+                compRows.push([block.name, ing.name, ing.qty, ing.unit]);
             }
         }
-        result.push({ name: '_Preparos (auto)', aoa: [headers, ...rows] });
+        result.push({ name: '_Preparos Composicoes (auto)', aoa: [compHeaders, ...compRows] });
     }
 
-    // Convert montagem blocks to a virtual tabular sheet: fichas finais + compositions
+    // Convert montagem blocks to TWO virtual sheets:
+    // 1. Recipes sheet (fichas finais with category)
+    // 2. Compositions sheet (linking recipes to ingredients)
     if (montagemBlocks.length > 0) {
-        const headers = ['Prato', 'Categoria', 'Ingrediente', 'Qtd', 'Und'];
-        const rows: unknown[][] = [];
+        // Recipes virtual sheet
+        const recHeaders = ['Produto', 'Tipo', 'Categoria', 'Rendimento', 'Und Rendimento'];
+        const recRows: unknown[][] = [];
+        for (const block of montagemBlocks) {
+            recRows.push([block.name, 'ficha_final', block.category || 'Outro', block.yield_quantity, block.yield_unit]);
+        }
+        result.push({ name: '_Fichas Montagem Receitas (auto)', aoa: [recHeaders, ...recRows] });
+
+        // Compositions virtual sheet
+        const compHeaders = ['Prato', 'Ingrediente', 'Qtd', 'Und'];
+        const compRows: unknown[][] = [];
         for (const block of montagemBlocks) {
             for (const ing of block.ingredients) {
-                rows.push([block.name, block.category, ing.name, ing.qty, ing.unit]);
+                compRows.push([block.name, ing.name, ing.qty, ing.unit]);
             }
         }
-        result.push({ name: '_Fichas Montagem (auto)', aoa: [headers, ...rows] });
+        result.push({ name: '_Fichas Montagem Composicoes (auto)', aoa: [compHeaders, ...compRows] });
     }
 
     return { sheets: result, recipeNames };
@@ -364,6 +404,114 @@ export async function interpretarFichaTecnica(
     };
 }
 
+// ── Fuzzy matching helpers ───────────────────────────────────────────────
+
+/** Remove accents/diacritics for comparison */
+function removeAccents(s: string): string {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/** Normalize name for matching: lowercase, trim, remove accents */
+function normalizeForMatch(s: string): string {
+    return removeAccents(s.toLowerCase().trim());
+}
+
+/** Known synonyms for ingredient matching */
+const SYNONYMS: [string, string][] = [
+    ['raspa', 'casca'],
+    ['file', 'filé'],
+    ['acucar', 'açucar'],
+];
+
+/**
+ * Fuzzy match a component name against a map of known names.
+ * Tries in order: exact → accent-insensitive → partial/substring → synonym swap
+ * Returns the matched key (lowercase) or null.
+ */
+function fuzzyMatchName(name: string, knownNames: Map<string, string>): string | null {
+    const key = name.toLowerCase().trim();
+
+    // 1. Exact match
+    if (knownNames.has(key)) return key;
+
+    // 2. Accent-insensitive match
+    const normName = normalizeForMatch(name);
+    for (const known of knownNames.keys()) {
+        if (normalizeForMatch(known) === normName) return known;
+    }
+
+    // 3. Partial match: "camarao" matches "camarao G", "pomodoro" matches "Molho pomodoro"
+    //    Prefer shorter known names (more specific match)
+    let bestPartial: string | null = null;
+    let bestLen = Infinity;
+    for (const known of knownNames.keys()) {
+        const normKnown = normalizeForMatch(known);
+        // Component name is a substring of known name, or vice-versa
+        if (normKnown.includes(normName) || normName.includes(normKnown)) {
+            if (known.length < bestLen) {
+                bestPartial = known;
+                bestLen = known.length;
+            }
+        }
+    }
+    if (bestPartial) return bestPartial;
+
+    // 4. Synonym swap: try replacing known synonyms and re-matching
+    for (const [a, b] of SYNONYMS) {
+        const swapped1 = normName.replace(a, b);
+        const swapped2 = normName.replace(b, a);
+        for (const known of knownNames.keys()) {
+            const normKnown = normalizeForMatch(known);
+            if (normKnown === swapped1 || normKnown === swapped2) return known;
+        }
+    }
+
+    // 5. Match ignoring prepositions (de, do, da, dos, das)
+    const stripPreps = (s: string) => s.replace(/\b(de|do|da|dos|das)\b/g, '').replace(/\s+/g, ' ').trim();
+    const strippedName = stripPreps(normName);
+    for (const known of knownNames.keys()) {
+        if (stripPreps(normalizeForMatch(known)) === strippedName) return known;
+    }
+
+    return null;
+}
+
+// ── Unit conversion helpers ──────────────────────────────────────────────
+
+/** Convert quantity to base unit (g→kg, ml→l) */
+function normalizeQuantityToBaseUnit(qty: number, unit: string): number {
+    const u = unit.toLowerCase().trim();
+    if (u === 'g' || u === 'grama' || u === 'gramas') return qty / 1000;
+    if (u === 'ml' || u === 'mililitro' || u === 'mililitros') return qty / 1000;
+    return qty;
+}
+
+/** Get the base unit for a given unit */
+function getBaseUnit(unit: string): string {
+    const u = unit.toLowerCase().trim();
+    if (u === 'g' || u === 'grama' || u === 'gramas') return 'kg';
+    if (u === 'ml' || u === 'mililitro' || u === 'mililitros') return 'l';
+    return u;
+}
+
+/** Convert quantity from source unit to target unit */
+function convertToTargetUnit(qty: number, fromUnit: string, toUnit: string): number {
+    const from = fromUnit.toLowerCase().trim();
+    const to = toUnit.toLowerCase().trim();
+    if (from === to) return qty;
+
+    // g → kg
+    if ((from === 'g' || from === 'grama' || from === 'gramas') && to === 'kg') return qty / 1000;
+    // kg → g
+    if (from === 'kg' && (to === 'g' || to === 'grama' || to === 'gramas')) return qty * 1000;
+    // ml → l
+    if ((from === 'ml' || from === 'mililitro' || from === 'mililitros') && to === 'l') return qty / 1000;
+    // l → ml
+    if (from === 'l' && (to === 'ml' || to === 'mililitro' || to === 'mililitros')) return qty * 1000;
+
+    return qty; // incompatible units, return as-is
+}
+
 // ── Step 3: Insert confirmed data ─────────────────────────────────────────
 
 export async function inserirFichaTecnica(
@@ -373,6 +521,7 @@ export async function inserirFichaTecnica(
 ): Promise<InsertionResult> {
     const restauranteId = await getRestauranteId();
     const errors: string[] = [];
+    const warnings: string[] = [];
     let ingredientsInserted = 0;
     let recipesInserted = 0;
     let compositionsInserted = 0;
@@ -474,41 +623,152 @@ export async function inserirFichaTecnica(
         }
     }
 
-    // 3. Insert compositions
+    // Build ingredient unit map for unit normalization
+    const ingUnitMap = new Map<string, string>();
+    for (const ing of selectedIngs) {
+        ingUnitMap.set(ing.name.toLowerCase().trim(), ing.unit_type);
+    }
+    // Also include existing ingredients' units
+    const { data: existingIngUnits } = await supabase
+        .from('ingredients')
+        .select('name, unit_type')
+        .eq('restaurant_id', restauranteId);
+    for (const ing of existingIngUnits || []) {
+        ingUnitMap.set(ing.name.toLowerCase().trim(), ing.unit_type);
+    }
+
+    // 3. Insert compositions (with dedup + unit normalization)
     if (compositions.length > 0) {
+        // Bug 4 fix: deduplicate compositions by (recipe, component), summing quantities
+        const compKey = (c: ParsedComposition) =>
+            `${c.recipe_name.toLowerCase().trim()}::${c.component_name.toLowerCase().trim()}`;
+        const dedupMap = new Map<string, ParsedComposition>();
+        for (const comp of compositions) {
+            const key = compKey(comp);
+            const existing = dedupMap.get(key);
+            if (existing) {
+                // Same unit: sum quantities. Different units: convert then sum.
+                const normalizedQty = normalizeQuantityToBaseUnit(comp.quantity_needed, comp.unit);
+                const existingQty = normalizeQuantityToBaseUnit(existing.quantity_needed, existing.unit);
+                existing.quantity_needed = existingQty + normalizedQty;
+                existing.unit = getBaseUnit(existing.unit);
+            } else {
+                dedupMap.set(key, { ...comp });
+            }
+        }
+        const dedupedComps = Array.from(dedupMap.values());
+
         const recipeIngredients: { recipe_id: string; ingredient_id: string; sub_recipe_id: null; quantity_needed: number }[] = [];
         const recipeSubRecipes: { recipe_id: string; sub_recipe_id: string; quantity_needed: number }[] = [];
+        const missingIngredients: { comp: ParsedComposition; recipeId: string; qty: number }[] = [];
 
-        for (const comp of compositions) {
-            const recipeId = recNameToId.get(comp.recipe_name.toLowerCase().trim());
+        for (const comp of dedupedComps) {
+            // Fuzzy match recipe name
+            const recipeKey = fuzzyMatchName(comp.recipe_name, recNameToId);
+            const recipeId = recipeKey ? recNameToId.get(recipeKey) : undefined;
             if (!recipeId) {
                 errors.push(`Composicao ignorada: receita "${comp.recipe_name}" nao encontrada`);
                 continue;
             }
 
+            // Bug 2 fix: normalize quantity to match ingredient's base unit
+            let qty = comp.quantity_needed;
+            const compUnit = comp.unit.toLowerCase().trim();
+            const ingMatchKey = fuzzyMatchName(comp.component_name, ingUnitMap);
+            const ingUnit = ingMatchKey ? ingUnitMap.get(ingMatchKey) : undefined;
+            if (ingUnit) {
+                qty = convertToTargetUnit(qty, compUnit, ingUnit);
+            }
+
             if (comp.component_type === 'sub_recipe') {
-                const subId = recNameToId.get(comp.component_name.toLowerCase().trim());
+                const subKey = fuzzyMatchName(comp.component_name, recNameToId);
+                const subId = subKey ? recNameToId.get(subKey) : undefined;
                 if (subId) {
                     recipeSubRecipes.push({
                         recipe_id: recipeId,
                         sub_recipe_id: subId,
-                        quantity_needed: comp.quantity_needed,
+                        quantity_needed: qty,
                     });
                 } else {
                     errors.push(`Composicao ignorada: preparo "${comp.component_name}" nao encontrado`);
                 }
             } else {
-                const ingId = ingNameToId.get(comp.component_name.toLowerCase().trim());
+                // Try ingredient first, then fallback to recipe (it might be a sub_recipe)
+                const ingKey = fuzzyMatchName(comp.component_name, ingNameToId);
+                const ingId = ingKey ? ingNameToId.get(ingKey) : undefined;
                 if (ingId) {
                     recipeIngredients.push({
                         recipe_id: recipeId,
                         ingredient_id: ingId,
                         sub_recipe_id: null,
-                        quantity_needed: comp.quantity_needed,
+                        quantity_needed: qty,
                     });
                 } else {
-                    errors.push(`Composicao ignorada: insumo "${comp.component_name}" nao encontrado`);
+                    // Fallback: check if it's a recipe/preparo (e.g. "pomodoro" → "Molho pomodoro")
+                    const subKey = fuzzyMatchName(comp.component_name, recNameToId);
+                    const subId = subKey ? recNameToId.get(subKey) : undefined;
+                    if (subId) {
+                        recipeSubRecipes.push({
+                            recipe_id: recipeId,
+                            sub_recipe_id: subId,
+                            quantity_needed: qty,
+                        });
+                    } else {
+                        // Auto-create missing ingredient and link it
+                        missingIngredients.push({ comp, recipeId, qty });
+                    }
                 }
+            }
+        }
+
+        // Auto-create ingredients that appear in compositions but don't exist
+        if (missingIngredients.length > 0) {
+            // Deduplicate by name
+            const uniqueMissing = new Map<string, { comp: ParsedComposition; recipeId: string; qty: number }[]>();
+            for (const m of missingIngredients) {
+                const key = m.comp.component_name.toLowerCase().trim();
+                if (!uniqueMissing.has(key)) uniqueMissing.set(key, []);
+                uniqueMissing.get(key)!.push(m);
+            }
+
+            const autoPayload = Array.from(uniqueMissing.keys()).map((name) => ({
+                restaurant_id: restauranteId,
+                name,
+                tipo: 'insumo_base' as const,
+                unit_type: 'un',
+                avg_cost_per_unit: 0,
+                aproveitamento: 1,
+                stock_quantity: 0,
+            }));
+
+            const { data: autoInserted, error: autoErr } = await supabase
+                .from('ingredients')
+                .insert(autoPayload)
+                .select('id, name');
+
+            if (autoErr) {
+                errors.push(`Erro ao auto-criar insumos faltantes: ${autoErr.message}`);
+            } else {
+                for (const ing of autoInserted || []) {
+                    ingNameToId.set(ing.name.toLowerCase().trim(), ing.id);
+                }
+                ingredientsInserted += autoInserted?.length ?? 0;
+
+                // Now link them
+                for (const [name, entries] of uniqueMissing) {
+                    const newIngId = ingNameToId.get(name);
+                    if (!newIngId) continue;
+                    for (const { recipeId, qty } of entries) {
+                        recipeIngredients.push({
+                            recipe_id: recipeId,
+                            ingredient_id: newIngId,
+                            sub_recipe_id: null,
+                            quantity_needed: qty,
+                        });
+                    }
+                }
+
+                warnings.push(`${autoInserted?.length ?? 0} insumo(s) criado(s) automaticamente: ${Array.from(uniqueMissing.keys()).join(', ')}`);
             }
         }
 
@@ -541,5 +801,5 @@ export async function inserirFichaTecnica(
         }
     }
 
-    return { ingredientsInserted, recipesInserted, compositionsInserted, errors };
+    return { ingredientsInserted, recipesInserted, compositionsInserted, errors: [...errors, ...warnings] };
 }

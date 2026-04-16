@@ -413,7 +413,7 @@ export const Ingredients = () => {
                                         {fmtQty(item.stock_quantity, item.unit_type)}
                                     </span>
                                     <span className="text-slate-200">·</span>
-                                    <span className="font-semibold text-slate-700">R$ {fmtMoney(item.avg_cost_per_unit)}</span>
+                                    <span className="font-semibold text-slate-700">{fmtMoney(item.avg_cost_per_unit)}</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-0.5 shrink-0">
@@ -517,7 +517,7 @@ export const Ingredients = () => {
                                             </span>
                                         </td>
                                         <td className="p-4 text-right font-semibold text-slate-900">
-                                            R$ {fmtMoney(item.avg_cost_per_unit)}
+                                            {fmtMoney(item.avg_cost_per_unit)}
                                         </td>
                                         <td className="p-4 text-right">
                                             <div className="flex items-center justify-end gap-1">
@@ -639,7 +639,7 @@ export const Ingredients = () => {
                             </div>
                             {Number(newAproveitamento) < 100 && Number(newAproveitamento) > 0 && (
                                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
-                                    Custo líquido: R$ {((Number(newCost) || 0) / ((Number(newAproveitamento) || 100) / 100)).toFixed(2)}/{newUnit}
+                                    Custo líquido: {fmtMoney((Number(newCost) || 0) / ((Number(newAproveitamento) || 100) / 100))}/{newUnit}
                                     <span className="text-slate-400 ml-1">(usado nas receitas)</span>
                                 </p>
                             )}
@@ -739,7 +739,7 @@ export const Ingredients = () => {
                             </div>
                             {Number(editAproveitamento) < 100 && Number(editAproveitamento) > 0 && (
                                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
-                                    Custo líquido: R$ {((Number(editCost) || 0) / ((Number(editAproveitamento) || 100) / 100)).toFixed(2)}/{editUnit}
+                                    Custo líquido: {fmtMoney((Number(editCost) || 0) / ((Number(editAproveitamento) || 100) / 100))}/{editUnit}
                                     <span className="text-slate-400 ml-1">(usado nas receitas)</span>
                                 </p>
                             )}
@@ -817,8 +817,8 @@ export const Ingredients = () => {
                                     const newAvg = ((currentQty * stockEntryIngredient.avg_cost_per_unit) + (addedQty * Number(stockEntryCost))) / (currentQty + addedQty);
                                     return (
                                         <p className="mt-2 text-xs text-primary-600">
-                                            Novo custo médio: <strong>R$ {fmtMoney(newAvg)}</strong>
-                                            <span className="text-slate-400 ml-1">(era R$ {fmtMoney(stockEntryIngredient.avg_cost_per_unit)})</span>
+                                            Novo custo médio: <strong>{fmtMoney(newAvg)}</strong>
+                                            <span className="text-slate-400 ml-1">(era {fmtMoney(stockEntryIngredient.avg_cost_per_unit)})</span>
                                         </p>
                                     );
                                 })()}

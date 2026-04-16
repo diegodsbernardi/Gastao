@@ -1,5 +1,10 @@
-/** Formata valor monetário: sempre 2 casas decimais */
-export const fmtMoney = (v: number): string => v.toFixed(2);
+/** Formata valor monetário no padrão brasileiro: R$ 1.234,56 */
+export const fmtMoney = (v: number): string =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** Formata valor monetário sem símbolo: 1.234,56 */
+export const fmtMoneyRaw = (v: number): string =>
+    v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Formata quantidade conforme unidade:
  *  kg, g, l, ml → 3 casas
@@ -7,6 +12,14 @@ export const fmtMoney = (v: number): string => v.toFixed(2);
  */
 export const fmtQty = (v: number, unit: string): string => {
     const u = unit.toLowerCase();
-    if (['kg', 'g', 'l', 'ml'].includes(u)) return v.toFixed(3);
-    return Number.isInteger(v) ? v.toString() : v.toFixed(2);
+    if (['kg', 'g', 'l', 'ml'].includes(u)) {
+        return v.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    }
+    return Number.isInteger(v)
+        ? v.toLocaleString('pt-BR')
+        : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
+
+/** Formata número para CSV no padrão BR (vírgula decimal, ponto milhar) */
+export const fmtCsvNumber = (v: number, decimals = 2): string =>
+    v.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });

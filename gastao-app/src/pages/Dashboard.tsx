@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { TrendingDown, TrendingUp, AlertCircle, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react';
 import { buildPreparoCostMap, calcFichaFinalCost, calcCMV } from '../lib/costCalculator';
+import { fmtMoney } from '../lib/format';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
@@ -301,13 +302,13 @@ export const Dashboard = () => {
                                     <p className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors">{p.product_name}</p>
                                     <p className="text-sm text-slate-500 mt-0.5">
                                         CMV: <span className={p.sale_price <= 0 ? 'text-slate-400 font-medium' : p.cmv < 30 ? 'text-green-600 font-medium' : p.cmv < 40 ? 'text-amber-600 font-medium' : 'text-red-600 font-medium'}>{p.sale_price > 0 ? `${p.cmv.toFixed(1)}%` : '—'}</span>
-                                        {' • '}Custo: R$ {p.food_cost.toFixed(2)}
+                                        {' • '}Custo: {fmtMoney(p.food_cost)}
                                         {' • '}{p.total_sold} vendido(s)
                                     </p>
                                 </div>
                                 <div className="text-right tabular-nums">
-                                    <p className="font-bold text-slate-900">Venda: R$ {p.sale_price.toFixed(2)}</p>
-                                    <p className="text-sm text-green-600">Margem: R$ {p.margin.toFixed(2)}</p>
+                                    <p className="font-bold text-slate-900">Venda: {fmtMoney(p.sale_price)}</p>
+                                    <p className="text-sm text-green-600">Margem: {fmtMoney(p.margin)}</p>
                                 </div>
                             </div>
                         ))}
