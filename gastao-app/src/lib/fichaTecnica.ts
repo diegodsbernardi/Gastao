@@ -309,12 +309,20 @@ export async function interpretarFichaTecnica(
 
     const data = fnData as Omit<InterpretationResult, '_selected'>;
 
-    // Deduplicate by name (keep first occurrence, which usually has better data)
+    // Build set of all recipe/preparo names
+    const recipeNameSet = new Set<string>();
+    for (const rec of data.recipes) {
+        recipeNameSet.add(rec.product_name.toLowerCase().trim());
+    }
+
+    // Deduplicate ingredients by name AND remove ingredients that are actually preparos/recipes
     const seenIngNames = new Set<string>();
     const dedupedIngs = data.ingredients.filter((ing) => {
         const key = ing.name.toLowerCase().trim();
         if (seenIngNames.has(key)) return false;
         seenIngNames.add(key);
+        // If this "ingredient" is actually a recipe/preparo, skip it from ingredients
+        if (recipeNameSet.has(key)) return false;
         return true;
     });
 
