@@ -183,8 +183,9 @@ O modelo do sistema tem 3 camadas:
 
 REGRAS:
 - Colunas podem ter nomes em PT-BR com abreviacoes: qtd/qty=quantidade, vl/vlr=valor, desc=descricao, un/und=unidade
-- Custo: custo, preco, valor, R$, preco de compra, custo unitario, vlr unit
-- Venda: venda, pvp, preco final, valor de venda
+- Custo (PRIORIDADE para cost_col): "Custo Líquido", "Custo Unitário", "Custo/Und" > "Preço Compra" (custo liquido ja considera aproveitamento, é mais preciso)
+- Se existem AMBOS "Preço Compra" e "Custo Líquido", use "Custo Líquido" como cost_col
+- Venda: venda, pvp, preco final, valor de venda, preco de venda
 - Unidades: kg, g, l, ml, un, cx, pct, fatia, folha, colher, xicara
 - Se uma aba mistura produtos e seus ingredientes (linhas agrupadas), use interpretation="mixed" com structure="grouped_rows"
 - Se a aba nao contem dados uteis, use interpretation="ignore"
@@ -467,10 +468,15 @@ function cellStr(row: unknown[], colIndex: number | null | undefined): string {
 
 function parseBRNumber(v: unknown): number {
   if (v == null) return 0;
-  const s = String(v)
-    .replace(/[R$\s]/g, "")
-    .replace(/\./g, "")   // remove thousand separators
-    .replace(",", ".");    // decimal comma to dot
+  // If already a number (from Excel), return directly — don't mangle the decimal point
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  const s = String(v).replace(/[R$\s]/g, "");
+  // Only apply BR formatting if string contains comma (e.g., "1.234,56")
+  if (s.includes(",")) {
+    const cleaned = s.replace(/\./g, "").replace(",", ".");
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  }
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }

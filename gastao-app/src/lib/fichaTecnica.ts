@@ -80,6 +80,13 @@ async function getRestauranteId(): Promise<string> {
 
 // ── Step 1: Parse Excel ───────────────────────────────────────────────────
 
+// Stores recipe/preparo names found during preprocessing (used to filter out pseudo-insumos)
+let _preprocessedRecipeNames: Set<string> = new Set();
+
+export function getPreprocessedRecipeNames(): Set<string> {
+    return _preprocessedRecipeNames;
+}
+
 export async function parseExcelSheets(file: File): Promise<SheetData[]> {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
@@ -91,7 +98,8 @@ export async function parseExcelSheets(file: File): Promise<SheetData[]> {
     });
 
     // Pre-process: detect and convert block-format sheets (fichas operacionais / montagem)
-    const processed = preprocessBlockSheets(rawSheets);
+    const { sheets: processed, recipeNames } = preprocessBlockSheets(rawSheets);
+    _preprocessedRecipeNames = recipeNames;
 
     return processed.map(({ name, aoa }) => {
         if (!aoa.length || !aoa[0]) {
@@ -211,10 +219,11 @@ function parseBlocks(aoa: unknown[][], type: BlockSheetType): ParsedBlock[] {
 
 function preprocessBlockSheets(
     sheets: { name: string; aoa: unknown[][] }[]
-): { name: string; aoa: unknown[][] }[] {
+): { sheets: { name: string; aoa: unknown[][] }[]; recipeNames: Set<string> } {
     const result: { name: string; aoa: unknown[][] }[] = [];
     const preparoBlocks: ParsedBlock[] = [];
     const montagemBlocks: ParsedBlock[] = [];
+    const recipeNames = new Set<string>();
 
     for (const sheet of sheets) {
         const type = detectSheetType(sheet.aoa);
@@ -222,10 +231,11 @@ function preprocessBlockSheets(
         if (type === 'preparo') {
             const blocks = parseBlocks(sheet.aoa, type);
             preparoBlocks.push(...blocks);
-            // Don't add the original sheet — it will be replaced by the virtual one
+            blocks.forEach((b) => recipeNames.add(b.name.toLowerCase().trim()));
         } else if (type === 'montagem') {
             const blocks = parseBlocks(sheet.aoa, type);
             montagemBlocks.push(...blocks);
+            blocks.forEach((b) => recipeNames.add(b.name.toLowerCase().trim()));
         } else {
             result.push(sheet);
         }
@@ -255,7 +265,7 @@ function preprocessBlockSheets(
         result.push({ name: '_Fichas Montagem (auto)', aoa: [headers, ...rows] });
     }
 
-    return result;
+    return { sheets: result, recipeNames };
 }
 
 // ── Step 2: Interpret with AI ─────────────────────────────────────────────
@@ -309,10 +319,15 @@ export async function interpretarFichaTecnica(
 
     const data = fnData as Omit<InterpretationResult, '_selected'>;
 
-    // Build set of all recipe/preparo names
+    // Build set of all recipe/preparo names (from Claude + from preprocessor)
     const recipeNameSet = new Set<string>();
     for (const rec of data.recipes) {
         recipeNameSet.add(rec.product_name.toLowerCase().trim());
+    }
+    // Also include names from block-format preprocessing (more reliable)
+    const preprocessedNames = getPreprocessedRecipeNames();
+    for (const name of preprocessedNames) {
+        recipeNameSet.add(name);
     }
 
     // Deduplicate ingredients by name AND remove ingredients that are actually preparos/recipes
