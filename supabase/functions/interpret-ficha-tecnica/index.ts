@@ -30,6 +30,7 @@ interface ColumnMap {
   name_col: number;
   unit_col: number | null;
   cost_col: number | null;
+  aproveitamento_col: number | null;
   price_col: number | null;
   yield_col: number | null;
   yield_unit_col: number | null;
@@ -67,6 +68,7 @@ interface ParsedIngredient {
   tipo: string;
   unit_type: string;
   avg_cost_per_unit: number;
+  aproveitamento: number;
   is_duplicate: boolean;
   duplicate_of?: string;
 }
@@ -223,6 +225,7 @@ Retorne JSON no formato:
         "name_col": 0,
         "unit_col": 1,
         "cost_col": 2,
+        "aproveitamento_col": null,
         "price_col": null,
         "yield_col": null,
         "yield_unit_col": null,
@@ -242,7 +245,7 @@ Retorne JSON no formato:
 }
 
 Regras para column_map:
-- Para ingredients: preencha name_col, unit_col, cost_col, tipo
+- Para ingredients: preencha name_col, unit_col, cost_col, aproveitamento_col (coluna "Aprovtm.", "Aproveitamento %", pode ser 0-1 ou 0-100), tipo
 - Para recipes: preencha name_col, price_col, tipo (preparo|ficha_final), category, yield_col se preparo
 - Para compositions: preencha recipe_name_col, ingredient_name_col, quantity_col, comp_unit_col
 - Para mixed: preencha os campos relevantes + structure ("grouped_rows" ou "flat")
@@ -324,6 +327,9 @@ function extractData(
           if (!name) continue;
 
           const dupName = findDuplicate(name, ingNamesLower);
+          const rawAprov = cm.aproveitamento_col != null ? parseBRNumber(cellRaw(row, cm.aproveitamento_col)) : 1;
+          // Aproveitamento can be 0-1 or 0-100, normalize to 0-1
+          const aproveitamento = rawAprov > 1 ? rawAprov / 100 : (rawAprov > 0 ? rawAprov : 1);
           ingredients.push({
             _source_sheet: sm.sheet_name,
             _source_row: i + 2,
@@ -331,6 +337,7 @@ function extractData(
             tipo: cm.tipo || "insumo_base",
             unit_type: normalizeUnit(cellStr(row, cm.unit_col) || "un"),
             avg_cost_per_unit: parseBRNumber(cellRaw(row, cm.cost_col)),
+            aproveitamento,
             is_duplicate: !!dupName,
             ...(dupName ? { duplicate_of: dupName } : {}),
           });

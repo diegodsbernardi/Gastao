@@ -92,7 +92,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             supabase.from('ingredients').select('*').eq('tipo', 'embalagem').order('name'),
             supabase.from('recipe_ingredients').select(`
                 id, recipe_id, ingredient_id, quantity_needed,
-                ingredients ( id, name, unit_type, avg_cost_per_unit, tipo )
+                ingredients ( id, name, unit_type, avg_cost_per_unit, aproveitamento, tipo )
             `),
             supabase.from('recipe_sub_recipes').select(`
                 id, recipe_id, sub_recipe_id, quantity_needed,
@@ -144,7 +144,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         const map: Record<string, number> = {};
         preparos.forEach(p => {
             const items = preparoIngs[p.id] ?? [];
-            const total = items.reduce((acc, i) => acc + i.ingredients.avg_cost_per_unit * i.quantity_needed, 0);
+            const total = items.reduce((acc, i) => acc + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0);
             map[p.id] = total / (p.yield_quantity || 1);
         });
         return map;
@@ -164,7 +164,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             let changed = false;
             fichas.forEach(f => {
                 const ingCost = (fichaIngs[f.id] ?? []).reduce(
-                    (acc, i) => acc + i.ingredients.avg_cost_per_unit * i.quantity_needed, 0
+                    (acc, i) => acc + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0
                 );
                 const subCost = (fichaSubs[f.id] ?? []).reduce(
                     (acc, s) => acc + (recipeCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0
@@ -384,7 +384,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     }, [preparoCostPerUnit, fichaCostMap]);
 
     const editTotalCost = useMemo(() => {
-        const ing = editIngItems.reduce((acc, i) => acc + i.ingredients.avg_cost_per_unit * i.quantity_needed, 0);
+        const ing = editIngItems.reduce((acc, i) => acc + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0);
         const sub = editSubItems.reduce((acc, s) => acc + (unifiedCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0);
         return ing + sub;
     }, [editIngItems, editSubItems, unifiedCostMap]);
@@ -622,7 +622,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     <div className="flex items-center gap-3 text-slate-500">
                                                         <span>{fmtQty(i.quantity_needed, i.ingredients.unit_type)} {i.ingredients.unit_type}</span>
                                                         <span className="font-semibold text-slate-700">
-                                                            R$ {(i.ingredients.avg_cost_per_unit * i.quantity_needed).toFixed(2)}
+                                                            R$ {((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed).toFixed(2)}
                                                         </span>
                                                     </div>
                                                 </li>
@@ -644,7 +644,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     <div className="flex items-center gap-3 text-slate-500">
                                                         <span>{fmtQty(i.quantity_needed, i.ingredients.unit_type)} {i.ingredients.unit_type}</span>
                                                         <span className="font-semibold text-slate-700">
-                                                            R$ {(i.ingredients.avg_cost_per_unit * i.quantity_needed).toFixed(2)}
+                                                            R$ {((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed).toFixed(2)}
                                                         </span>
                                                     </div>
                                                 </li>

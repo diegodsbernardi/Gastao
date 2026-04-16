@@ -57,7 +57,7 @@ export const Preparos = () => {
             supabase.from('ingredients').select('*').eq('tipo', 'insumo_base').order('name'),
             supabase.from('recipe_ingredients').select(`
                 id, recipe_id, ingredient_id, quantity_needed,
-                ingredients ( id, name, unit_type, avg_cost_per_unit )
+                ingredients ( id, name, unit_type, avg_cost_per_unit, aproveitamento )
             `),
         ]);
 
@@ -82,7 +82,7 @@ export const Preparos = () => {
         preparos.forEach(p => {
             const items = compositions[p.id] ?? [];
             const total = items.reduce(
-                (acc, i) => acc + (i.ingredients.avg_cost_per_unit * i.quantity_needed),
+                (acc, i) => acc + ((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed),
                 0
             );
             map[p.id] = { total, perUnit: total / (p.yield_quantity || 1) };
@@ -235,7 +235,7 @@ export const Preparos = () => {
 
     const editingPreparo = preparos.find(p => p.id === editingId);
     const editTotalCost = editItems.reduce(
-        (acc, i) => acc + (i.ingredients.avg_cost_per_unit * i.quantity_needed), 0
+        (acc, i) => acc + ((i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed), 0
     );
     const editCostPerUnit = editTotalCost / (editingPreparo?.yield_quantity || 1);
 
@@ -499,7 +499,7 @@ export const Preparos = () => {
                                 {newItems.length > 0 && (
                                     <span className="text-sm text-slate-500">
                                         Custo: <strong className="text-amber-600">
-                                            R$ {fmtMoney(newItems.reduce((a, i) => a + i.ingredients.avg_cost_per_unit * i.quantity_needed, 0) / (Number(newYield) || 1))}
+                                            R$ {fmtMoney(newItems.reduce((a, i) => a + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0) / (Number(newYield) || 1))}
                                         </strong> /un
                                     </span>
                                 )}

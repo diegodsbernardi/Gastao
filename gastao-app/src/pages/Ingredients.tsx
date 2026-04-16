@@ -54,6 +54,7 @@ export const Ingredients = () => {
     const [newCategoria, setNewCategoria] = useState('');
     const [newCost, setNewCost] = useState<number | ''>('');
     const [newStock, setNewStock] = useState<number | ''>(0);
+    const [newAproveitamento, setNewAproveitamento] = useState<number | ''>(100);
     const [savingNew, setSavingNew] = useState(false);
 
     // Edit modal
@@ -64,6 +65,7 @@ export const Ingredients = () => {
     const [editCategoria, setEditCategoria] = useState('');
     const [editCost, setEditCost] = useState<number | ''>('');
     const [editStock, setEditStock] = useState<number | ''>('');
+    const [editAproveitamento, setEditAproveitamento] = useState<number | ''>(100);
     const [savingEdit, setSavingEdit] = useState(false);
 
     // Stock entry modal
@@ -136,13 +138,14 @@ export const Ingredients = () => {
             categoria: newTipo !== 'embalagem' ? (newCategoria || null) : null,
             avg_cost_per_unit: Number(newCost) || 0,
             stock_quantity: Number(newStock) || 0,
+            aproveitamento: (Number(newAproveitamento) || 100) / 100,
             use_in_recipes: newTipo === 'insumo_base',
         }]).select().single();
 
         if (!error && data) {
             setIngredients([...ingredients, data].sort((a, b) => a.name.localeCompare(b.name)));
             setShowNewModal(false);
-            setNewName(''); setNewUnit('kg'); setNewTipo('insumo_base'); setNewCategoria(''); setNewCost(''); setNewStock(0);
+            setNewName(''); setNewUnit('kg'); setNewTipo('insumo_base'); setNewCategoria(''); setNewCost(''); setNewStock(0); setNewAproveitamento(100);
             toast.success('Insumo criado com sucesso!');
         } else {
             toast.error('Erro ao criar insumo: ' + error?.message);
@@ -160,13 +163,14 @@ export const Ingredients = () => {
             categoria: editTipo !== 'embalagem' ? (editCategoria || null) : null,
             avg_cost_per_unit: Number(editCost) || 0,
             stock_quantity: Number(editStock) || 0,
+            aproveitamento: (Number(editAproveitamento) || 100) / 100,
             use_in_recipes: editTipo === 'insumo_base',
         }).eq('id', editingIngredient.id);
 
         if (!error) {
             setIngredients(ingredients.map(i =>
                 i.id === editingIngredient.id
-                    ? { ...i, name: editName.trim(), unit_type: editUnit, tipo: editTipo, categoria: editTipo !== 'embalagem' ? (editCategoria || null) : null, avg_cost_per_unit: Number(editCost) || 0, stock_quantity: Number(editStock) || 0 }
+                    ? { ...i, name: editName.trim(), unit_type: editUnit, tipo: editTipo, categoria: editTipo !== 'embalagem' ? (editCategoria || null) : null, avg_cost_per_unit: Number(editCost) || 0, stock_quantity: Number(editStock) || 0, aproveitamento: (Number(editAproveitamento) || 100) / 100 }
                     : i
             ));
             setEditingIngredient(null);
@@ -421,6 +425,7 @@ export const Ingredients = () => {
                                         setEditTipo(item.tipo ?? 'insumo_base');
                                         setEditCost(item.avg_cost_per_unit);
                                         setEditStock(item.stock_quantity);
+                                        setEditAproveitamento(Math.round((item.aproveitamento ?? 1) * 100));
                                     }}
                                     className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                                 >
@@ -599,7 +604,7 @@ export const Ingredients = () => {
                                     </select>
                                 </div>
                             )}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Custo Médio (R$)</label>
                                     <input
@@ -607,6 +612,17 @@ export const Ingredients = () => {
                                         value={newCost}
                                         onChange={e => setNewCost(e.target.value === '' ? '' : Number(e.target.value))}
                                         placeholder="0.00"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Aproveitamento (%)</label>
+                                    <input
+                                        type="number"
+                                        min="1" max="100" step="1"
+                                        value={newAproveitamento}
+                                        onChange={e => setNewAproveitamento(e.target.value === '' ? '' : Number(e.target.value))}
+                                        placeholder="100"
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
@@ -621,6 +637,12 @@ export const Ingredients = () => {
                                     />
                                 </div>
                             </div>
+                            {Number(newAproveitamento) < 100 && Number(newAproveitamento) > 0 && (
+                                <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+                                    Custo líquido: R$ {((Number(newCost) || 0) / ((Number(newAproveitamento) || 100) / 100)).toFixed(2)}/{newUnit}
+                                    <span className="text-slate-400 ml-1">(usado nas receitas)</span>
+                                </p>
+                            )}
                             <p className="text-xs text-slate-400 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                                 {TIPO_OPTIONS.find(t => t.value === newTipo)?.desc}
                             </p>
@@ -682,13 +704,24 @@ export const Ingredients = () => {
                                     </select>
                                 </div>
                             )}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Custo Médio (R$)</label>
                                     <input
                                         type="number"
                                         value={editCost}
                                         onChange={e => setEditCost(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onFocus={e => e.target.select()}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Aproveitamento (%)</label>
+                                    <input
+                                        type="number"
+                                        min="1" max="100" step="1"
+                                        value={editAproveitamento}
+                                        onChange={e => setEditAproveitamento(e.target.value === '' ? '' : Number(e.target.value))}
                                         onFocus={e => e.target.select()}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
@@ -704,6 +737,12 @@ export const Ingredients = () => {
                                     />
                                 </div>
                             </div>
+                            {Number(editAproveitamento) < 100 && Number(editAproveitamento) > 0 && (
+                                <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+                                    Custo líquido: R$ {((Number(editCost) || 0) / ((Number(editAproveitamento) || 100) / 100)).toFixed(2)}/{editUnit}
+                                    <span className="text-slate-400 ml-1">(usado nas receitas)</span>
+                                </p>
+                            )}
                             <p className="text-xs text-slate-400 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                                 {TIPO_OPTIONS.find(t => t.value === editTipo)?.desc}
                             </p>

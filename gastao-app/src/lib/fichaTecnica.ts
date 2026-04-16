@@ -17,6 +17,7 @@ export interface ParsedIngredient {
     tipo: string;
     unit_type: string;
     avg_cost_per_unit: number;
+    aproveitamento: number; // 0-1, default 1
     is_duplicate: boolean;
     duplicate_of?: string;
     _selected: boolean; // UI toggle
@@ -425,6 +426,7 @@ export async function inserirFichaTecnica(
                 tipo,
                 unit_type: i.unit_type,
                 avg_cost_per_unit: i.avg_cost_per_unit,
+                aproveitamento: i.aproveitamento || 1,
                 stock_quantity: 0,
             };
         });

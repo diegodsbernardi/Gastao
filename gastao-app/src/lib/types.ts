@@ -20,6 +20,7 @@ export interface Ingredient {
     categoria?: string | null;
     unit_type: string;
     avg_cost_per_unit: number;
+    aproveitamento: number; // 0-1, ex: 0.53 = 53%. Custo líquido = avg_cost / aproveitamento
     stock_quantity: number;
     use_in_recipes: boolean;
 }
@@ -54,7 +55,7 @@ export interface RecipeIngredient {
     recipe_id: string;
     ingredient_id: string;
     quantity_needed: number;
-    ingredients: Pick<Ingredient, 'id' | 'name' | 'unit_type' | 'avg_cost_per_unit' | 'tipo'>;
+    ingredients: Pick<Ingredient, 'id' | 'name' | 'unit_type' | 'avg_cost_per_unit' | 'aproveitamento' | 'tipo'>;
 }
 
 // ── Composição: Ficha Final → Preparo (tabela: recipe_sub_recipes) ──
