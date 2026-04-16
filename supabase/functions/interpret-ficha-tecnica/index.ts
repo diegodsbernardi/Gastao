@@ -183,8 +183,8 @@ O modelo do sistema tem 3 camadas:
 
 REGRAS:
 - Colunas podem ter nomes em PT-BR com abreviacoes: qtd/qty=quantidade, vl/vlr=valor, desc=descricao, un/und=unidade
-- Custo (PRIORIDADE para cost_col): "Custo Líquido", "Custo Unitário", "Custo/Und" > "Preço Compra" (custo liquido ja considera aproveitamento, é mais preciso)
-- Se existem AMBOS "Preço Compra" e "Custo Líquido", use "Custo Líquido" como cost_col
+- Custo (PRIORIDADE para cost_col): "Preço Compra", "Preço de Compra", "Custo Unitário", "Vlr Unitario" (usar preco de compra pois sera atualizado por notas fiscais)
+- Se existem AMBOS "Preço Compra" e "Custo Líquido", use "Preço Compra" como cost_col
 - Venda: venda, pvp, preco final, valor de venda, preco de venda
 - Unidades: kg, g, l, ml, un, cx, pct, fatia, folha, colher, xicara
 - Se uma aba mistura produtos e seus ingredientes (linhas agrupadas), use interpretation="mixed" com structure="grouped_rows"
