@@ -4,6 +4,12 @@ import { supabase } from '../lib/supabase';
 
 export type Perfil = 'dono' | 'gerente' | 'funcionario';
 
+export interface PendingInvite {
+    id: string;
+    restaurante_nome: string;
+    perfil: Perfil;
+}
+
 interface AuthContextType {
     session: Session | null;
     user: User | null;
@@ -14,7 +20,10 @@ interface AuthContextType {
     nomeRestaurante: string | null;
     brandColor: string | null;
     logoUrl: string | null;
+    pendingInvite: PendingInvite | null;
     refreshMembro: () => Promise<void>;
+    acceptPendingInvite: () => Promise<{ error?: string }>;
+    rejectPendingInvite: () => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,7 +36,10 @@ const AuthContext = createContext<AuthContextType>({
     nomeRestaurante: null,
     brandColor: null,
     logoUrl: null,
+    pendingInvite: null,
     refreshMembro: async () => {},
+    acceptPendingInvite: async () => ({}),
+    rejectPendingInvite: async () => ({}),
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -39,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [nomeRestaurante, setNomeRestaurante] = useState<string | null>(null);
     const [brandColor, setBrandColor] = useState<string | null>(null);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
     const initializedRef = useRef(false);
 
     const clearMembro = () => {
@@ -47,9 +60,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setNomeRestaurante(null);
         setBrandColor(null);
         setLogoUrl(null);
+        setPendingInvite(null);
     };
 
-    // fetchMembro é chamado FORA do onAuthStateChange para evitar deadlock
+    // fetchMembro é chamado FORA do onAuthStateChange para evitar deadlock.
+    // NUNCA aceita convite aqui — só LISTA convites pendentes pra UI mostrar
+    // tela de consentimento explícito (ver acceptPendingInvite/rejectPendingInvite).
     const fetchMembro = async (currentUser: User) => {
         try {
             const { data: rows } = await supabase.rpc('get_my_membership');
@@ -60,36 +76,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setNomeRestaurante(m.restaurante_nome);
                 setBrandColor(m.brand_color ?? '#FF6B35');
                 setLogoUrl(m.logo_url ?? null);
+                setPendingInvite(null);
                 return;
             }
 
-            // Verifica convite pendente
+            // Sem membership — verifica se há convite pendente pro email
             const { data: convites } = await supabase
                 .from('convites')
-                .select('id')
+                .select('id, perfil, restaurantes!inner(nome)')
                 .eq('status', 'pendente')
                 .ilike('email', currentUser.email ?? '')
                 .limit(1);
 
             if (convites && convites.length > 0) {
-                const { error } = await supabase.rpc('accept_invite', {
-                    p_convite_id: convites[0].id,
+                const c = convites[0] as {
+                    id: string;
+                    perfil: Perfil;
+                    restaurantes: { nome: string } | { nome: string }[];
+                };
+                const restNome = Array.isArray(c.restaurantes)
+                    ? c.restaurantes[0]?.nome ?? ''
+                    : c.restaurantes?.nome ?? '';
+                setPendingInvite({
+                    id: c.id,
+                    restaurante_nome: restNome,
+                    perfil: c.perfil,
                 });
-                if (!error) {
-                    const { data: newRows } = await supabase.rpc('get_my_membership');
-                    if (newRows && newRows.length > 0) {
-                        const m = newRows[0];
-                        setRestauranteId(m.restaurante_id);
-                        setPerfil(m.perfil as Perfil);
-                        setNomeRestaurante(m.restaurante_nome);
-                        setBrandColor(m.brand_color ?? '#FF6B35');
-                        setLogoUrl(m.logo_url ?? null);
-                        return;
-                    }
-                }
+            } else {
+                setPendingInvite(null);
             }
 
-            clearMembro();
+            setRestauranteId(null);
+            setPerfil(null);
+            setNomeRestaurante(null);
+            setBrandColor(null);
+            setLogoUrl(null);
         } catch {
             clearMembro();
         }
@@ -97,6 +118,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const refreshMembro = async () => {
         if (user) await fetchMembro(user);
+    };
+
+    const acceptPendingInvite = async (): Promise<{ error?: string }> => {
+        if (!pendingInvite || !user) return { error: 'Sem convite pendente' };
+        const { error } = await supabase.rpc('accept_invite', {
+            p_convite_id: pendingInvite.id,
+        });
+        if (error) return { error: error.message ?? 'Erro ao aceitar convite' };
+        await fetchMembro(user);
+        return {};
+    };
+
+    const rejectPendingInvite = async (): Promise<{ error?: string }> => {
+        if (!pendingInvite || !user) return { error: 'Sem convite pendente' };
+        const { error } = await supabase.rpc('reject_invite', {
+            p_convite_id: pendingInvite.id,
+        });
+        if (error) return { error: error.message ?? 'Erro ao recusar convite' };
+        await fetchMembro(user);
+        return {};
     };
 
     useEffect(() => {
@@ -168,7 +209,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             nomeRestaurante,
             brandColor,
             logoUrl,
+            pendingInvite,
             refreshMembro,
+            acceptPendingInvite,
+            rejectPendingInvite,
         }}>
             {children}
         </AuthContext.Provider>

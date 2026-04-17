@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
@@ -11,14 +11,21 @@ import { Recipes } from './pages/Recipes';
 import { Ingredients } from './pages/Ingredients';
 import { Sales } from './pages/Sales';
 import { Onboarding } from './pages/Onboarding';
+import { PendingInvite } from './pages/PendingInvite';
 import { Equipe } from './pages/Equipe';
 import { NotasFiscais } from './pages/NotasFiscais';
 import { Preparos } from './pages/Preparos';
 import { Checklists } from './pages/Checklists';
 import { Feedbacks } from './pages/Feedbacks';
-import { ImportarFichaTecnica } from './pages/ImportarFichaTecnica';
 import { AuthProvider, useAuth, Perfil } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+
+// Lazy load do importador de fichas: SheetJS (xlsx) é pesado (~400KB)
+// e só é usado por dono/gerente no desktop. Sai do bundle inicial pra
+// que tablet/celular não baixem código que nunca vão usar.
+const ImportarFichaTecnica = React.lazy(() =>
+    import('./pages/ImportarFichaTecnica').then(m => ({ default: m.ImportarFichaTecnica }))
+);
 
 // Spinner de tela cheia
 const FullScreenLoader = () => (
@@ -29,24 +36,40 @@ const FullScreenLoader = () => (
 
 // Rota privada: exige sessão + restaurante configurado
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-    const { session, isLoading, restauranteId } = useAuth();
+    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
 
     if (isLoading) return <FullScreenLoader />;
     if (!session) return <Navigate to="/login" replace />;
-    if (!restauranteId) return <Navigate to="/onboarding" replace />;
+    if (!restauranteId) {
+        return <Navigate to={pendingInvite ? '/convite-pendente' : '/onboarding'} replace />;
+    }
 
     return <Layout>{children}</Layout>;
 };
 
-// Rota de onboarding: exige sessão mas SEM restaurante
+// Rota de onboarding: exige sessão SEM restaurante e SEM convite pendente
+// (se tem convite, a tela dedicada de aceitar/recusar tem prioridade)
 const OnboardingRoute = () => {
-    const { session, isLoading, restauranteId } = useAuth();
+    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
 
     if (isLoading) return <FullScreenLoader />;
     if (!session) return <Navigate to="/login" replace />;
     if (restauranteId) return <Navigate to="/" replace />;
+    if (pendingInvite) return <Navigate to="/convite-pendente" replace />;
 
     return <Onboarding />;
+};
+
+// Rota de convite pendente: exige sessão SEM restaurante e COM convite
+const InviteRoute = () => {
+    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
+
+    if (isLoading) return <FullScreenLoader />;
+    if (!session) return <Navigate to="/login" replace />;
+    if (restauranteId) return <Navigate to="/" replace />;
+    if (!pendingInvite) return <Navigate to="/onboarding" replace />;
+
+    return <PendingInvite />;
 };
 
 // Rota com restrição de perfil
@@ -63,13 +86,15 @@ const RoleRoute = ({
 };
 
 function AppRoutes() {
-    const { session, isLoading, restauranteId } = useAuth();
+    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
 
     // Enquanto carrega, não renderiza nenhuma rota pública
     if (isLoading) return <FullScreenLoader />;
 
     const redirectIfAuth = session
-        ? (restauranteId ? <Navigate to="/" replace /> : <Navigate to="/onboarding" replace />)
+        ? (restauranteId
+            ? <Navigate to="/" replace />
+            : <Navigate to={pendingInvite ? '/convite-pendente' : '/onboarding'} replace />)
         : null;
 
     return (
@@ -80,8 +105,9 @@ function AppRoutes() {
             <Route path="/reset-password" element={redirectIfAuth ?? <ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />
 
-            {/* Onboarding (sessão obrigatória, sem restaurante) */}
-            <Route path="/onboarding" element={<OnboardingRoute />} />
+            {/* Onboarding e convite pendente (sessão obrigatória, sem restaurante) */}
+            <Route path="/onboarding"       element={<OnboardingRoute />} />
+            <Route path="/convite-pendente" element={<InviteRoute />} />
 
             {/* Rotas privadas */}
             <Route
@@ -103,7 +129,9 @@ function AppRoutes() {
                                 path="/importar"
                                 element={
                                     <RoleRoute allowed={['dono', 'gerente']}>
-                                        <ImportarFichaTecnica />
+                                        <Suspense fallback={<FullScreenLoader />}>
+                                            <ImportarFichaTecnica />
+                                        </Suspense>
                                     </RoleRoute>
                                 }
                             />
