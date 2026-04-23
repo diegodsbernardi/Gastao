@@ -56,6 +56,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
     const [isFetchingMembro, setIsFetchingMembro] = useState(false);
     const initializedRef = useRef(false);
+    // Rastreia qual user.id já carregamos. Supabase re-emite SIGNED_IN em
+    // visibilitychange/reconexão mesmo quando o user não mudou — se o id
+    // bate com o ref, evitamos re-fetch que unmountaria o importador.
+    const currentUserIdRef = useRef<string | null>(null);
 
     const clearMembro = () => {
         setRestauranteId(null);
@@ -155,7 +159,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (!mounted) return;
             setSession(s);
             setUser(s?.user ?? null);
-            if (s?.user) await fetchMembro(s.user);
+            if (s?.user) {
+                currentUserIdRef.current = s.user.id;
+                await fetchMembro(s.user);
+            }
             initializedRef.current = true;
             if (mounted) setIsLoading(false);
         };
@@ -171,19 +178,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 // Se ainda estamos na carga inicial, ignora (loadInitial cuida disso)
                 if (!initializedRef.current) return;
 
+                // Supabase re-emite SIGNED_IN em visibilitychange (alt-tab, troca
+                // de aba) mesmo quando o user não mudou. Nesse caso, só atualiza
+                // a session — não re-dispara fetchMembro, porque isso setaria
+                // isFetchingMembro=true e unmountaria componentes em andamento
+                // (importador de fichas, formulários, etc).
+                const sameUser = s?.user?.id && s.user.id === currentUserIdRef.current;
                 setSession(s);
                 setUser(s?.user ?? null);
-                // setTimeout desacopla a chamada Supabase do callback do onAuthStateChange.
-                // Marca isFetchingMembro=true JÁ pra fechar a janela de race em que
-                // PrivateRoute veria restauranteId=null e redirecionaria pro onboarding
-                // antes de fetchMembro resolver.
-                if (s?.user) {
+                if (s?.user && !sameUser) {
                     const u = s.user;
+                    currentUserIdRef.current = u.id;
                     setIsFetchingMembro(true);
                     setTimeout(() => { if (mounted) fetchMembro(u); }, 0);
                 }
 
             } else if (event === 'SIGNED_OUT') {
+                currentUserIdRef.current = null;
                 setSession(null);
                 setUser(null);
                 clearMembro();

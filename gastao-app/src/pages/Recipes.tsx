@@ -116,6 +116,10 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             const prepIngMap:  Record<string, RecipeIngredient[]> = {};
 
             allIngsRes.data.forEach((item: any) => {
+                // Descarta linhas sem ingredients (ex: recipe_ingredients.sub_recipe_id
+                // preenchido em vez de ingredient_id — nested preparos vão em
+                // recipe_sub_recipes, não aqui). Sem esse filtro o render crasha.
+                if (!item.ingredients) return;
                 if (fichaIds.has(item.recipe_id)) {
                     if (!fichaIngMap[item.recipe_id]) fichaIngMap[item.recipe_id] = [];
                     fichaIngMap[item.recipe_id].push(item);

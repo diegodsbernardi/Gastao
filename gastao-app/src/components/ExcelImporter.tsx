@@ -334,8 +334,10 @@ async function runImport(
     summary.pulados += parsed.preparos.length - preparosNovos.length;
 
     // ── 5) Inserir composição dos Preparos (somente dos que foram inseridos nesta run) ──
+    // Insumos vão em recipe_ingredients; sub-preparos vão em recipe_sub_recipes
+    // (tabela canônica do app — Recipes.tsx lê de lá).
     const preparoRiRows: any[] = [];
-    const preparoSubRows: any[] = [];
+    const preparoRsrRows: any[] = [];
     for (const c of parsed.compPreparos) {
         const parentKey = normKey(c.preparo);
         // só grava composição de preparo novo (existente no banco presumidamente já tem)
@@ -355,33 +357,38 @@ async function runImport(
                 unit: ing.unit_type,
             });
         } else {
-            // sub-preparo → vai em recipe_ingredients.sub_recipe_id (XOR)
             const sub = preparoByName.get(normKey(c.item))!;
-            preparoRiRows.push({
+            preparoRsrRows.push({
                 recipe_id: parentId,
                 sub_recipe_id: sub.id,
                 quantity_needed: c.quantidade,
-                unit: sub.yield_unit,
             });
-            preparoSubRows.push({ preparo: c.preparo, item: c.item });
         }
     }
 
     if (preparoRiRows.length > 0) {
-        log(`\n🔄 Inserindo ${preparoRiRows.length} linhas de composição de preparos...`);
-        // Inserir em chunks pra evitar payloads grandes
+        log(`\n🔄 Inserindo ${preparoRiRows.length} insumos em preparos...`);
         const chunkSize = 500;
         for (let i = 0; i < preparoRiRows.length; i += chunkSize) {
             const chunk = preparoRiRows.slice(i, i + chunkSize);
             const { error } = await supabase.from('recipe_ingredients').insert(chunk);
             if (error) throw new Error('Erro em composição de preparos: ' + error.message);
         }
-        summary.compPreparosLinhas = preparoRiRows.length;
         log(`   ✅ +${preparoRiRows.length} linhas`);
-        if (preparoSubRows.length > 0) {
-            log(`   🔗 ${preparoSubRows.length} delas são preparo→preparo (profundidade arbitrária)`);
-        }
     }
+
+    if (preparoRsrRows.length > 0) {
+        log(`🔄 Inserindo ${preparoRsrRows.length} sub-preparos (preparo→preparo)...`);
+        const chunkSize = 500;
+        for (let i = 0; i < preparoRsrRows.length; i += chunkSize) {
+            const chunk = preparoRsrRows.slice(i, i + chunkSize);
+            const { error } = await supabase.from('recipe_sub_recipes').insert(chunk);
+            if (error) throw new Error('Erro em sub-preparos: ' + error.message);
+        }
+        log(`   🔗 +${preparoRsrRows.length} linhas (profundidade arbitrária)`);
+    }
+
+    summary.compPreparosLinhas = preparoRiRows.length + preparoRsrRows.length;
 
     // ── 6) Inserir Fichas ──
     const fichasNovas = parsed.fichas.filter(f => !fichaByName.has(normKey(f.nome)));

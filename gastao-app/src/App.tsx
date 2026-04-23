@@ -38,8 +38,12 @@ const FullScreenLoader = () => (
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     const { session, isLoading, isFetchingMembro, restauranteId, pendingInvite } = useAuth();
 
-    if (isLoading || isFetchingMembro) return <FullScreenLoader />;
+    // Só bloqueia render quando não temos nada carregado. Re-fetches em
+    // background (ex: membro sendo atualizado) não devem desmontar children
+    // — isso destruiria state de componentes em andamento (importador, etc).
+    if (isLoading) return <FullScreenLoader />;
     if (!session) return <Navigate to="/login" replace />;
+    if (isFetchingMembro && !restauranteId) return <FullScreenLoader />;
     if (!restauranteId) {
         return <Navigate to={pendingInvite ? '/convite-pendente' : '/onboarding'} replace />;
     }
@@ -88,8 +92,11 @@ const RoleRoute = ({
 function AppRoutes() {
     const { session, isLoading, isFetchingMembro, restauranteId, pendingInvite } = useAuth();
 
-    // Enquanto carrega, não renderiza nenhuma rota pública
-    if (isLoading || isFetchingMembro) return <FullScreenLoader />;
+    // Só bloqueia quando realmente não sabemos pra onde mandar o user.
+    // Se já temos restauranteId OU pendingInvite, um re-fetch em background
+    // não deve derrubar a árvore (isso desmontaria o importador de fichas).
+    if (isLoading) return <FullScreenLoader />;
+    if (isFetchingMembro && !restauranteId && !pendingInvite) return <FullScreenLoader />;
 
     const redirectIfAuth = session
         ? (restauranteId

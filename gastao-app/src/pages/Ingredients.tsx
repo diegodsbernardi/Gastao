@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { PackageSearch, Plus, Filter, FileSpreadsheet, Trash2, X, Pencil, PlusCircle, Settings2 } from 'lucide-react';
-import { ExcelImporter } from '../components/ExcelImporter';
+import { PackageSearch, Plus, Filter, Trash2, X, Pencil, PlusCircle, Settings2 } from 'lucide-react';
 import type { Ingredient, IngredientTipo } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
 
@@ -33,7 +32,6 @@ export const Ingredients = () => {
     const { user, restauranteId } = useAuth();
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showImporter, setShowImporter] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState('Todos');
     const [searchQuery, setSearchQuery] = useState('');
@@ -269,13 +267,6 @@ export const Ingredients = () => {
                     <p className="text-slate-500 mt-1 hidden sm:block">Gerencie a matéria-prima do seu restaurante e acompanhe o Custo Médio.</p>
                 </div>
                 <div className="mt-3 sm:mt-0 flex flex-wrap gap-2 w-full sm:w-auto">
-                    <button
-                        onClick={() => setShowImporter(!showImporter)}
-                        className="flex-1 sm:flex-none flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-700 font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200"
-                    >
-                        <FileSpreadsheet className="w-4 h-4 mr-1.5 shrink-0" />
-                        {showImporter ? 'Ocultar' : 'Excel'}
-                    </button>
                     {selectedIds.length > 0 && (
                         <button
                             onClick={handleBulkDelete}
@@ -298,12 +289,6 @@ export const Ingredients = () => {
                     </button>
                 </div>
             </div>
-
-            {showImporter && (
-                <ExcelImporter onComplete={() => {
-                    fetchIngredients();
-                }} />
-            )}
 
             {showCatManager && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid sm:grid-cols-2 gap-6">
