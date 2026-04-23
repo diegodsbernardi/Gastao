@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package,
+    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2,
 } from 'lucide-react';
 import type { Ingredient, Recipe, RecipeIngredient, RecipeSubRecipe } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
@@ -32,6 +32,8 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     const [fichaSubs, setFichaSubs] = useState<Record<string, EditSubItem[]>>({});
     // composições dos preparos (para calcular custo/un)
     const [preparoIngs, setPreparoIngs] = useState<Record<string, RecipeIngredient[]>>({});
+    // quem usa essa receita como sub-componente (id da receita usada → fichas que dependem)
+    const [usedByMap, setUsedByMap] = useState<Record<string, { id: string; name: string }[]>>({});
 
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -129,11 +131,28 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
 
         if (subsRes.data) {
             const subMap: Record<string, EditSubItem[]> = {};
+            const reverseMap: Record<string, { id: string; name: string }[]> = {};
+            // Pai pode ser ficha_final OU preparo — incluir ambos pra cobrir qualquer
+            // referência que bloqueie o delete via FK restrict de recipe_sub_recipes.
+            const recipeNameById = new Map<string, string>();
+            (fichasRes.data ?? []).forEach((f: Recipe) => recipeNameById.set(f.id, f.product_name));
+            (preparosRes.data ?? []).forEach((p: Recipe) => recipeNameById.set(p.id, p.product_name));
+
             subsRes.data.forEach((item: any) => {
                 if (!subMap[item.recipe_id]) subMap[item.recipe_id] = [];
                 subMap[item.recipe_id].push(item);
+
+                // Ignora auto-referência no mapa reverso
+                if (item.recipe_id === item.sub_recipe_id) return;
+
+                const parentName = recipeNameById.get(item.recipe_id);
+                if (parentName) {
+                    if (!reverseMap[item.sub_recipe_id]) reverseMap[item.sub_recipe_id] = [];
+                    reverseMap[item.sub_recipe_id].push({ id: item.recipe_id, name: parentName });
+                }
             });
             setFichaSubs(subMap);
+            setUsedByMap(reverseMap);
         }
 
         setLoading(false);
@@ -244,26 +263,74 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
 
     const handleDelete = async (id: string) => {
         if (!confirm('Excluir esta ficha técnica?')) return;
+
+        // Remove auto-referência (ficha que aponta pra si mesma) antes de deletar —
+        // o FK RESTRICT do recipe_sub_recipes bloquearia o delete por esse loop.
+        await supabase
+            .from('recipe_sub_recipes')
+            .delete()
+            .eq('recipe_id', id)
+            .eq('sub_recipe_id', id);
+
         const { error } = await supabase.from('recipes').delete().eq('id', id);
         if (!error) {
             setFichas(prev => prev.filter(f => f.id !== id));
             setSelectedIds(prev => prev.filter(i => i !== id));
             toast.success('Ficha excluída.');
-        } else {
-            toast.error('Erro: ' + error.message);
+            return;
         }
+        if (error.code === '23503') {
+            const deps = usedByMap[id] ?? [];
+            const lista = deps.map(d => d.name).join(', ');
+            toast.error(
+                deps.length
+                    ? `Essa ficha é base de ${deps.length} outra(s): ${lista}. Remova a referência antes de excluir.`
+                    : 'Essa ficha é usada em outras fichas. Remova a referência antes de excluir.',
+                { duration: 7000 },
+            );
+            return;
+        }
+        toast.error('Erro: ' + error.message);
     };
 
     const handleBulkDelete = async () => {
         if (!confirm(`Excluir ${selectedIds.length} ficha(s)?`)) return;
+
+        // Limpa auto-referências dos selecionados antes do bulk delete
+        for (const id of selectedIds) {
+            await supabase
+                .from('recipe_sub_recipes')
+                .delete()
+                .eq('recipe_id', id)
+                .eq('sub_recipe_id', id);
+        }
+
         const { error } = await supabase.from('recipes').delete().in('id', selectedIds);
         if (!error) {
             setFichas(prev => prev.filter(f => !selectedIds.includes(f.id)));
             setSelectedIds([]);
             toast.success(`${selectedIds.length} ficha(s) excluída(s).`);
-        } else {
-            toast.error('Erro: ' + error.message);
+            return;
         }
+        if (error.code === '23503') {
+            const bloqueando = selectedIds
+                .map(id => ({ id, deps: usedByMap[id] ?? [] }))
+                .filter(x => x.deps.length > 0);
+            if (bloqueando.length > 0) {
+                const resumo = bloqueando
+                    .map(({ id, deps }) => {
+                        const ficha = fichas.find(f => f.id === id);
+                        return `"${ficha?.product_name ?? id}" → usada em ${deps.map(d => d.name).join(', ')}`;
+                    })
+                    .join(' | ');
+                toast.error(
+                    `${bloqueando.length} ficha(s) não podem ser excluída(s) porque são base de outras. ${resumo}`,
+                    { duration: 10000 },
+                );
+                return;
+            }
+        }
+        toast.error('Erro: ' + error.message);
     };
 
     // ─── modal editar ─────────────────────────────────────────────────────────
@@ -564,6 +631,15 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 )}
                                                 {viewMode === 'operacao' && (
                                                     <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{ficha.category}</span>
+                                                )}
+                                                {(usedByMap[ficha.id]?.length ?? 0) > 0 && (
+                                                    <span
+                                                        title={`Usada em: ${usedByMap[ficha.id].map(d => d.name).join(', ')}`}
+                                                        className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200"
+                                                    >
+                                                        <Link2 className="w-3 h-3" />
+                                                        Base de {usedByMap[ficha.id].length} ficha{usedByMap[ficha.id].length > 1 ? 's' : ''}
+                                                    </span>
                                                 )}
                                             </>
                                         )}

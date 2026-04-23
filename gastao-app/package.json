@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run build:template && tsc && vite build",
+    "build:template": "node scripts/generate-template.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.6.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

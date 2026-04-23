@@ -36,9 +36,9 @@ const FullScreenLoader = () => (
 
 // Rota privada: exige sessão + restaurante configurado
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
+    const { session, isLoading, isFetchingMembro, restauranteId, pendingInvite } = useAuth();
 
-    if (isLoading) return <FullScreenLoader />;
+    if (isLoading || isFetchingMembro) return <FullScreenLoader />;
     if (!session) return <Navigate to="/login" replace />;
     if (!restauranteId) {
         return <Navigate to={pendingInvite ? '/convite-pendente' : '/onboarding'} replace />;
@@ -50,9 +50,9 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 // Rota de onboarding: exige sessão SEM restaurante e SEM convite pendente
 // (se tem convite, a tela dedicada de aceitar/recusar tem prioridade)
 const OnboardingRoute = () => {
-    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
+    const { session, isLoading, isFetchingMembro, restauranteId, pendingInvite } = useAuth();
 
-    if (isLoading) return <FullScreenLoader />;
+    if (isLoading || isFetchingMembro) return <FullScreenLoader />;
     if (!session) return <Navigate to="/login" replace />;
     if (restauranteId) return <Navigate to="/" replace />;
     if (pendingInvite) return <Navigate to="/convite-pendente" replace />;
@@ -62,9 +62,9 @@ const OnboardingRoute = () => {
 
 // Rota de convite pendente: exige sessão SEM restaurante e COM convite
 const InviteRoute = () => {
-    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
+    const { session, isLoading, isFetchingMembro, restauranteId, pendingInvite } = useAuth();
 
-    if (isLoading) return <FullScreenLoader />;
+    if (isLoading || isFetchingMembro) return <FullScreenLoader />;
     if (!session) return <Navigate to="/login" replace />;
     if (restauranteId) return <Navigate to="/" replace />;
     if (!pendingInvite) return <Navigate to="/onboarding" replace />;
@@ -86,10 +86,10 @@ const RoleRoute = ({
 };
 
 function AppRoutes() {
-    const { session, isLoading, restauranteId, pendingInvite } = useAuth();
+    const { session, isLoading, isFetchingMembro, restauranteId, pendingInvite } = useAuth();
 
     // Enquanto carrega, não renderiza nenhuma rota pública
-    if (isLoading) return <FullScreenLoader />;
+    if (isLoading || isFetchingMembro) return <FullScreenLoader />;
 
     const redirectIfAuth = session
         ? (restauranteId

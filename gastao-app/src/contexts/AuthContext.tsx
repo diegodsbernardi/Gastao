@@ -15,6 +15,7 @@ interface AuthContextType {
     user: User | null;
     signOut: () => Promise<void>;
     isLoading: boolean;
+    isFetchingMembro: boolean;
     restauranteId: string | null;
     perfil: Perfil | null;
     nomeRestaurante: string | null;
@@ -31,6 +32,7 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     signOut: async () => {},
     isLoading: true,
+    isFetchingMembro: false,
     restauranteId: null,
     perfil: null,
     nomeRestaurante: null,
@@ -52,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [brandColor, setBrandColor] = useState<string | null>(null);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
+    const [isFetchingMembro, setIsFetchingMembro] = useState(false);
     const initializedRef = useRef(false);
 
     const clearMembro = () => {
@@ -67,6 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // NUNCA aceita convite aqui — só LISTA convites pendentes pra UI mostrar
     // tela de consentimento explícito (ver acceptPendingInvite/rejectPendingInvite).
     const fetchMembro = async (currentUser: User) => {
+        setIsFetchingMembro(true);
         try {
             const { data: rows } = await supabase.rpc('get_my_membership');
             if (rows && rows.length > 0) {
@@ -113,6 +117,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setLogoUrl(null);
         } catch {
             clearMembro();
+        } finally {
+            setIsFetchingMembro(false);
         }
     };
 
@@ -167,9 +173,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                 setSession(s);
                 setUser(s?.user ?? null);
-                // setTimeout desacopla a chamada Supabase do callback do onAuthStateChange
+                // setTimeout desacopla a chamada Supabase do callback do onAuthStateChange.
+                // Marca isFetchingMembro=true JÁ pra fechar a janela de race em que
+                // PrivateRoute veria restauranteId=null e redirecionaria pro onboarding
+                // antes de fetchMembro resolver.
                 if (s?.user) {
                     const u = s.user;
+                    setIsFetchingMembro(true);
                     setTimeout(() => { if (mounted) fetchMembro(u); }, 0);
                 }
 
@@ -204,6 +214,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             user,
             signOut,
             isLoading,
+            isFetchingMembro,
             restauranteId,
             perfil,
             nomeRestaurante,
