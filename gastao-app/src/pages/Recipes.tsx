@@ -685,14 +685,14 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                     </div>
                                 )}
 
-                                {/* Itens Prontos */}
-                                {ings.filter(i => i.ingredients.tipo === 'insumo_direto').length > 0 && (
+                                {/* Insumos (base + direto) */}
+                                {ings.filter(i => i.ingredients.tipo !== 'embalagem').length > 0 && (
                                     <div>
                                         <p className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                            <Package className="w-3.5 h-3.5" /> Itens Prontos
+                                            <Package className="w-3.5 h-3.5" /> Insumos
                                         </p>
                                         <ul className="space-y-1.5">
-                                            {ings.filter(i => i.ingredients.tipo === 'insumo_direto').map(i => (
+                                            {ings.filter(i => i.ingredients.tipo !== 'embalagem').map(i => (
                                                 <li key={i.id} className="flex justify-between items-center text-sm">
                                                     <span className="font-medium text-slate-700">{i.ingredients.name}</span>
                                                     <div className="flex items-center gap-3 text-slate-500">
@@ -861,14 +861,14 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                 </div>
                             )}
 
-                            {/* Itens Prontos na composição */}
-                            {editIngItems.filter(i => i.ingredients.tipo === 'insumo_direto').length > 0 && (
+                            {/* Insumos (base + direto) na composição */}
+                            {editIngItems.filter(i => i.ingredients.tipo !== 'embalagem').length > 0 && (
                                 <div className="px-6 pt-4">
                                     <p className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                        <Package className="w-3.5 h-3.5" /> Itens Prontos
+                                        <Package className="w-3.5 h-3.5" /> Insumos
                                     </p>
                                     <div className="space-y-2">
-                                        {editIngItems.map((item, idx) => item.ingredients.tipo !== 'insumo_direto' ? null : (
+                                        {editIngItems.map((item, idx) => item.ingredients.tipo === 'embalagem' ? null : (
                                             <div key={item.id} className="flex items-center gap-3 px-4 py-3 bg-amber-50 rounded-xl border border-amber-100 group">
                                                 <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.ingredients.name}</span>
                                                 <input
