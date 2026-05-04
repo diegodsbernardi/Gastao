@@ -34,14 +34,22 @@ const LEIAME = [
     '  Se sua categoria não aparecer no dropdown, cadastre primeiro em _Categorias.',
     '• Nas abas de Composição:',
     '    - Coluna "Preparo"/"Ficha": dropdown puxa da aba Preparos/Fichas.',
-    '    - Coluna "Item": dropdown unificado com insumos + preparos cadastrados.',
+    '    - Coluna "Item":',
+    '         · Composicao_Preparos: insumos + preparos.',
+    '         · Composicao_Fichas: insumos + preparos + FICHAS (combos).',
     '    - Coluna "Componente": PREENCHIDA AUTOMÁTICAMENTE a partir do Item.',
-    '      (se o Item existe em Insumos → "insumo"; em Preparos → "preparo")',
+    '      (Insumos → "insumo"; Preparos → "preparo"; Fichas → "ficha")',
     '    - Coluna "Unidade": PREENCHIDA AUTOMÁTICAMENTE a partir do Item.',
-    '      (usa a unidade cadastrada do insumo ou a unidade de rendimento do preparo)',
+    '      (usa a unidade do insumo, do rendimento do preparo, ou de venda da ficha)',
     '  Ou seja: escolhe Preparo/Ficha + Item + Quantidade — o resto vem sozinho.',
-    '• Se dois nomes iguais existirem em Insumos e Preparos, prevalece "insumo".',
+    '• Se um nome existir em mais de uma aba, prevalece insumo > preparo > ficha.',
     '  Evite repetir nomes entre as abas.',
+    '',
+    '═══ COMBOS (FICHA DENTRO DE FICHA) ═══',
+    'Combos como "Combão" (lanche + porção + refri) podem reusar fichas existentes.',
+    'Em Composicao_Fichas, escolha o Item entre as fichas já cadastradas — o Componente',
+    'fica "ficha" automaticamente. O custo do combo soma o custo de cada ficha + extras.',
+    'Não crie ciclo: se Combo A usa Ficha B, B não pode usar A.',
     '',
     '═══ REGRAS ESSENCIAIS ═══',
     '• Nome é a chave — não renomeie depois de importar',
@@ -56,7 +64,8 @@ const LEIAME = [
     '    insumo_base   → usado em Preparos (ex: carne moída, farinha)',
     '    insumo_direto → vai direto em Fichas (ex: pão, bebida engarrafada)',
     '    embalagem     → caixas, sacolas, descartáveis',
-    '• Componente (Composição): insumo | preparo',
+    '• Componente (Composicao_Preparos): insumo | preparo',
+    '• Componente (Composicao_Fichas): insumo | preparo | ficha',
     '• Aproveitamento: 1 a 100 (% aproveitado; abacaxi descascado ≈ 53)',
     '• Números: aceita formato BR (1.234,56) e EN (1234.56)',
     '',
@@ -126,6 +135,7 @@ const EX_FICHAS = [
     ['Filé ao Molho Rosé', 'Massas', 89.00, 'un', ''],
     ['Hot Roll Salmão', 'Sushi', 38.00, 'un', '8 peças'],
     ['Brigadeiro da Casa', 'Sobremesa', 12.00, 'un', ''],
+    ['Combo X-Burger', 'Lanches', 38.00, 'un', 'X-Burger Duplo + Coca'],
 ];
 
 const EX_COMP_PREP = [
@@ -161,6 +171,9 @@ const EX_COMP_FICHA = [
     ['Hot Roll Salmão', 'insumo', 'Salmão Fresco', 0.08, 'kg'],
     ['Hot Roll Salmão', 'insumo', 'Folha de Nori', 1, 'un'],
     ['Brigadeiro da Casa', 'insumo', 'Chocolate 70%', 0.04, 'kg'],
+    // Exemplo de combo: ficha-em-ficha
+    ['Combo X-Burger', 'ficha', 'X-Burger Duplo', 1, 'un'],
+    ['Combo X-Burger', 'insumo', 'Coca-Cola Lata 350ml', 1, 'un'],
 ];
 
 // ────────────────────────────────────────────────────────────────
@@ -176,6 +189,8 @@ wb.calcProperties.fullCalcOnLoad = true;
 // assim o Excel mostra os valores imediatamente mesmo se o recálculo não rodar.
 const insumoUnitByName = new Map(EX_INSUMOS.map(i => [i[0], i[3]]));
 const preparoUnitByName = new Map(EX_PREPAROS.map(p => [p[0], p[3]]));
+const fichaUnitByName = new Map(EX_FICHAS.map(f => [f[0], f[3]]));
+// Composicao_Preparos: aceita só insumo|preparo
 const componenteFor = (item) => {
     if (insumoUnitByName.has(item)) return 'insumo';
     if (preparoUnitByName.has(item)) return 'preparo';
@@ -183,6 +198,15 @@ const componenteFor = (item) => {
 };
 const unidadeFor = (item) =>
     insumoUnitByName.get(item) ?? preparoUnitByName.get(item) ?? '';
+// Composicao_Fichas: aceita os 3 (combos)
+const componenteForFicha = (item) => {
+    if (insumoUnitByName.has(item)) return 'insumo';
+    if (preparoUnitByName.has(item)) return 'preparo';
+    if (fichaUnitByName.has(item)) return 'ficha';
+    return '';
+};
+const unidadeForFicha = (item) =>
+    insumoUnitByName.get(item) ?? preparoUnitByName.get(item) ?? fichaUnitByName.get(item) ?? '';
 
 const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -311,10 +335,11 @@ const styleHeader = (ws, cols) => {
     }
 }
 
-// ── _ref_itens (aba oculta, helper pro dropdown unificado de Item) ──
-// Uma coluna com todos os nomes: linhas 1..MAX_ROWS replicam Insumos!A,
-// linhas MAX_ROWS+1..2*MAX_ROWS replicam Preparos!A. IFERROR mantém vazio
-// se a linha fonte ainda não foi preenchida.
+// ── _ref_itens (aba oculta, helper pros dropdowns de Item) ──
+// Cobre os 3 catálogos empilhados:
+//   linhas 2..MAX_ROWS               → Insumos!A
+//   linhas MAX_ROWS+1..2*MAX_ROWS-1  → Preparos!A
+//   linhas 2*MAX_ROWS..3*MAX_ROWS-2  → Fichas!A   (usado só por Composicao_Fichas, p/ combos)
 {
     const ws = wb.addWorksheet('_ref_itens', { state: 'hidden' });
     ws.columns = [{ header: 'item', width: 32 }];
@@ -324,18 +349,28 @@ const styleHeader = (ws, cols) => {
     for (let r = 2; r <= MAX_ROWS; r++) {
         ws.getCell(`A${MAX_ROWS + r - 1}`).value = { formula: `IFERROR(Preparos!A${r},"")` };
     }
+    for (let r = 2; r <= MAX_ROWS; r++) {
+        ws.getCell(`A${2 * MAX_ROWS + r - 2}`).value = { formula: `IFERROR(Fichas!A${r},"")` };
+    }
 }
 
-// Named range pra o dropdown de Item das composições
+// Named ranges pros dropdowns de Item.
+// itens_todos    = insumos + preparos        → Composicao_Preparos
+// itens_combo    = insumos + preparos + fichas → Composicao_Fichas (combos)
 wb.definedNames.add(`_ref_itens!$A$2:$A$${2 * MAX_ROWS - 1}`, 'itens_todos');
+wb.definedNames.add(`_ref_itens!$A$2:$A$${3 * MAX_ROWS - 2}`, 'itens_combo');
 
-// Fórmulas reutilizadas pelas duas abas de composição.
-// Componente: se Item existe em Insumos → "insumo"; em Preparos → "preparo"; senão ""
+// Fórmulas — Composicao_Preparos (só insumo|preparo)
 const fmComponente = (row) =>
     `IF(C${row}="","",IF(ISNUMBER(MATCH(C${row},Insumos!$A:$A,0)),"insumo",IF(ISNUMBER(MATCH(C${row},Preparos!$A:$A,0)),"preparo","")))`;
-// Unidade: tenta VLOOKUP em Insumos (col 4 = Unidade); se falhar, Preparos (col 4 = Rendimento unidade)
 const fmUnidade = (row) =>
     `IF(C${row}="","",IFERROR(VLOOKUP(C${row},Insumos!$A:$D,4,FALSE),IFERROR(VLOOKUP(C${row},Preparos!$A:$D,4,FALSE),"")))`;
+
+// Fórmulas — Composicao_Fichas (insumo|preparo|ficha)
+const fmComponenteFicha = (row) =>
+    `IF(C${row}="","",IF(ISNUMBER(MATCH(C${row},Insumos!$A:$A,0)),"insumo",IF(ISNUMBER(MATCH(C${row},Preparos!$A:$A,0)),"preparo",IF(ISNUMBER(MATCH(C${row},Fichas!$A:$A,0)),"ficha",""))))`;
+const fmUnidadeFicha = (row) =>
+    `IF(C${row}="","",IFERROR(VLOOKUP(C${row},Insumos!$A:$D,4,FALSE),IFERROR(VLOOKUP(C${row},Preparos!$A:$D,4,FALSE),IFERROR(VLOOKUP(C${row},Fichas!$A:$D,4,FALSE),""))))`;
 
 // Protect options comuns para as duas abas de composição:
 // trava B e E (fórmulas); libera A, C, D pro usuário; mantém dropdowns, sort, inserir/deletar linhas.
@@ -394,6 +429,7 @@ const COMP_PROTECT_OPTS = {
 }
 
 // ── Composicao_Fichas ─────────────────────────────────────────
+// Aceita Item entre insumos + preparos + fichas (combos).
 {
     const ws = wb.addWorksheet('Composicao_Fichas');
     ws.columns = [
@@ -412,14 +448,14 @@ const COMP_PROTECT_OPTS = {
         };
         ws.getCell(`C${r}`).dataValidation = {
             type: 'list', allowBlank: true,
-            formulae: ['=itens_todos'],
+            formulae: ['=itens_combo'],
         };
         const exIdx = r - 2;
         const exItem = exIdx >= 0 && exIdx < EX_COMP_FICHA.length ? EX_COMP_FICHA[exIdx][2] : null;
-        const cachedB = exItem ? componenteFor(exItem) : '';
-        const cachedE = exItem ? unidadeFor(exItem) : '';
-        ws.getCell(`B${r}`).value = { formula: fmComponente(r), result: cachedB };
-        ws.getCell(`E${r}`).value = { formula: fmUnidade(r), result: cachedE };
+        const cachedB = exItem ? componenteForFicha(exItem) : '';
+        const cachedE = exItem ? unidadeForFicha(exItem) : '';
+        ws.getCell(`B${r}`).value = { formula: fmComponenteFicha(r), result: cachedB };
+        ws.getCell(`E${r}`).value = { formula: fmUnidadeFicha(r), result: cachedE };
         ws.getCell(`A${r}`).protection = { locked: false };
         ws.getCell(`C${r}`).protection = { locked: false };
         ws.getCell(`D${r}`).protection = { locked: false };

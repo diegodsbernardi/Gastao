@@ -332,8 +332,9 @@ async function runImport(
             errs.push(`Composicao_Preparos: preparo "${c.item}" referenciado por "${c.preparo}" não existe.`);
         }
     }
+    const fichaNameSet = new Set(parsed.fichas.map(f => normKey(f.nome)));
     for (const c of parsed.compFichas) {
-        if (!parsed.fichas.some(f => normKey(f.nome) === normKey(c.ficha)) && !fichaByName.has(normKey(c.ficha))) {
+        if (!fichaNameSet.has(normKey(c.ficha)) && !fichaByName.has(normKey(c.ficha))) {
             errs.push(`Composicao_Fichas: ficha "${c.ficha}" não existe em Fichas nem no banco.`);
         }
         if (c.componente === 'insumo' && !ingByName.has(normKey(c.item))) {
@@ -341,6 +342,9 @@ async function runImport(
         }
         if (c.componente === 'preparo' && !preparoNameSet.has(normKey(c.item)) && !preparoByName.has(normKey(c.item))) {
             errs.push(`Composicao_Fichas: preparo "${c.item}" não existe.`);
+        }
+        if (c.componente === 'ficha' && !fichaNameSet.has(normKey(c.item)) && !fichaByName.has(normKey(c.item))) {
+            errs.push(`Composicao_Fichas: ficha "${c.item}" referenciada por "${c.ficha}" não existe.`);
         }
     }
 
@@ -480,11 +484,19 @@ async function runImport(
                 quantity_needed: qty,
                 unit: ing.unit_type,
             });
-        } else {
+        } else if (c.componente === 'preparo') {
             const sub = preparoByName.get(normKey(c.item))!;
             fichaRsrRows.push({
                 recipe_id: fichaId,
                 sub_recipe_id: sub.id,
+                quantity_needed: c.quantidade,
+            });
+        } else {
+            // componente === 'ficha' — combo: ficha aponta pra outra ficha em recipe_sub_recipes
+            const subFicha = fichaByName.get(normKey(c.item))!;
+            fichaRsrRows.push({
+                recipe_id: fichaId,
+                sub_recipe_id: subFicha.id,
                 quantity_needed: c.quantidade,
             });
         }

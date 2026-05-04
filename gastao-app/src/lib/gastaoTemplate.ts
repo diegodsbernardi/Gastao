@@ -19,12 +19,16 @@ import * as XLSX from 'xlsx';
 export const UNIDADES = ['kg', 'g', 'l', 'ml', 'un', 'porção'] as const;
 export const TIPOS_INSUMO = ['insumo_base', 'insumo_direto', 'embalagem'] as const;
 export const TIPOS_ITEM = ['insumo', 'preparo', 'ficha'] as const;
+// Composicao_Preparos aceita só insumo|preparo (preparo não compõe ficha).
+// Composicao_Fichas aceita os 3 (combos: ficha pode conter outra ficha).
 export const TIPOS_COMPONENTE = ['insumo', 'preparo'] as const;
+export const TIPOS_COMPONENTE_FICHA = ['insumo', 'preparo', 'ficha'] as const;
 
 export type Unidade = typeof UNIDADES[number];
 export type TipoInsumo = typeof TIPOS_INSUMO[number];
 export type TipoItem = typeof TIPOS_ITEM[number];
 export type TipoComponente = typeof TIPOS_COMPONENTE[number];
+export type TipoComponenteFicha = typeof TIPOS_COMPONENTE_FICHA[number];
 
 // ── Linhas normalizadas pós-parse ─────────────────────────────
 
@@ -70,7 +74,7 @@ export interface CompPreparoRow {
 
 export interface CompFichaRow {
     ficha: string;
-    componente: TipoComponente;
+    componente: TipoComponenteFicha;
     item: string;
     quantidade: number;
     unidade: string;
@@ -337,19 +341,33 @@ export const parseGastaoTemplate = (workbook: XLSX.WorkBook): ParseResult => {
     parsed.insumos.forEach(i => insumoByName.set(i.nome.toLowerCase(), i));
     const preparoByName = new Map<string, PreparoRow>();
     parsed.preparos.forEach(p => preparoByName.set(p.nome.toLowerCase(), p));
+    const fichaByName = new Map<string, FichaRow>();
+    parsed.fichas.forEach(f => fichaByName.set(f.nome.toLowerCase(), f));
 
-    /** Descobre se o Item é insumo ou preparo. Se não for nenhum, retorna null. */
+    /** Composicao_Preparos: aceita só insumo|preparo (preparo não compõe ficha). */
     const inferComponente = (item: string): TipoComponente | null => {
         const k = item.toLowerCase();
         if (insumoByName.has(k)) return 'insumo';
         if (preparoByName.has(k)) return 'preparo';
         return null;
     };
-
-    /** Se Componente explícito for válido, usa; senão infere do Item. */
     const resolveComponente = (explicit: string, item: string): TipoComponente | null => {
         if (TIPOS_COMPONENTE.includes(explicit as TipoComponente)) return explicit as TipoComponente;
         return inferComponente(item);
+    };
+
+    /** Composicao_Fichas: aceita os 3 (combos: ficha pode conter outra ficha). */
+    const inferComponenteFicha = (item: string): TipoComponenteFicha | null => {
+        const k = item.toLowerCase();
+        // Se nome existe em insumos E fichas, prevalece insumo (regra documentada no _Leia-me).
+        if (insumoByName.has(k)) return 'insumo';
+        if (preparoByName.has(k)) return 'preparo';
+        if (fichaByName.has(k)) return 'ficha';
+        return null;
+    };
+    const resolveComponenteFicha = (explicit: string, item: string): TipoComponenteFicha | null => {
+        if (TIPOS_COMPONENTE_FICHA.includes(explicit as TipoComponenteFicha)) return explicit as TipoComponenteFicha;
+        return inferComponenteFicha(item);
     };
 
     /** Unidade default do item quando a composição não informa. */
@@ -357,6 +375,12 @@ export const parseGastaoTemplate = (workbook: XLSX.WorkBook): ParseResult => {
         const k = item.toLowerCase();
         if (componente === 'insumo') return insumoByName.get(k)?.unidade ?? '';
         return preparoByName.get(k)?.rendimentoUnidade ?? '';
+    };
+    const defaultUnidadeFicha = (componente: TipoComponenteFicha, item: string): string => {
+        const k = item.toLowerCase();
+        if (componente === 'insumo') return insumoByName.get(k)?.unidade ?? '';
+        if (componente === 'preparo') return preparoByName.get(k)?.rendimentoUnidade ?? '';
+        return fichaByName.get(k)?.unidadeVenda ?? 'un';
     };
 
     // ─── Composicao_Preparos ───
@@ -406,6 +430,7 @@ export const parseGastaoTemplate = (workbook: XLSX.WorkBook): ParseResult => {
     }
 
     // ─── Composicao_Fichas ───
+    // Aceita insumo | preparo | ficha (combos: ficha-em-ficha).
     {
         const rows = readRows(workbook, 'Composicao_Fichas');
         for (let i = 1; i < rows.length; i++) {
@@ -419,11 +444,11 @@ export const parseGastaoTemplate = (workbook: XLSX.WorkBook): ParseResult => {
 
             if (!ficha || !item) continue;
 
-            const componente = resolveComponente(componenteRaw, item);
+            const componente = resolveComponenteFicha(componenteRaw, item);
             if (!componente) {
                 errors.push({
                     sheet: 'Composicao_Fichas', row: i + 1,
-                    message: `Não consegui identificar o Item "${item}". Confira se está cadastrado em Insumos ou Preparos.`,
+                    message: `Não consegui identificar o Item "${item}". Confira se está cadastrado em Insumos, Preparos ou Fichas.`,
                 });
                 continue;
             }
@@ -431,7 +456,11 @@ export const parseGastaoTemplate = (workbook: XLSX.WorkBook): ParseResult => {
                 errors.push({ sheet: 'Composicao_Fichas', row: i + 1, message: `Quantidade deve ser > 0. Recebido: ${r[3]}` });
                 continue;
             }
-            if (!unidade) unidade = defaultUnidade(componente, item);
+            if (componente === 'ficha' && ficha.toLowerCase() === item.toLowerCase()) {
+                errors.push({ sheet: 'Composicao_Fichas', row: i + 1, message: `Ficha "${ficha}" não pode usar ela mesma (auto-referência).` });
+                continue;
+            }
+            if (!unidade) unidade = defaultUnidadeFicha(componente, item);
             if (componente === 'insumo' && unidade && !UNIDADES.includes(unidade as Unidade)) {
                 errors.push({ sheet: 'Composicao_Fichas', row: i + 1, message: `Unidade inválida: "${r[4]}". Use: ${UNIDADES.join(', ')}` });
                 continue;

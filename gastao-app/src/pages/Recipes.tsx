@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2,
+    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2, ArrowDownUp,
 } from 'lucide-react';
 import type { Ingredient, Recipe, RecipeIngredient, RecipeSubRecipe } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
@@ -40,6 +40,8 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('Todas');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    // Sort: nome (default) | CMV asc (mais saudável primeiro) | CMV desc (mais crítico primeiro)
+    const [sortMode, setSortMode] = useState<'name' | 'cmv-asc' | 'cmv-desc'>('name');
 
     // ── modal: nova ficha ─────────────────────────────────────────────────────
     const [showNewModal, setShowNewModal] = useState(false);
@@ -208,6 +210,14 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         return map;
     }, [fichas, fichaIngs, fichaSubs, preparoCostPerUnit]);
 
+    // Mapa unificado de custo: preparos + fichas finais.
+    // Usado tanto pelo modal de edição quanto pelos cards (combos: ficha como
+    // sub-item de outra ficha precisa do custo da ficha-base, não do preparoCostPerUnit).
+    const unifiedCostMap = useMemo(
+        () => ({ ...preparoCostPerUnit, ...fichaCostMap }),
+        [preparoCostPerUnit, fichaCostMap]
+    );
+
     // Categorias disponíveis nos dropdowns (Novo/Editar Ficha): defaults + customizadas do usuário.
     const allCategories = useMemo(
         () => Array.from(new Set([...DEFAULT_CATEGORIES, ...customCategories])),
@@ -223,13 +233,34 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         [fichas, customCategories]
     );
 
-    const filteredFichas = useMemo(() => fichas.filter(f => {
-        const matchSearch = f.product_name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchCat = categoryFilter
-            ? f.category === categoryFilter
-            : (activeCategory === 'Todas' || f.category === activeCategory);
-        return matchSearch && matchCat;
-    }), [fichas, searchQuery, activeCategory, categoryFilter]);
+    const filteredFichas = useMemo(() => {
+        const list = fichas.filter(f => {
+            const matchSearch = f.product_name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchCat = categoryFilter
+                ? f.category === categoryFilter
+                : (activeCategory === 'Todas' || f.category === activeCategory);
+            return matchSearch && matchCat;
+        });
+
+        if (sortMode === 'name') {
+            return list.slice().sort((a, b) => a.product_name.localeCompare(b.product_name));
+        }
+        // CMV sort: fichas sem preço ou sem composição (CMV indefinido) sempre no fim.
+        const cmvOf = (f: Recipe): number | null => {
+            if (!f.sale_price || f.sale_price <= 0) return null;
+            const cost = fichaCostMap[f.id] ?? 0;
+            if (cost <= 0) return null;
+            return cost / f.sale_price;
+        };
+        return list.slice().sort((a, b) => {
+            const ca = cmvOf(a);
+            const cb = cmvOf(b);
+            if (ca === null && cb === null) return a.product_name.localeCompare(b.product_name);
+            if (ca === null) return 1;
+            if (cb === null) return -1;
+            return sortMode === 'cmv-asc' ? ca - cb : cb - ca;
+        });
+    }, [fichas, searchQuery, activeCategory, categoryFilter, sortMode, fichaCostMap]);
 
     // ─── CRUD ────────────────────────────────────────────────────────────────
 
@@ -462,10 +493,6 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
 
     // ─── cálculos do modal ────────────────────────────────────────────────────
     const editingFicha = fichas.find(f => f.id === editingId);
-    // Mapa unificado de custo: preparos + fichas finais (para combos)
-    const unifiedCostMap = useMemo(() => {
-        return { ...preparoCostPerUnit, ...fichaCostMap };
-    }, [preparoCostPerUnit, fichaCostMap]);
 
     const editTotalCost = useMemo(() => {
         const ing = editIngItems.reduce((acc, i) => acc + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0);
@@ -554,15 +581,30 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                         </button>
                     ))}
                 </div>
-                <div className="relative w-full sm:w-72">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Buscar fichas..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                    />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative">
+                        <ArrowDownUp className="w-4 h-4 absolute left-2.5 top-2.5 text-slate-400 pointer-events-none" />
+                        <select
+                            value={sortMode}
+                            onChange={e => setSortMode(e.target.value as typeof sortMode)}
+                            title="Ordenar fichas"
+                            className="pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                        >
+                            <option value="name">A–Z</option>
+                            <option value="cmv-asc">CMV menor primeiro</option>
+                            <option value="cmv-desc">CMV maior primeiro</option>
+                        </select>
+                    </div>
+                    <div className="relative flex-1 sm:w-72">
+                        <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar fichas..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -680,20 +722,25 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
 
                             {/* Composição */}
                             <div className="p-5 flex-1 space-y-4">
-                                {/* Preparos usados */}
+                                {/* Preparos & Combos (sub-fichas) */}
                                 {subs.length > 0 && (
                                     <div>
                                         <p className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                            <ChefHat className="w-3.5 h-3.5" /> Preparos
+                                            <ChefHat className="w-3.5 h-3.5" /> {subs.some(s => s.sub_recipe.tipo === 'ficha_final') ? 'Preparos & Combos' : 'Preparos'}
                                         </p>
                                         <ul className="space-y-1.5">
                                             {subs.map(s => (
                                                 <li key={s.id} className="flex justify-between items-center text-sm">
-                                                    <span className="font-medium text-slate-700">{s.sub_recipe.product_name}</span>
+                                                    <span className="font-medium text-slate-700 flex items-center gap-1.5">
+                                                        {s.sub_recipe.product_name}
+                                                        {s.sub_recipe.tipo === 'ficha_final' && (
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded">combo</span>
+                                                        )}
+                                                    </span>
                                                     <div className="flex items-center gap-3 text-slate-500">
                                                         <span>{s.quantity_needed} un</span>
                                                         <span className="font-semibold text-slate-700">
-                                                            {fmtMoney((preparoCostPerUnit[s.sub_recipe_id] ?? 0) * s.quantity_needed)}
+                                                            {fmtMoney((unifiedCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed)}
                                                         </span>
                                                     </div>
                                                 </li>
@@ -840,16 +887,21 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                 </button>
                             </div>
 
-                            {/* Preparos na composição */}
+                            {/* Preparos & Combos na composição */}
                             {editSubItems.length > 0 && (
                                 <div className="px-6 pt-4">
                                     <p className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                        <ChefHat className="w-3.5 h-3.5" /> Preparos
+                                        <ChefHat className="w-3.5 h-3.5" /> {editSubItems.some(s => s.sub_recipe.tipo === 'ficha_final') ? 'Preparos & Combos' : 'Preparos'}
                                     </p>
                                     <div className="space-y-2">
                                         {editSubItems.map((item, idx) => (
                                             <div key={item.id} className="flex items-center gap-3 px-4 py-3 bg-amber-50 rounded-xl border border-amber-100 group">
-                                                <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.sub_recipe.product_name}</span>
+                                                <span className="flex-1 font-medium text-slate-800 text-sm truncate flex items-center gap-1.5">
+                                                    {item.sub_recipe.product_name}
+                                                    {item.sub_recipe.tipo === 'ficha_final' && (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded shrink-0">combo</span>
+                                                    )}
+                                                </span>
                                                 <input
                                                     type="number"
                                                     value={item.quantity_needed}
@@ -864,7 +916,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <span className="text-xs text-slate-400 w-6">un</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                                    {fmtMoney((preparoCostPerUnit[item.sub_recipe_id] ?? 0) * item.quantity_needed)}
+                                                    {fmtMoney((unifiedCostMap[item.sub_recipe_id] ?? 0) * item.quantity_needed)}
                                                 </span>
                                                 <button
                                                     onClick={() => setEditSubItems(editSubItems.filter((_, i) => i !== idx))}
