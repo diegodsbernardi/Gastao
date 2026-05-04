@@ -22,6 +22,12 @@ dist-ssr
 supabase/.temp/
 supabase/.branches/
 
+# Dados de cliente / outputs de scripts (raiz do gastao-app)
+# (NÃO ignora public/Gastao_Planilha_Mae.xlsx — esse é servido pelo app)
+/*.xlsx
+/*.csv
+/gastao_import_*_LOG.txt
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
