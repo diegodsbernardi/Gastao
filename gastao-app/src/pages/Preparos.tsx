@@ -35,6 +35,8 @@ export const Preparos = () => {
     const [usedByMap, setUsedByMap] = useState<Record<string, { id: string; name: string; kind: 'ficha' | 'preparo' }[]>>({});
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState('Todas');
+    const [customCategories, setCustomCategories] = useState<string[]>([]);
 
     // Modal: novo preparo
     const [showNewModal, setShowNewModal] = useState(false);
@@ -80,7 +82,7 @@ export const Preparos = () => {
     const fetchData = async () => {
         setLoading(true);
 
-        const [preparosRes, ingredientsRes, compositionsRes, subsRes] = await Promise.all([
+        const [preparosRes, ingredientsRes, compositionsRes, subsRes, catsRes] = await Promise.all([
             supabase.from('recipes').select('*').eq('tipo', 'preparo').order('product_name'),
             supabase.from('ingredients').select('*').eq('tipo', 'insumo_base').order('name'),
             // Agora trazemos sub_recipe_id também + join do sub-preparo
@@ -94,10 +96,12 @@ export const Preparos = () => {
                 recipe_id, sub_recipe_id,
                 parent:recipes!recipe_sub_recipes_recipe_id_fkey ( id, product_name, tipo )
             `),
+            supabase.from('recipe_categories').select('name').eq('recipe_tipo', 'preparo').order('name'),
         ]);
 
         if (preparosRes.data) setPreparos(preparosRes.data);
         if (ingredientsRes.data) setIngredients(ingredientsRes.data);
+        if (catsRes.data) setCustomCategories(catsRes.data.map((c: any) => c.name));
 
         const ingsGrouped: Record<string, RecipeIngredient[]> = {};
         const subsGrouped: Record<string, PreparoSubEntry[]> = {};
@@ -212,9 +216,22 @@ export const Preparos = () => {
         return map;
     }, [preparos, compositions, subCompositions]);
 
+    // Chips de categoria: união de categorias usadas pelos preparos + cadastradas em recipe_categories.
+    // 'Preparo' (default do create manual) não polui o filtro.
+    const categories = useMemo(() => {
+        const fromPreparos = preparos
+            .map(p => p.category)
+            .filter((c): c is string => !!c && c !== 'Preparo');
+        return ['Todas', ...Array.from(new Set([...fromPreparos, ...customCategories]))];
+    }, [preparos, customCategories]);
+
     const filteredPreparos = useMemo(
-        () => preparos.filter(p => p.product_name.toLowerCase().includes(searchQuery.toLowerCase())),
-        [preparos, searchQuery]
+        () => preparos.filter(p => {
+            const matchSearch = p.product_name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchCat = activeCategory === 'Todas' || p.category === activeCategory;
+            return matchSearch && matchCat;
+        }),
+        [preparos, searchQuery, activeCategory]
     );
 
     // Sub-preparos permitidos quando editando X:
@@ -528,16 +545,31 @@ export const Preparos = () => {
                 </button>
             </div>
 
-            {/* Busca */}
-            <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                <input
-                    type="text"
-                    placeholder="Buscar preparos..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none shadow-sm"
-                />
+            {/* Filtros: chips de categoria + busca */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 border border-slate-200 rounded-xl shadow-sm">
+                {categories.length > 1 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${activeCategory === cat ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                ) : <div />}
+                <div className="relative w-full sm:w-72">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar preparos..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none"
+                    />
+                </div>
             </div>
 
             {/* Lista */}
