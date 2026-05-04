@@ -16,7 +16,7 @@ type EditSubItem = Omit<RecipeSubRecipe, 'sub_recipe'> & {
 };
 type AddTab = 'preparo' | 'insumo' | 'embalagem';
 
-const CATEGORIES = ['Lanche', 'Porção', 'Sobremesa', 'Combo', 'Bebida', 'Outro'];
+const DEFAULT_CATEGORIES = ['Lanche', 'Porção', 'Sobremesa', 'Combo', 'Bebida', 'Outro'];
 
 export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) => {
     const { user, restauranteId } = useAuth();
@@ -27,6 +27,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     const [preparos, setPreparos] = useState<Recipe[]>([]);
     const [insumosDiretos, setInsumosDiretos] = useState<Ingredient[]>([]);
     const [embalagens, setEmbalagens] = useState<Ingredient[]>([]);
+    const [customCategories, setCustomCategories] = useState<string[]>([]);
     // composições das fichas finais
     const [fichaIngs, setFichaIngs] = useState<Record<string, EditIngItem[]>>({});
     const [fichaSubs, setFichaSubs] = useState<Record<string, EditSubItem[]>>({});
@@ -87,7 +88,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         setLoading(true);
 
         // Todos os fetches em paralelo — sem waterfall
-        const [fichasRes, preparosRes, insumosDiretosRes, embalagemRes, allIngsRes, subsRes] = await Promise.all([
+        const [fichasRes, preparosRes, insumosDiretosRes, embalagemRes, allIngsRes, subsRes, catsRes] = await Promise.all([
             supabase.from('recipes').select('*').eq('tipo', 'ficha_final').order('product_name'),
             supabase.from('recipes').select('*').eq('tipo', 'preparo').order('product_name'),
             supabase.from('ingredients').select('*').eq('tipo', 'insumo_direto').order('name'),
@@ -100,12 +101,14 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                 id, recipe_id, sub_recipe_id, quantity_needed,
                 sub_recipe:recipes!recipe_sub_recipes_sub_recipe_id_fkey ( id, product_name, tipo, yield_quantity )
             `),
+            supabase.from('recipe_categories').select('name').eq('recipe_tipo', 'ficha').order('name'),
         ]);
 
         if (fichasRes.data) setFichas(fichasRes.data);
         if (preparosRes.data) setPreparos(preparosRes.data);
         if (insumosDiretosRes.data) setInsumosDiretos(insumosDiretosRes.data);
         if (embalagemRes.data) setEmbalagens(embalagemRes.data);
+        if (catsRes.data) setCustomCategories(catsRes.data.map((c: any) => c.name));
 
         // Agrupa recipe_ingredients: fichas vs preparos (pelo tipo da receita)
         if (allIngsRes.data && fichasRes.data && preparosRes.data) {
@@ -205,9 +208,19 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         return map;
     }, [fichas, fichaIngs, fichaSubs, preparoCostPerUnit]);
 
+    // Categorias disponíveis nos dropdowns (Novo/Editar Ficha): defaults + customizadas do usuário.
+    const allCategories = useMemo(
+        () => Array.from(new Set([...DEFAULT_CATEGORIES, ...customCategories])),
+        [customCategories]
+    );
+
+    // Chips de filtro: mostra só categorias com fichas OU cadastradas como 'ficha'.
     const categories = useMemo(
-        () => ['Todas', ...Array.from(new Set(fichas.map(f => f.category).filter(Boolean)))],
-        [fichas]
+        () => ['Todas', ...Array.from(new Set([
+            ...fichas.map(f => f.category).filter(Boolean),
+            ...customCategories,
+        ]))],
+        [fichas, customCategories]
     );
 
     const filteredFichas = useMemo(() => fichas.filter(f => {
@@ -594,7 +607,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <div className="flex gap-2">
                                                     <select value={editInfoCategory} onChange={e => setEditInfoCategory(e.target.value)} className="flex-1 px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-primary-500">
-                                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                                     </select>
                                                     <input
                                                         type="number"
@@ -778,7 +791,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
                                     <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
-                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
                                 <div>

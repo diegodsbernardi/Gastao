@@ -217,6 +217,52 @@ async function runImport(
         else fichaByName.set(normKey(r.product_name), { id: r.id });
     });
 
+    // ── 0) Garantir categorias governadas ──
+    // Insumos: tabela ingredient_categories (ingredient_tipo derivado do uso real).
+    // Preparos/Fichas: tabela recipe_categories (recipe_tipo direto).
+    if (parsed.categorias.length > 0) {
+        log(`\n🔄 Garantindo categorias...`);
+
+        const catsInsumo = parsed.categorias.filter(c => c.tipo === 'insumo');
+        const catsPreparo = parsed.categorias.filter(c => c.tipo === 'preparo');
+        const catsFicha = parsed.categorias.filter(c => c.tipo === 'ficha');
+
+        // Deriva ingredient_tipo olhando os insumos que usam cada categoria.
+        // Prioridade: insumo_base > insumo_direto > (default base se só embalagem).
+        const ingTipoByCategoria = new Map<string, 'insumo_base' | 'insumo_direto'>();
+        for (const ins of parsed.insumos) {
+            const key = normKey(ins.categoria);
+            const current = ingTipoByCategoria.get(key);
+            if (ins.tipoInsumo === 'insumo_base') ingTipoByCategoria.set(key, 'insumo_base');
+            else if (ins.tipoInsumo === 'insumo_direto' && current !== 'insumo_base') ingTipoByCategoria.set(key, 'insumo_direto');
+        }
+
+        if (catsInsumo.length > 0) {
+            const rows = catsInsumo.map(c => ({
+                restaurant_id: restaurantId,
+                name: c.categoria,
+                ingredient_tipo: ingTipoByCategoria.get(normKey(c.categoria)) ?? 'insumo_base',
+            }));
+            const { error } = await supabase
+                .from('ingredient_categories')
+                .upsert(rows, { onConflict: 'restaurant_id,name', ignoreDuplicates: true });
+            if (error) throw new Error('Erro em categorias de insumos: ' + error.message);
+            log(`   ✅ ${catsInsumo.length} cat. insumos`);
+        }
+
+        const recCatsRows = [
+            ...catsPreparo.map(c => ({ restaurant_id: restaurantId, name: c.categoria, recipe_tipo: 'preparo' as const })),
+            ...catsFicha.map(c => ({ restaurant_id: restaurantId, name: c.categoria, recipe_tipo: 'ficha' as const })),
+        ];
+        if (recCatsRows.length > 0) {
+            const { error } = await supabase
+                .from('recipe_categories')
+                .upsert(recCatsRows, { onConflict: 'restaurant_id,recipe_tipo,name', ignoreDuplicates: true });
+            if (error) throw new Error('Erro em categorias de preparos/fichas: ' + error.message);
+            log(`   ✅ ${catsPreparo.length} cat. preparos + ${catsFicha.length} cat. fichas`);
+        }
+    }
+
     // ── 1) Inserir Insumos novos ──
     const insumosNovos = parsed.insumos.filter(i => !ingByName.has(normKey(i.nome)));
     const insumosPulados = parsed.insumos.length - insumosNovos.length;
