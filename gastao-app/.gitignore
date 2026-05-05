@@ -28,6 +28,10 @@ supabase/.branches/
 /*.csv
 /gastao_import_*_LOG.txt
 
+# Pastas de XLSX brutos por cliente (dados privados, scripts de conversão
+# leem de lá mas o output não vai pro repo)
+fichas brut/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
