@@ -40,8 +40,10 @@ import path from 'node:path';
 const DIR = path.join(import.meta.dirname, '..', 'fichas brut');
 const FILE_FOOD = 'fichas tecnicas atualizadas abril 2026_1776282649245.xlsx';
 const FILE_DRINKS = 'PLANILHA DE CMV BRUT E ROSE 2026_1776283104217.xlsx';
-const OUT_XLSX = path.join(DIR, 'Brut_Planilha_Mae.xlsx');
-const OUT_LOG = path.join(DIR, 'Brut_Planilha_Mae_LOG.txt');
+// Sufixo de timestamp pra não conflitar com arquivo aberto no Excel
+const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+const OUT_XLSX = path.join(DIR, `Brut_Planilha_Mae_${ts}.xlsx`);
+const OUT_LOG  = path.join(DIR, `Brut_Planilha_Mae_${ts}_LOG.txt`);
 
 // ── classificação das abas do arq1 (já validado em convert-fichas.js) ─────
 const ABAS_FOOD = {
@@ -131,7 +133,11 @@ function parseEstoque(wb) {
     for (let i = 2; i < aoa.length; i++) {
         const r = aoa[i] || [];
         const nome = String(r[3] ?? '').trim();
-        if (!nome || nome.toLowerCase() === 'nome do item' || nome === '-') continue;
+        const nl = nome.toLowerCase();
+        // Skip placeholders/templates do Estoque (header repetido, "Nome da Receita" etc)
+        if (!nome || nl === 'nome do item' || nl === 'nome da receita'
+            || nl === 'nome do prato' || nl === 'frutas frescas'
+            || nome === '-' || nome === 'x') continue;
 
         const precoCompra = toNum(r[8]);
         const qtdEmb      = toNum(r[9]) || 1;
@@ -211,8 +217,8 @@ function parseBlocos(aoa, tipo) {
         const ini = inicios[b];
         const fim = inicios[b + 1];
         const header = aoa[ini] || [];
-        const nome = String(header[4] ?? '').trim();    // L2 col 4 = nome
-        const codigo = String(header[3] ?? '').trim();  // L2 col 3 = código (ex: "1.1")
+        const nome = String(header[5] ?? '').trim();    // L2 col F = nome (col 5 0-indexed)
+        const codigo = String(header[4] ?? '').trim();  // L2 col E = código (ex: "1.1")
 
         // descarta bloco placeholder/vazio
         const nl = nome.toLowerCase();
@@ -221,11 +227,11 @@ function parseBlocos(aoa, tipo) {
             continue;
         }
 
-        // procura header de INGREDIENTES dentro do bloco
+        // procura header de INGREDIENTES dentro do bloco (col C, idx 2 0-based)
         let ingHeaderIdx = -1;
         for (let i = ini; i < fim; i++) {
-            const c1 = String(aoa[i]?.[1] ?? '').trim();
-            if (c1 === 'INGREDIENTES') { ingHeaderIdx = i; break; }
+            const c2 = String(aoa[i]?.[2] ?? '').trim();
+            if (c2 === 'INGREDIENTES') { ingHeaderIdx = i; break; }
         }
         if (ingHeaderIdx < 0) { descartados++; continue; }
 
