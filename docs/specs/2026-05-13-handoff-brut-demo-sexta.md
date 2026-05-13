@@ -99,9 +99,9 @@ Estruturar a narrativa:
 ## Estado do mundo
 
 ### Repo
-- Branch: `master`
-- Último commit relevante: `dd03472 docs(handoff): pivot B2B2B via BPO Cinco + conversor BRUT WIP`
-- Tem alterações em `scripts/convert-brut.mjs` **não commitadas** (os fixes dessa sessão). **Próxima Claude precisa commitar** com mensagem tipo `fix(convert-brut): corrige offsets dos parseBlocos/parseEstoque`.
+- Branch: `master` (pushed)
+- Último commit: `2d7d408 fix(convert-brut): corrige offsets do parseBlocos/parseEstoque`
+- No servidor: `git pull` traz os fixes + esse handoff.
 
 ### Deploy
 - Prod: https://gastao-app.vercel.app — atualizada hoje (deploy `dpl_FWMdWQNT7CfU56hyrTkvPT4ra9vJ`)
