@@ -241,34 +241,16 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         setLoading(false);
     };
 
-    // Custo por unidade de cada preparo — memoizado.
-    // Considera insumos diretos (preparoIngs) E sub-preparos (fichaSubs com recipe_id de preparo).
-    // Multi-pass pra resolver cascata preparo→preparo (ex: Aligot usa Mix de queijos).
+    // Custo por unidade de cada preparo — memoizado
     const preparoCostPerUnit = useMemo(() => {
         const map: Record<string, number> = {};
-        // Inicializa cada preparo com 0 pra evitar undefined em deps recursivas
-        preparos.forEach(p => { map[p.id] = 0; });
-        for (let pass = 0; pass < 5; pass++) {
-            let changed = false;
-            preparos.forEach(p => {
-                const items = preparoIngs[p.id] ?? [];
-                const subs  = fichaSubs[p.id] ?? []; // sub-preparos usados POR este preparo
-                const ingCost = items.reduce(
-                    (acc, i) => acc + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0,
-                );
-                const subCost = subs.reduce(
-                    (acc, s) => acc + (map[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0,
-                );
-                const perUnit = (ingCost + subCost) / (p.yield_quantity || 1);
-                if (map[p.id] !== perUnit) {
-                    map[p.id] = perUnit;
-                    changed = true;
-                }
-            });
-            if (!changed) break;
-        }
+        preparos.forEach(p => {
+            const items = preparoIngs[p.id] ?? [];
+            const total = items.reduce((acc, i) => acc + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0);
+            map[p.id] = total / (p.yield_quantity || 1);
+        });
         return map;
-    }, [preparos, preparoIngs, fichaSubs]);
+    }, [preparos, preparoIngs]);
 
     // Custo total de cada ficha final — memoizado
     // Suporta combos: fichas finais podem conter outras fichas finais como sub-itens
