@@ -20,9 +20,10 @@ interface SaleRecord {
     sold_at: string;
 }
 
-type DateFilter = 'today' | 'week' | 'month';
+type DateFilter = 'today' | 'week' | 'month' | 'all';
 
-const getStartDate = (filter: DateFilter): Date => {
+const getStartDate = (filter: DateFilter): Date | null => {
+    if (filter === 'all') return null; // sem filtro de data
     const now = new Date();
     if (filter === 'today') {
         return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -72,11 +73,12 @@ export const Sales = () => {
     const fetchSales = useCallback(async (filter: DateFilter) => {
         setLoadingSales(true);
         const startDate = getStartDate(filter);
-        const { data } = await supabase
+        let query = supabase
             .from('sales')
             .select('id, recipe_id, quantity_sold, unit_price, total_value, sold_at')
-            .gte('sold_at', startDate.toISOString())
             .order('sold_at', { ascending: false });
+        if (startDate) query = query.gte('sold_at', startDate.toISOString());
+        const { data } = await query;
         if (data) setSales(data);
         setLoadingSales(false);
     }, []);
@@ -146,6 +148,7 @@ export const Sales = () => {
         today: 'Hoje',
         week: 'Esta Semana',
         month: 'Este Mês',
+        all: 'Tudo',
     };
 
     return (
@@ -260,7 +263,7 @@ export const Sales = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Filter tabs */}
                 <div className="p-4 border-b border-slate-200 bg-slate-50 flex space-x-1">
-                    {(['today', 'week', 'month'] as DateFilter[]).map(f => (
+                    {(['today', 'week', 'month', 'all'] as DateFilter[]).map(f => (
                         <button
                             key={f}
                             onClick={() => setDateFilter(f)}
