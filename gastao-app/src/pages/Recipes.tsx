@@ -117,8 +117,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             supabase.from('ingredients').select('*').eq('tipo', 'insumo_direto').order('name'),
             supabase.from('ingredients').select('*').eq('tipo', 'embalagem').order('name'),
             supabase.from('recipe_ingredients').select(`
-                id, recipe_id, ingredient_id, quantity_needed,
-                ingredients ( id, name, unit_type, avg_cost_per_unit, aproveitamento, tipo )
+                id, recipe_id, ingredient_id, sub_recipe_id, quantity_needed,
+                ingredients ( id, name, unit_type, avg_cost_per_unit, aproveitamento, tipo ),
+                sub_recipe:recipes!recipe_ingredients_sub_recipe_id_fkey ( id, product_name, tipo, yield_quantity, unit_type )
             `),
             supabase.from('recipe_sub_recipes').select(`
                 id, recipe_id, sub_recipe_id, quantity_needed,
@@ -168,7 +169,29 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             (fichasRes.data ?? []).forEach((f: Recipe) => recipeNameById.set(f.id, f.product_name));
             (preparosRes.data ?? []).forEach((p: Recipe) => recipeNameById.set(p.id, p.product_name));
 
+            // ── Inclui também sub-preparos via recipe_ingredients.sub_recipe_id
+            // (rota legada usada pela UI do /preparos). Dedup por (recipe_id, sub_recipe_id).
+            const seenPairs = new Set<string>();
+            (allIngsRes.data ?? []).forEach((item: any) => {
+                if (!item.sub_recipe_id || !item.sub_recipe) return;
+                const key = `${item.recipe_id}:${item.sub_recipe_id}`;
+                if (seenPairs.has(key)) return;
+                seenPairs.add(key);
+                if (!subMap[item.recipe_id]) subMap[item.recipe_id] = [];
+                subMap[item.recipe_id].push(item);
+                if (item.recipe_id !== item.sub_recipe_id) {
+                    const parentName = recipeNameById.get(item.recipe_id);
+                    if (parentName) {
+                        if (!reverseMap[item.sub_recipe_id]) reverseMap[item.sub_recipe_id] = [];
+                        reverseMap[item.sub_recipe_id].push({ id: item.recipe_id, name: parentName });
+                    }
+                }
+            });
+
             subsRes.data.forEach((item: any) => {
+                const key = `${item.recipe_id}:${item.sub_recipe_id}`;
+                if (seenPairs.has(key)) return; // já foi via recipe_ingredients (dedup)
+                seenPairs.add(key);
                 if (!subMap[item.recipe_id]) subMap[item.recipe_id] = [];
                 subMap[item.recipe_id].push(item);
 
