@@ -12,7 +12,7 @@ import { usePermissions } from '../hooks/usePermissions';
 // ─── tipos locais para o modal ────────────────────────────────────────────────
 type EditIngItem = RecipeIngredient;
 type EditSubItem = Omit<RecipeSubRecipe, 'sub_recipe'> & {
-    sub_recipe: Pick<Recipe, 'id' | 'product_name' | 'tipo' | 'yield_quantity'>;
+    sub_recipe: Pick<Recipe, 'id' | 'product_name' | 'tipo' | 'yield_quantity' | 'unit_type'>;
 };
 type AddTab = 'preparo' | 'insumo' | 'embalagem';
 
@@ -101,7 +101,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             `),
             supabase.from('recipe_sub_recipes').select(`
                 id, recipe_id, sub_recipe_id, quantity_needed,
-                sub_recipe:recipes!recipe_sub_recipes_sub_recipe_id_fkey ( id, product_name, tipo, yield_quantity )
+                sub_recipe:recipes!recipe_sub_recipes_sub_recipe_id_fkey ( id, product_name, tipo, yield_quantity, unit_type )
             `),
             supabase.from('recipe_categories').select('name').eq('recipe_tipo', 'ficha').order('name'),
         ]);
@@ -738,7 +738,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                         )}
                                                     </span>
                                                     <div className="flex items-center gap-3 text-slate-500">
-                                                        <span>{s.quantity_needed} un</span>
+                                                        <span>{s.quantity_needed} {s.sub_recipe.unit_type || 'un'}</span>
                                                         <span className="font-semibold text-slate-700">
                                                             {fmtMoney((unifiedCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed)}
                                                         </span>
@@ -914,7 +914,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     }}
                                                     className="w-16 px-2 py-1 border border-amber-200 rounded-lg text-right text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white"
                                                 />
-                                                <span className="text-xs text-slate-400 w-6">un</span>
+                                                <span className="text-xs text-slate-400 w-6">{item.sub_recipe.unit_type || 'un'}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                                     {fmtMoney((unifiedCostMap[item.sub_recipe_id] ?? 0) * item.quantity_needed)}
                                                 </span>
@@ -1070,7 +1070,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                             >
                                                                 <span className="text-sm font-medium text-slate-700">{p.product_name}</span>
                                                                 <span className="text-xs text-amber-600 font-semibold">
-                                                                    {p.tipo === 'ficha_final' ? fmtMoney(fichaCostMap[p.id] ?? 0) : `${fmtMoney(preparoCostPerUnit[p.id] ?? 0)}/un`}
+                                                                    {p.tipo === 'ficha_final' ? fmtMoney(fichaCostMap[p.id] ?? 0) : `${fmtMoney(preparoCostPerUnit[p.id] ?? 0)}/${p.unit_type || 'un'}`}
                                                                 </span>
                                                             </div>
                                                         ))

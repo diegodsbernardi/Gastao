@@ -614,7 +614,7 @@ export const Preparos = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="text-right">
-                                            <p className="text-xs text-slate-400">Custo / un</p>
+                                            <p className="text-xs text-slate-400">Custo / {preparo.unit_type || 'un'}</p>
                                             <p className="text-base font-bold text-amber-600">{fmtMoney(perUnit)}</p>
                                         </div>
                                         <button
@@ -889,7 +889,7 @@ export const Preparos = () => {
                             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 sm:rounded-b-2xl flex justify-between items-center">
                                 {(newItems.length > 0 || newSubItems.length > 0) && (
                                     <span className="text-sm text-slate-500">
-                                        Custo: <strong className="text-amber-600">{fmtMoney(newCosts)}</strong> /un
+                                        Custo: <strong className="text-amber-600">{fmtMoney(newCosts)}</strong> /{newUnit || 'un'}
                                     </span>
                                 )}
                                 <div className="flex gap-2 ml-auto">
