@@ -18,25 +18,43 @@ type AddTab = 'preparo' | 'insumo' | 'embalagem';
 
 const DEFAULT_CATEGORIES = ['Lanche', 'Porção', 'Sobremesa', 'Combo', 'Bebida', 'Outro'];
 
+// ─── Cache em memória pra eliminar "blink" entre rotas ───────────────────────
+// Module-level state sobrevive a unmount/remount do componente. Hydrata os
+// useStates na primeira render, evitando skeleton ao voltar pra esta página.
+// Fetch fresh roda em background pra manter os dados sincronizados.
+type RecipesCache = {
+    fichas: Recipe[];
+    preparos: Recipe[];
+    insumosDiretos: Ingredient[];
+    embalagens: Ingredient[];
+    customCategories: string[];
+    fichaIngs: Record<string, EditIngItem[]>;
+    fichaSubs: Record<string, EditSubItem[]>;
+    preparoIngs: Record<string, RecipeIngredient[]>;
+    usedByMap: Record<string, { id: string; name: string }[]>;
+};
+let recipesCache: RecipesCache | null = null;
+
 export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) => {
     const { user, restauranteId } = useAuth();
     const { viewMode, canViewCMV, canViewCosts, canEdit } = usePermissions();
 
-    // ── dados principais ──────────────────────────────────────────────────────
-    const [fichas, setFichas] = useState<Recipe[]>([]);
-    const [preparos, setPreparos] = useState<Recipe[]>([]);
-    const [insumosDiretos, setInsumosDiretos] = useState<Ingredient[]>([]);
-    const [embalagens, setEmbalagens] = useState<Ingredient[]>([]);
-    const [customCategories, setCustomCategories] = useState<string[]>([]);
+    // ── dados principais (hidratam do cache em memória pra evitar "blink") ───
+    const [fichas, setFichas] = useState<Recipe[]>(() => recipesCache?.fichas ?? []);
+    const [preparos, setPreparos] = useState<Recipe[]>(() => recipesCache?.preparos ?? []);
+    const [insumosDiretos, setInsumosDiretos] = useState<Ingredient[]>(() => recipesCache?.insumosDiretos ?? []);
+    const [embalagens, setEmbalagens] = useState<Ingredient[]>(() => recipesCache?.embalagens ?? []);
+    const [customCategories, setCustomCategories] = useState<string[]>(() => recipesCache?.customCategories ?? []);
     // composições das fichas finais
-    const [fichaIngs, setFichaIngs] = useState<Record<string, EditIngItem[]>>({});
-    const [fichaSubs, setFichaSubs] = useState<Record<string, EditSubItem[]>>({});
+    const [fichaIngs, setFichaIngs] = useState<Record<string, EditIngItem[]>>(() => recipesCache?.fichaIngs ?? {});
+    const [fichaSubs, setFichaSubs] = useState<Record<string, EditSubItem[]>>(() => recipesCache?.fichaSubs ?? {});
     // composições dos preparos (para calcular custo/un)
-    const [preparoIngs, setPreparoIngs] = useState<Record<string, RecipeIngredient[]>>({});
+    const [preparoIngs, setPreparoIngs] = useState<Record<string, RecipeIngredient[]>>(() => recipesCache?.preparoIngs ?? {});
     // quem usa essa receita como sub-componente (id da receita usada → fichas que dependem)
-    const [usedByMap, setUsedByMap] = useState<Record<string, { id: string; name: string }[]>>({});
+    const [usedByMap, setUsedByMap] = useState<Record<string, { id: string; name: string }[]>>(() => recipesCache?.usedByMap ?? {});
 
-    const [loading, setLoading] = useState(true);
+    // loading=true só se NÃO tem cache; senão renderiza dado em cache e refetcha em background
+    const [loading, setLoading] = useState(() => !recipesCache);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('Todas');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -87,7 +105,8 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     useEffect(() => { if (user) fetchData(); }, [user]);
 
     const fetchData = async () => {
-        setLoading(true);
+        // Só mostra skeleton se NÃO tem cache (primeira carga); senão refetch silencioso
+        if (!recipesCache) setLoading(true);
 
         // Todos os fetches em paralelo — sem waterfall
         const [fichasRes, preparosRes, insumosDiretosRes, embalagemRes, allIngsRes, subsRes, catsRes] = await Promise.all([
@@ -163,6 +182,61 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             setFichaSubs(subMap);
             setUsedByMap(reverseMap);
         }
+
+        // Snapshot final pro cache de módulo (próxima montagem hidrata daqui)
+        recipesCache = {
+            fichas: fichasRes.data ?? [],
+            preparos: preparosRes.data ?? [],
+            insumosDiretos: insumosDiretosRes.data ?? [],
+            embalagens: embalagemRes.data ?? [],
+            customCategories: catsRes.data?.map((c: any) => c.name) ?? [],
+            fichaIngs: allIngsRes.data && fichasRes.data
+                ? (() => {
+                    const fIds = new Set(fichasRes.data.map((r: Recipe) => r.id));
+                    const map: Record<string, EditIngItem[]> = {};
+                    allIngsRes.data.forEach((item: any) => {
+                        if (!item.ingredients) return;
+                        if (fIds.has(item.recipe_id)) {
+                            (map[item.recipe_id] ??= []).push(item);
+                        }
+                    });
+                    return map;
+                })()
+                : {},
+            fichaSubs: subsRes.data
+                ? subsRes.data.reduce((acc: Record<string, EditSubItem[]>, item: any) => {
+                    (acc[item.recipe_id] ??= []).push(item);
+                    return acc;
+                }, {})
+                : {},
+            preparoIngs: allIngsRes.data && preparosRes.data
+                ? (() => {
+                    const pIds = new Set(preparosRes.data.map((r: Recipe) => r.id));
+                    const map: Record<string, RecipeIngredient[]> = {};
+                    allIngsRes.data.forEach((item: any) => {
+                        if (!item.ingredients) return;
+                        if (pIds.has(item.recipe_id)) {
+                            (map[item.recipe_id] ??= []).push(item);
+                        }
+                    });
+                    return map;
+                })()
+                : {},
+            usedByMap: subsRes.data && fichasRes.data && preparosRes.data
+                ? (() => {
+                    const map: Record<string, { id: string; name: string }[]> = {};
+                    const nameById = new Map<string, string>();
+                    (fichasRes.data ?? []).forEach((f: Recipe) => nameById.set(f.id, f.product_name));
+                    (preparosRes.data ?? []).forEach((p: Recipe) => nameById.set(p.id, p.product_name));
+                    subsRes.data.forEach((item: any) => {
+                        if (item.recipe_id === item.sub_recipe_id) return;
+                        const n = nameById.get(item.recipe_id);
+                        if (n) (map[item.sub_recipe_id] ??= []).push({ id: item.recipe_id, name: n });
+                    });
+                    return map;
+                })()
+                : {},
+        };
 
         setLoading(false);
     };

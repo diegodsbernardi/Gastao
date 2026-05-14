@@ -23,20 +23,29 @@ interface PreparoSubEntry {
     };
 }
 
+// ─── Cache em memória pra eliminar "blink" entre rotas ───────────────────────
+type PreparosCache = {
+    preparos: Recipe[];
+    ingredients: Ingredient[];
+    compositions: Record<string, RecipeIngredient[]>;
+    subCompositions: Record<string, PreparoSubEntry[]>;
+    usedByMap: Record<string, { id: string; name: string; kind: 'ficha' | 'preparo' }[]>;
+    customCategories: string[];
+};
+let preparosCache: PreparosCache | null = null;
+
 export const Preparos = () => {
     const { user, restauranteId } = useAuth();
 
-    const [preparos, setPreparos] = useState<Recipe[]>([]);
-    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-    const [compositions, setCompositions] = useState<Record<string, RecipeIngredient[]>>({});
-    // Sub-preparos usados por cada preparo (preparo pai → lista de sub-preparos)
-    const [subCompositions, setSubCompositions] = useState<Record<string, PreparoSubEntry[]>>({});
-    // Quem usa esse preparo como sub-componente (preparo → fichas/preparos que dependem)
-    const [usedByMap, setUsedByMap] = useState<Record<string, { id: string; name: string; kind: 'ficha' | 'preparo' }[]>>({});
-    const [loading, setLoading] = useState(true);
+    const [preparos, setPreparos] = useState<Recipe[]>(() => preparosCache?.preparos ?? []);
+    const [ingredients, setIngredients] = useState<Ingredient[]>(() => preparosCache?.ingredients ?? []);
+    const [compositions, setCompositions] = useState<Record<string, RecipeIngredient[]>>(() => preparosCache?.compositions ?? {});
+    const [subCompositions, setSubCompositions] = useState<Record<string, PreparoSubEntry[]>>(() => preparosCache?.subCompositions ?? {});
+    const [usedByMap, setUsedByMap] = useState<Record<string, { id: string; name: string; kind: 'ficha' | 'preparo' }[]>>(() => preparosCache?.usedByMap ?? {});
+    const [loading, setLoading] = useState(() => !preparosCache);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('Todas');
-    const [customCategories, setCustomCategories] = useState<string[]>([]);
+    const [customCategories, setCustomCategories] = useState<string[]>(() => preparosCache?.customCategories ?? []);
 
     // Modal: novo preparo
     const [showNewModal, setShowNewModal] = useState(false);
@@ -80,7 +89,7 @@ export const Preparos = () => {
     }, [user]);
 
     const fetchData = async () => {
-        setLoading(true);
+        if (!preparosCache) setLoading(true);
 
         const [preparosRes, ingredientsRes, compositionsRes, subsRes, catsRes] = await Promise.all([
             supabase.from('recipes').select('*').eq('tipo', 'preparo').order('product_name'),
@@ -150,6 +159,16 @@ export const Preparos = () => {
             });
         }
         setUsedByMap(reverse);
+
+        // Snapshot pro cache em memória
+        preparosCache = {
+            preparos: preparosRes.data ?? [],
+            ingredients: ingredientsRes.data ?? [],
+            compositions: ingsGrouped,
+            subCompositions: subsGrouped,
+            usedByMap: reverse,
+            customCategories: catsRes.data?.map((c: any) => c.name) ?? [],
+        };
 
         setLoading(false);
     };
