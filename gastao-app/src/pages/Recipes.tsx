@@ -8,6 +8,7 @@ import {
 import type { Ingredient, Recipe, RecipeIngredient, RecipeSubRecipe } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
 import { usePermissions } from '../hooks/usePermissions';
+import { buildPreparoCostMapRecursive, type PreparoNode } from '../lib/costCalculator';
 
 // ─── tipos locais para o modal ────────────────────────────────────────────────
 type EditIngItem = RecipeIngredient;
@@ -56,7 +57,8 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     // loading=true só se NÃO tem cache; senão renderiza dado em cache e refetcha em background
     const [loading, setLoading] = useState(() => !recipesCache);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('Todas');
+    // Set vazio = mostra tudo (equivalente a "Todas"); senão filtra pelas selecionadas
+    const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     // Sort: nome (default) | CMV asc (mais saudável primeiro) | CMV desc (mais crítico primeiro)
     const [sortMode, setSortMode] = useState<'name' | 'cmv-asc' | 'cmv-desc'>('name');
@@ -241,16 +243,27 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         setLoading(false);
     };
 
-    // Custo por unidade de cada preparo — memoizado
+    // Custo por unidade de cada preparo — usa buildPreparoCostMapRecursive
+    // (mesma função do /preparos: resolve sub-preparos recursivamente, detecta ciclos).
     const preparoCostPerUnit = useMemo(() => {
-        const map: Record<string, number> = {};
-        preparos.forEach(p => {
-            const items = preparoIngs[p.id] ?? [];
-            const total = items.reduce((acc, i) => acc + (i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1)) * i.quantity_needed, 0);
-            map[p.id] = total / (p.yield_quantity || 1);
-        });
-        return map;
-    }, [preparos, preparoIngs]);
+        // Constrói PreparoNode[] no shape esperado pelo calculador
+        const nodes: PreparoNode[] = preparos.map(p => ({
+            id: p.id,
+            yield_quantity: p.yield_quantity || 1,
+            // ingredients: custo BRUTO já dividido por aproveitamento (caller aplica)
+            ingredients: (preparoIngs[p.id] ?? []).map(i => ({
+                avg_cost_per_unit: i.ingredients.avg_cost_per_unit / (i.ingredients.aproveitamento || 1),
+                quantity_needed: i.quantity_needed,
+            })),
+            // sub-preparos: lê de fichaSubs (que pra preparos contém recipe_sub_recipes deles também)
+            subRecipes: (fichaSubs[p.id] ?? []).map(s => ({
+                sub_recipe_id: s.sub_recipe_id,
+                quantity_needed: s.quantity_needed,
+            })),
+        }));
+        const { costPerUnit } = buildPreparoCostMapRecursive(nodes);
+        return costPerUnit;
+    }, [preparos, preparoIngs, fichaSubs]);
 
     // Custo total de cada ficha final — memoizado
     // Suporta combos: fichas finais podem conter outras fichas finais como sub-itens
@@ -310,9 +323,11 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     const filteredFichas = useMemo(() => {
         const list = fichas.filter(f => {
             const matchSearch = f.product_name.toLowerCase().includes(searchQuery.toLowerCase());
+            // Filtro: categoryFilter (sidebar) tem prioridade; senão usa multi-select
+            // Set vazio = "Todas" = sem filtro
             const matchCat = categoryFilter
                 ? f.category === categoryFilter
-                : (activeCategory === 'Todas' || f.category === activeCategory);
+                : (activeCategories.size === 0 || activeCategories.has(f.category));
             return matchSearch && matchCat;
         });
 
@@ -334,7 +349,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             if (cb === null) return -1;
             return sortMode === 'cmv-asc' ? ca - cb : cb - ca;
         });
-    }, [fichas, searchQuery, activeCategory, categoryFilter, sortMode, fichaCostMap]);
+    }, [fichas, searchQuery, activeCategories, categoryFilter, sortMode, fichaCostMap]);
 
     // ─── CRUD ────────────────────────────────────────────────────────────────
 
@@ -645,15 +660,31 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             {/* Filtros */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 border border-slate-200 rounded-xl shadow-sm">
                 <div className="flex flex-wrap gap-2">
-                    {categories.map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => setActiveCategory(cat)}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${activeCategory === cat ? 'bg-slate-800 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
+                    {categories.map(cat => {
+                        // "Todas" = chip especial que limpa seleção; selecionado quando Set vazio
+                        const isTodas = cat === 'Todas';
+                        const isActive = isTodas ? activeCategories.size === 0 : activeCategories.has(cat);
+                        return (
+                            <button
+                                key={cat}
+                                onClick={() => {
+                                    if (isTodas) {
+                                        setActiveCategories(new Set());
+                                    } else {
+                                        setActiveCategories(prev => {
+                                            const next = new Set(prev);
+                                            if (next.has(cat)) next.delete(cat);
+                                            else next.add(cat);
+                                            return next;
+                                        });
+                                    }
+                                }}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${isActive ? 'bg-slate-800 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            >
+                                {cat}
+                            </button>
+                        );
+                    })}
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="relative">

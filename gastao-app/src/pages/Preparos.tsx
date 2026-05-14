@@ -44,7 +44,7 @@ export const Preparos = () => {
     const [usedByMap, setUsedByMap] = useState<Record<string, { id: string; name: string; kind: 'ficha' | 'preparo' }[]>>(() => preparosCache?.usedByMap ?? {});
     const [loading, setLoading] = useState(() => !preparosCache);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('Todas');
+    const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
     const [customCategories, setCustomCategories] = useState<string[]>(() => preparosCache?.customCategories ?? []);
 
     // Modal: novo preparo
@@ -247,10 +247,10 @@ export const Preparos = () => {
     const filteredPreparos = useMemo(
         () => preparos.filter(p => {
             const matchSearch = p.product_name.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchCat = activeCategory === 'Todas' || p.category === activeCategory;
+            const matchCat = activeCategories.size === 0 || activeCategories.has(p.category || '');
             return matchSearch && matchCat;
         }),
-        [preparos, searchQuery, activeCategory]
+        [preparos, searchQuery, activeCategories]
     );
 
     // Sub-preparos permitidos quando editando X:
@@ -568,15 +568,30 @@ export const Preparos = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 border border-slate-200 rounded-xl shadow-sm">
                 {categories.length > 1 ? (
                     <div className="flex flex-wrap gap-2">
-                        {categories.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setActiveCategory(cat)}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${activeCategory === cat ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
+                        {categories.map(cat => {
+                            const isTodas = cat === 'Todas';
+                            const isActive = isTodas ? activeCategories.size === 0 : activeCategories.has(cat);
+                            return (
+                                <button
+                                    key={cat}
+                                    onClick={() => {
+                                        if (isTodas) {
+                                            setActiveCategories(new Set());
+                                        } else {
+                                            setActiveCategories(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(cat)) next.delete(cat);
+                                                else next.add(cat);
+                                                return next;
+                                            });
+                                        }
+                                    }}
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${isActive ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                >
+                                    {cat}
+                                </button>
+                            );
+                        })}
                     </div>
                 ) : <div />}
                 <div className="relative w-full sm:w-72">
