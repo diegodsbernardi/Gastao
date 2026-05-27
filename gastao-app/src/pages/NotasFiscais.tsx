@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-    AlertCircle, Check, ChevronDown, FileText, Loader2,
-    Plus, Search, Upload, X,
+    AlertCircle, Check, ChevronDown, CheckCircle2, FileText, Files,
+    Loader2, Plus, Search, Upload, X, XCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
@@ -613,6 +613,317 @@ function UploadView({ onUploaded }: { onUploaded: (notaId: string) => void }) {
     );
 }
 
+// ── View: Upload em lote (BPO) ─────────────────────────────────────────────
+//
+// Aceita N XMLs ao mesmo tempo e processa em loop sequencial (não paralelo —
+// evita rate limit nas edge functions parse-nfe e match-nfe-items).
+// Faz dedup soft client-side antes do upload via parse leve do XML
+// (extrai numero + cnpj + data). Notas já existentes no banco viram "duplicada"
+// sem reprocessar (poupa storage + edge function calls).
+// =============================================================================
+
+type BulkStatus = 'pending' | 'processing' | 'success' | 'duplicate' | 'error';
+
+interface BulkResult {
+    fileName: string;
+    status: BulkStatus;
+    notaId?: string;
+    valor?: number;
+    motivo?: string;
+    error?: string;
+}
+
+/** Parse leve do XML pra extrair só os 3 campos necessários pro dedup. */
+function parseLightNFe(xmlText: string): { numero: string; cnpj: string; dataEmi: string } | null {
+    try {
+        const stripped = xmlText
+            .replace(/\s+xmlns(?::[a-zA-Z0-9_-]+)?="[^"]*"/g, '')
+            .replace(/<([/]?)([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)/g, '<$1$3');
+        const dom = new DOMParser().parseFromString(stripped, 'text/xml');
+        const numero = dom.querySelector('ide > nNF')?.textContent?.trim() ?? '';
+        const cnpj = dom.querySelector('emit > CNPJ')?.textContent?.trim() ?? '';
+        const dataRaw = dom.querySelector('ide > dhEmi')?.textContent?.trim()
+            ?? dom.querySelector('ide > dEmi')?.textContent?.trim() ?? '';
+        if (!numero || !cnpj) return null;
+        return { numero, cnpj, dataEmi: dataRaw.slice(0, 10) };
+    } catch {
+        return null;
+    }
+}
+
+function BulkUploadView({ onDone, onOpenNota }: { onDone: () => void; onOpenNota: (id: string) => void }) {
+    const [files, setFiles] = useState<File[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
+    const [phase, setPhase] = useState<'idle' | 'processing' | 'done'>('idle');
+    const [results, setResults] = useState<BulkResult[]>([]);
+    const [currentIdx, setCurrentIdx] = useState<number | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const addFiles = (newFiles: FileList | File[]) => {
+        const xmls = Array.from(newFiles).filter(f => f.name.toLowerCase().endsWith('.xml'));
+        if (xmls.length === 0) {
+            toast.error('Nenhum arquivo .xml selecionado');
+            return;
+        }
+        // dedup por nome
+        setFiles(prev => {
+            const seen = new Set(prev.map(f => f.name));
+            const novos = xmls.filter(f => !seen.has(f.name));
+            return [...prev, ...novos];
+        });
+    };
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+    }, []);
+
+    const removeFile = (idx: number) => {
+        setFiles(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleStart = async () => {
+        if (files.length === 0) return;
+        setPhase('processing');
+        const initialResults: BulkResult[] = files.map(f => ({ fileName: f.name, status: 'pending' }));
+        setResults(initialResults);
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            setCurrentIdx(i);
+            setResults(prev => prev.map((r, idx) => idx === i ? { ...r, status: 'processing' } : r));
+
+            try {
+                // 1. Parse leve pra dedup
+                const text = await file.text();
+                const light = parseLightNFe(text);
+
+                if (light) {
+                    const cnpjDigits = light.cnpj.replace(/\D/g, '');
+                    const { data: existing } = await supabase
+                        .from('notas_fiscais')
+                        .select('id, numero_nota, fornecedor_cnpj')
+                        .eq('numero_nota', light.numero)
+                        .ilike('fornecedor_cnpj', `%${cnpjDigits.slice(0, 8)}%`)
+                        .maybeSingle();
+                    if (existing?.id) {
+                        setResults(prev => prev.map((r, idx) => idx === i ? {
+                            ...r,
+                            status: 'duplicate',
+                            motivo: `NF ${light.numero} já existe`,
+                            notaId: existing.id as string,
+                        } : r));
+                        continue;
+                    }
+                }
+
+                // 2. Upload + parse + match completo
+                const notaId = await uploadNfeXml(file);
+
+                // 3. Pega valor pra exibir
+                const { data: nota } = await supabase
+                    .from('notas_fiscais')
+                    .select('valor_total')
+                    .eq('id', notaId)
+                    .single();
+
+                setResults(prev => prev.map((r, idx) => idx === i ? {
+                    ...r,
+                    status: 'success',
+                    notaId,
+                    valor: (nota?.valor_total as number | undefined) ?? undefined,
+                } : r));
+            } catch (err) {
+                setResults(prev => prev.map((r, idx) => idx === i ? {
+                    ...r,
+                    status: 'error',
+                    error: String(err).slice(0, 200),
+                } : r));
+            }
+        }
+
+        setCurrentIdx(null);
+        setPhase('done');
+    };
+
+    const summary = {
+        total: results.length,
+        success: results.filter(r => r.status === 'success').length,
+        duplicate: results.filter(r => r.status === 'duplicate').length,
+        error: results.filter(r => r.status === 'error').length,
+    };
+
+    const totalFatur = results
+        .filter(r => r.status === 'success' && r.valor)
+        .reduce((s, r) => s + (r.valor ?? 0), 0);
+
+    return (
+        <div className="max-w-3xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-800">Upload em lote — NF-e</h2>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                        Sobe vários XMLs de uma vez. Notas duplicadas (mesmo número + CNPJ) são puladas automaticamente.
+                    </p>
+                </div>
+                <button
+                    onClick={onDone}
+                    className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                    Voltar
+                </button>
+            </div>
+
+            {phase === 'idle' && (
+                <>
+                    {/* Drop zone */}
+                    <div
+                        onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={handleDrop}
+                        onClick={() => inputRef.current?.click()}
+                        className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
+                            isDragging ? 'border-primary-500 bg-primary-50' : 'border-slate-300 hover:border-slate-400 bg-white'
+                        }`}
+                    >
+                        <input
+                            ref={inputRef}
+                            type="file"
+                            accept=".xml"
+                            multiple
+                            className="hidden"
+                            onChange={e => { if (e.target.files) addFiles(e.target.files); }}
+                        />
+                        <Files className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-primary-500' : 'text-slate-400'}`} />
+                        <p className="text-slate-600 font-medium">Arraste vários XMLs aqui</p>
+                        <p className="text-sm text-slate-400 mt-1">ou clique pra selecionar (segura Ctrl/Cmd ou Shift)</p>
+                        {files.length > 0 && (
+                            <p className="mt-3 text-sm font-medium text-primary-700">
+                                {files.length} arquivo{files.length !== 1 ? 's' : ''} selecionado{files.length !== 1 ? 's' : ''}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Lista de selecionados */}
+                    {files.length > 0 && (
+                        <div className="bg-white rounded-xl border border-slate-200 p-4 max-h-72 overflow-y-auto">
+                            <ul className="divide-y divide-slate-100">
+                                {files.map((f, i) => (
+                                    <li key={i} className="flex items-center justify-between py-1.5 text-sm">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                            <span className="truncate text-slate-700">{f.name}</span>
+                                            <span className="text-xs text-slate-400 flex-shrink-0">{fmtFileSize(f.size)}</span>
+                                        </div>
+                                        <button
+                                            onClick={e => { e.stopPropagation(); removeFile(i); }}
+                                            className="text-slate-400 hover:text-red-500 p-1"
+                                            title="Remover"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {files.length > 0 && (
+                        <button
+                            onClick={handleStart}
+                            className="w-full py-3 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Upload className="w-4 h-4" />
+                            Processar {files.length} nota{files.length !== 1 ? 's' : ''}
+                        </button>
+                    )}
+                </>
+            )}
+
+            {(phase === 'processing' || phase === 'done') && (
+                <>
+                    {/* Progress header */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-semibold text-slate-700">
+                                {phase === 'processing'
+                                    ? `Processando ${(currentIdx ?? 0) + 1} de ${files.length}…`
+                                    : '🎉 Concluído'}
+                            </div>
+                            <div className="text-xs font-mono text-slate-500">
+                                {summary.success} ok · {summary.duplicate} dup · {summary.error} erro
+                            </div>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-primary-500 transition-all duration-300"
+                                style={{ width: `${(((currentIdx ?? results.length) + (phase === 'done' ? 0 : 1)) / files.length) * 100}%` }}
+                            />
+                        </div>
+                        {phase === 'done' && totalFatur > 0 && (
+                            <div className="mt-3 text-sm text-slate-600">
+                                Faturamento total das notas novas:{' '}
+                                <span className="font-semibold text-slate-800">{fmtCurrency(totalFatur)}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Lista de resultados */}
+                    <div className="bg-slate-900 rounded-xl p-4 max-h-96 overflow-y-auto text-xs font-mono leading-relaxed">
+                        {results.map((r, i) => (
+                            <div key={i} className="flex items-start gap-2 py-0.5">
+                                {r.status === 'pending'    && <span className="text-slate-500">⏸</span>}
+                                {r.status === 'processing' && <Loader2 className="w-3 h-3 animate-spin text-primary-400 mt-0.5" />}
+                                {r.status === 'success'    && <CheckCircle2 className="w-3 h-3 text-emerald-400 mt-0.5 flex-shrink-0" />}
+                                {r.status === 'duplicate'  && <span className="text-amber-400">⊘</span>}
+                                {r.status === 'error'      && <XCircle className="w-3 h-3 text-red-400 mt-0.5 flex-shrink-0" />}
+                                <span className={
+                                    r.status === 'success'    ? 'text-emerald-300' :
+                                    r.status === 'duplicate'  ? 'text-amber-300' :
+                                    r.status === 'error'      ? 'text-red-300' :
+                                    r.status === 'processing' ? 'text-primary-300' :
+                                                                'text-slate-400'
+                                }>
+                                    {r.fileName.replace(/^NFe/, 'NFe ')}
+                                </span>
+                                {r.valor !== undefined && <span className="text-slate-400 ml-1">— {fmtCurrency(r.valor)}</span>}
+                                {r.motivo && <span className="text-slate-400 ml-1">— {r.motivo}</span>}
+                                {r.error && <span className="text-red-400 ml-1">— {r.error}</span>}
+                                {r.notaId && (r.status === 'success' || r.status === 'duplicate') && (
+                                    <button
+                                        onClick={() => onOpenNota(r.notaId!)}
+                                        className="ml-auto text-primary-400 hover:text-primary-300 underline"
+                                    >
+                                        revisar
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {phase === 'done' && (
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => { setFiles([]); setResults([]); setPhase('idle'); }}
+                                className="flex-1 py-2.5 text-sm font-medium text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-50"
+                            >
+                                Subir outro lote
+                            </button>
+                            <button
+                                onClick={onDone}
+                                className="flex-1 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700"
+                            >
+                                Ver lista de notas
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
 // ── View: Revisão dos itens ────────────────────────────────────────────────
 
 function ReviewView({
@@ -869,9 +1180,10 @@ function ReviewView({
 // ── View: Lista de notas ───────────────────────────────────────────────────
 
 function ListaView({
-    onImportar, onOpenNota,
+    onImportar, onImportarLote, onOpenNota,
 }: {
     onImportar: () => void;
+    onImportarLote: () => void;
     onOpenNota: (id: string) => void;
 }) {
     const [notas, setNotas] = useState<NotaFiscal[]>([]);
@@ -905,13 +1217,22 @@ function ListaView({
                     <h1 className="text-2xl font-bold text-slate-800">Notas Fiscais</h1>
                     <p className="text-sm text-slate-500 mt-0.5">Importe e gerencie NF-e XML</p>
                 </div>
-                <button
-                    onClick={onImportar}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm"
-                >
-                    <Upload className="w-4 h-4" />
-                    Importar NF-e
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={onImportarLote}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 border border-primary-300 bg-white rounded-xl hover:bg-primary-50 transition-colors shadow-sm"
+                    >
+                        <Files className="w-4 h-4" />
+                        Upload em lote
+                    </button>
+                    <button
+                        onClick={onImportar}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Importar NF-e
+                    </button>
+                </div>
             </div>
 
             {notas.length === 0 ? (
@@ -967,7 +1288,7 @@ function ListaView({
 
 // ── Page principal ─────────────────────────────────────────────────────────
 
-type View = 'list' | 'upload' | 'review';
+type View = 'list' | 'upload' | 'bulk' | 'review';
 
 export function NotasFiscais() {
     const navigate = useNavigate();
@@ -991,6 +1312,15 @@ export function NotasFiscais() {
         );
     }
 
+    if (view === 'bulk') {
+        return (
+            <BulkUploadView
+                onDone={() => setView('list')}
+                onOpenNota={(id) => { setReviewNotaId(id); setView('review'); }}
+            />
+        );
+    }
+
     if (view === 'review' && reviewNotaId) {
         return (
             <ReviewView
@@ -1004,6 +1334,7 @@ export function NotasFiscais() {
     return (
         <ListaView
             onImportar={() => setView('upload')}
+            onImportarLote={() => setView('bulk')}
             onOpenNota={(id) => {
                 setReviewNotaId(id);
                 setView('review');

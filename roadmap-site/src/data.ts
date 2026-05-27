@@ -19,7 +19,7 @@ export interface Milestone {
   notes?: string;
 }
 
-export const lastUpdated = '2026-05-26';
+export const lastUpdated = '2026-05-27';
 
 export const milestones: Milestone[] = [
   {
@@ -69,15 +69,15 @@ export const milestones: Milestone[] = [
     status: 'in_progress',
     estimatedHours: '5-6h',
     items: [
-      { text: 'Componente BulkUploadView (multi-file + drag pasta)', done: false, inProgress: true },
-      { text: 'Loop sequencial com progress visual', done: false },
-      { text: 'Skip soft de duplicatas (numero + cnpj + data)', done: false },
-      { text: 'Log final agregado: X processados / Y duplicados / Z erros', done: false },
-      { text: 'Migrar match-nfe-items de OpenAI gpt-4o-mini → Claude (Haiku/Sonnet)', done: false },
+      { text: 'Componente BulkUploadView (multi-file + drag pasta)', done: true, date: '2026-05-27' },
+      { text: 'Loop sequencial com progress visual', done: true, date: '2026-05-27' },
+      { text: 'Skip soft de duplicatas (numero + cnpj + data) via parseLightNFe client-side', done: true, date: '2026-05-27' },
+      { text: 'Log final agregado: X processados / Y duplicados / Z erros + links de revisão', done: true, date: '2026-05-27' },
+      { text: 'Migrar match-nfe-items de OpenAI gpt-4o-mini → Claude (Haiku/Sonnet)', done: false, inProgress: true },
       { text: 'Extração de embalagem + qty canônica (10 PCT × 1kg = 10kg)', done: false },
       { text: 'Cache local de mapeamentos (fornecedor + descrição → insumo)', done: false },
       { text: 'Atualização de avg_cost_per_unit pelo último/médio preço', done: false },
-      { text: 'Teste end-to-end com 5-10 XMLs reais', done: false },
+      { text: 'Teste end-to-end com 5-10 XMLs reais (50 disponíveis na pasta NotasEntrada da Dani)', done: false },
     ],
   },
   {
