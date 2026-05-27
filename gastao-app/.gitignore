@@ -31,6 +31,8 @@ supabase/.branches/
 # Pastas de XLSX brutos por cliente (dados privados, scripts de conversão
 # leem de lá mas o output não vai pro repo)
 fichas brut/
+fichas criminal/
+fichas yalinha/
 
 # Editor directories and files
 .vscode/*
