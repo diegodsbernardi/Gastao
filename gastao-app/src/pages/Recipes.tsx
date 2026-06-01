@@ -114,7 +114,10 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         const [fichasRes, preparosRes, insumosDiretosRes, embalagemRes, allIngsRes, subsRes, catsRes] = await Promise.all([
             supabase.from('recipes').select('*').eq('tipo', 'ficha_final').order('product_name'),
             supabase.from('recipes').select('*').eq('tipo', 'preparo').order('product_name'),
-            supabase.from('ingredients').select('*').eq('tipo', 'insumo_direto').order('name'),
+            // Picker de "Item pronto" na ficha aceita TUDO exceto embalagem
+            // (insumo_base + insumo_direto). Antes filtrava só insumo_direto, o que
+            // escondia 145 insumos do CRIMINAL (todos vieram do conversor como base).
+            supabase.from('ingredients').select('*').neq('tipo', 'embalagem').order('name'),
             supabase.from('ingredients').select('*').eq('tipo', 'embalagem').order('name'),
             supabase.from('recipe_ingredients').select(`
                 id, recipe_id, ingredient_id, sub_recipe_id, quantity_needed,
