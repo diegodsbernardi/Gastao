@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2, ArrowDownUp,
+    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2, ArrowDownUp, Copy,
 } from 'lucide-react';
 import type { Ingredient, Recipe, RecipeIngredient, RecipeSubRecipe } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
@@ -422,6 +422,38 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             toast.error('Erro: ' + error.message);
         }
         setSavingInfo(false);
+    };
+
+    const handleDuplicate = async (ficha: Recipe) => {
+        const defaultName = `${ficha.product_name} (cópia)`;
+        const nome = prompt(`Nome da nova ficha:`, defaultName);
+        if (nome === null) return; // cancelou
+        const nomeTrim = nome.trim();
+        if (!nomeTrim) {
+            toast.error('Nome não pode ser vazio');
+            return;
+        }
+
+        const { data, error } = await supabase.rpc('duplicate_recipe', {
+            p_recipe_id: ficha.id,
+            p_new_name: nomeTrim,
+        });
+
+        if (error) {
+            toast.error('Erro ao duplicar: ' + error.message);
+            return;
+        }
+
+        toast.success(`Ficha duplicada: "${nomeTrim}"`);
+        // Refetch pra trazer a cópia + composição clonada
+        await fetchData();
+        // Bonus: rola pra perto da cópia (opcional — não bloqueia)
+        if (data) {
+            setTimeout(() => {
+                const el = document.querySelector(`[data-recipe-id="${data}"]`);
+                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
     };
 
     const handleDelete = async (id: string) => {
@@ -844,9 +876,18 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                             : <span className="px-3 py-1.5 rounded-lg text-sm bg-slate-100 text-slate-400 font-medium">CMV —</span>
                                     )}
                                     {canEdit && (
-                                        <button onClick={() => handleDelete(ficha.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <>
+                                            <button
+                                                onClick={() => handleDuplicate(ficha)}
+                                                className="p-2 text-slate-300 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                                title="Duplicar ficha"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDelete(ficha.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             </div>
