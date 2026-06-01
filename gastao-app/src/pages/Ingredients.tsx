@@ -115,13 +115,37 @@ export const Ingredients = () => {
 
     const handleDeleteCategory = async (name: string, tipo: 'insumo_base' | 'insumo_direto') => {
         if (!confirm(`Excluir categoria "${name}"? Os insumos com esta categoria ficarão sem categoria.`)) return;
-        const { error } = await supabase.from('ingredient_categories').delete().eq('name', name).eq('ingredient_tipo', tipo);
-        if (!error) {
-            if (tipo === 'insumo_base') setCustomCatsBase(customCatsBase.filter(c => c !== name));
-            else setCustomCatsDireto(customCatsDireto.filter(c => c !== name));
-            if (activeTab === name) setActiveTab('Todos');
-            toast.success('Categoria removida.');
+
+        // 1. Remove o registro da tabela de categorias
+        const { error: errDel } = await supabase
+            .from('ingredient_categories')
+            .delete().eq('name', name).eq('ingredient_tipo', tipo);
+        if (errDel) {
+            toast.error('Erro ao remover categoria: ' + errDel.message);
+            return;
         }
+
+        // 2. Limpa o campo categoria (text) dos insumos afetados — sem isso a
+        // categoria fantasma continua aparecendo em fichas/pickers que leem
+        // ingredients.categoria direto da row.
+        const { error: errUpd } = await supabase
+            .from('ingredients')
+            .update({ categoria: null })
+            .eq('categoria', name)
+            .eq('tipo', tipo);
+        if (errUpd) {
+            toast.error('Categoria removida, mas insumos não foram atualizados: ' + errUpd.message);
+            return;
+        }
+
+        // 3. Atualiza state local pra refletir
+        setIngredients(prev => prev.map(i =>
+            (i.categoria === name && i.tipo === tipo) ? { ...i, categoria: null } : i
+        ));
+        if (tipo === 'insumo_base') setCustomCatsBase(customCatsBase.filter(c => c !== name));
+        else setCustomCatsDireto(customCatsDireto.filter(c => c !== name));
+        if (activeTab === name) setActiveTab('Todos');
+        toast.success('Categoria removida e insumos atualizados.');
     };
 
     const handleCreateIngredient = async () => {
