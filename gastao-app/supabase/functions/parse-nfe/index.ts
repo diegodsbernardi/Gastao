@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { XMLParser } from "https://esm.sh/fast-xml-parser@4.3.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,21 +53,16 @@ function jsonError(message: string, status: number) {
   });
 }
 
-/**
- * Remove declarações de namespace e prefixos de elementos para que
- * getElementsByTagName() funcione sem necessidade de NS explícito.
- * Mantém atributos normais intactos.
- */
-function stripNamespaces(xml: string): string {
-  return xml
-    .replace(/\s+xmlns(?::[a-zA-Z0-9_-]+)?="[^"]*"/g, "")
-    .replace(/<([/]?)([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)/g, "<$1$3");
-}
-
-function getText(el: Element | null, tag: string): string {
-  if (!el) return "";
-  const child = el.getElementsByTagName(tag)[0];
-  return child?.textContent?.trim() ?? "";
+/** Lê uma string de um possível path de tags aninhadas no objeto NFe. */
+// deno-lint-ignore no-explicit-any
+function getStr(obj: any, ...keys: string[]): string {
+  let cur = obj;
+  for (const k of keys) {
+    if (cur == null) return "";
+    cur = cur[k];
+  }
+  if (cur == null) return "";
+  return String(cur).trim();
 }
 
 function formatCNPJ(raw: string): string {
@@ -97,74 +93,76 @@ interface NFeNota {
 }
 
 function parseNFe(xmlText: string): { nota: NFeNota; itens: NFeItem[] } {
-  const clean = stripNamespaces(xmlText);
+  // Remove declarações de namespace e prefixos pra acessar tags sem namespace
+  const clean = xmlText
+    .replace(/\s+xmlns(?::[a-zA-Z0-9_-]+)?="[^"]*"/g, "")
+    .replace(/<([/]?)([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)/g, "<$1$3");
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(clean, "text/xml");
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "@_",
+    parseTagValue: false,    // mantém valores como string — parseamos sob demanda
+    parseAttributeValue: false,
+    trimValues: true,
+  });
 
-  // Falha de parse
-  const parseErr = doc.getElementsByTagName("parsererror")[0];
-  if (parseErr) {
-    throw new Error("XML malformado: " + parseErr.textContent?.slice(0, 200));
+  // deno-lint-ignore no-explicit-any
+  let doc: any;
+  try {
+    doc = parser.parse(clean);
+  } catch (e) {
+    throw new Error("XML malformado: " + String(e).slice(0, 200));
   }
 
-  // Valida que é NF-e (aceita nfeProc ou NFe avulsa)
-  const hasNfeProc = doc.getElementsByTagName("nfeProc").length > 0;
-  const hasNFe = doc.getElementsByTagName("NFe").length > 0;
-  if (!hasNfeProc && !hasNFe) {
-    throw new Error(
-      "XML inválido: não é uma NF-e (nfeProc ou NFe não encontrado)"
-    );
+  // Aceita nfeProc (envelope com proto) ou NFe avulsa
+  const nfeRoot = doc.nfeProc?.NFe ?? doc.NFe;
+  if (!nfeRoot) {
+    throw new Error("XML inválido: não é uma NF-e (nfeProc ou NFe não encontrado)");
   }
 
-  const infNFe = doc.getElementsByTagName("infNFe")[0];
+  const infNFe = nfeRoot.infNFe;
   if (!infNFe) {
     throw new Error("XML inválido: elemento infNFe não encontrado");
   }
 
   // ------ Cabeçalho ------
-  const ide = infNFe.getElementsByTagName("ide")[0] ?? null;
-  const emit = infNFe.getElementsByTagName("emit")[0] ?? null;
-  const ICMSTot =
-    infNFe.getElementsByTagName("ICMSTot")[0] ??
-    infNFe.getElementsByTagName("total")[0]
-      ?.getElementsByTagName("ICMSTot")[0] ??
-    null;
+  const ide = infNFe.ide ?? {};
+  const emit = infNFe.emit ?? {};
+  const total = infNFe.total ?? {};
+  const ICMSTot = total.ICMSTot ?? infNFe.ICMSTot ?? {};
 
-  const numero = getText(ide, "nNF");
-  const dataEmissao = getText(ide, "dhEmi") || getText(ide, "dEmi"); // dEmi = formato legado
-  const fornecedorNome =
-    getText(emit, "xNome") || getText(emit, "xFant") || "";
-  const fornecedorCNPJ = getText(emit, "CNPJ");
-  const valorTotalStr = getText(ICMSTot, "vNF");
+  const numero = getStr(ide, "nNF");
+  const dataEmissao = getStr(ide, "dhEmi") || getStr(ide, "dEmi");
+  const fornecedorNome = getStr(emit, "xNome") || getStr(emit, "xFant");
+  const fornecedorCNPJ = getStr(emit, "CNPJ");
+  const valorTotalStr = getStr(ICMSTot, "vNF");
 
   // ------ Itens ------
-  const detElements = infNFe.getElementsByTagName("det");
-  if (detElements.length === 0) {
+  // <det> pode vir como array (vários itens) ou objeto (1 item só) no fast-xml-parser
+  const detRaw = infNFe.det;
+  // deno-lint-ignore no-explicit-any
+  const detArr: any[] = Array.isArray(detRaw) ? detRaw : detRaw ? [detRaw] : [];
+
+  if (detArr.length === 0) {
     throw new Error("NF-e sem itens (nenhum elemento <det> encontrado)");
   }
 
   const itens: NFeItem[] = [];
 
-  for (let i = 0; i < detElements.length; i++) {
-    const det = detElements[i];
-    const prod = det.getElementsByTagName("prod")[0];
+  for (const det of detArr) {
+    const prod = det.prod;
     if (!prod) continue;
 
-    const descricao = getText(prod, "xProd");
+    const descricao = getStr(prod, "xProd");
     if (!descricao) continue;
 
-    const quantidade = parseFloat(getText(prod, "qCom") || "0");
-    const valorUnitario = parseFloat(getText(prod, "vUnCom") || "0");
-    const valorTotal = parseFloat(getText(prod, "vProd") || "0");
-
     itens.push({
-      codigo_produto: getText(prod, "cProd"),
+      codigo_produto: getStr(prod, "cProd"),
       descricao,
-      quantidade,
-      unidade: getText(prod, "uCom"),
-      valor_unitario: valorUnitario,
-      valor_total: valorTotal,
+      quantidade: parseFloat(getStr(prod, "qCom")) || 0,
+      unidade: getStr(prod, "uCom"),
+      valor_unitario: parseFloat(getStr(prod, "vUnCom")) || 0,
+      valor_total: parseFloat(getStr(prod, "vProd")) || 0,
     });
   }
 
