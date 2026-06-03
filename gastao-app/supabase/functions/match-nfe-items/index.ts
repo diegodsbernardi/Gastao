@@ -21,7 +21,7 @@ interface Ingredient {
   id: string;
   name: string;
   unit_type: string;
-  type: string;
+  tipo: string;
 }
 
 interface AIMatch {
@@ -70,7 +70,7 @@ serve(async (req) => {
 
     const { data: ingredients, error: ingError } = await supabase
       .from("ingredients")
-      .select("id, name, unit_type, type")
+      .select("id, name, unit_type, tipo")
       .eq("restaurant_id", restaurant_id);
 
     if (ingError) {
@@ -90,7 +90,7 @@ serve(async (req) => {
     }
 
     // ------------------------------------------------------------------
-    // 2. Chama GPT-4o mini em batch (1 chamada para todos os itens)
+    // 2. Chama Claude em batch (1 chamada para todos os itens)
     // ------------------------------------------------------------------
     const matches = await matchWithAI(itens, ingredients as Ingredient[]);
 
@@ -132,10 +132,11 @@ async function matchWithAI(
   const catalogList = ingredients
     .map(
       (ing, i) =>
-        `${i + 1}. [id: "${ing.id}"] ${ing.name} (unidade: ${ing.unit_type}, tipo: ${ing.type})`
+        `${i + 1}. [id: "${ing.id}"] ${ing.name} (unidade: ${ing.unit_type}, tipo: ${ing.tipo})`
     )
     .join("\n");
 
+  // Conteúdo ESTÁVEL (instruções) — cacheado entre todas as notas.
   const systemPrompt = `Você é um especialista em gestão de restaurantes e insumos alimentares.
 Sua tarefa é associar itens de notas fiscais (NF-e) com insumos já cadastrados no sistema.
 
@@ -147,13 +148,17 @@ Considere:
 
 Retorne APENAS JSON válido, sem texto adicional.`;
 
+  // Catálogo do restaurante — estável dentro de um upload em lote, então
+  // também vai no system com cache_control: cada nota seguinte do mesmo
+  // restaurante reaproveita o cache (5 min) e custa ~quase nada.
+  const catalogBlock = `CATÁLOGO DE INSUMOS DO RESTAURANTE:
+${catalogList}`;
+
+  // Conteúdo VARIÁVEL (itens desta nota) — fica no user message.
   const userPrompt = `Associe cada item da nota fiscal com o insumo mais adequado do catálogo.
 
 ITENS DA NOTA FISCAL:
 ${itemsList}
-
-CATÁLOGO DE INSUMOS DO RESTAURANTE:
-${catalogList}
 
 Retorne JSON no formato exato:
 {
@@ -169,30 +174,39 @@ Regras:
 - Use insumo_id: null quando a confiança for menor que 0.5 ou não houver match razoável
 - Retorne exatamente ${itens.length} entradas no array`;
 
-  const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+  const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+      "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!,
+      "anthropic-version": "2023-06-01",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 8192,
       temperature: 0,
-      response_format: { type: "json_object" },
+      system: [
+        { type: "text", text: systemPrompt },
+        // breakpoint de cache no fim do catálogo → cacheia instruções + catálogo
+        { type: "text", text: catalogBlock, cache_control: { type: "ephemeral" } },
+      ],
       messages: [
-        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
+        // prefill força a resposta a começar como JSON (sem cercas markdown)
+        { role: "assistant", content: "{" },
       ],
     }),
   });
 
-  if (!openaiRes.ok) {
-    const errText = await openaiRes.text();
-    throw new Error(`Erro na API OpenAI (${openaiRes.status}): ${errText}`);
+  if (!anthropicRes.ok) {
+    const errText = await anthropicRes.text();
+    throw new Error(`Erro na API Anthropic (${anthropicRes.status}): ${errText}`);
   }
 
-  const openaiData = await openaiRes.json();
-  const content: string = openaiData.choices?.[0]?.message?.content ?? "";
+  const anthropicData = await anthropicRes.json();
+  // prefill "{" não volta na resposta — reconstituímos o JSON completo
+  const rawText: string = anthropicData.content?.[0]?.text ?? "";
+  const content = "{" + rawText;
 
   let parsed: { matches: AIMatch[] };
   try {

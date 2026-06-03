@@ -15,7 +15,7 @@ import { usePermissions } from '../hooks/usePermissions';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
-interface Ingredient { id: string; name: string; unit_type: string; type: string; }
+interface Ingredient { id: string; name: string; unit_type: string; tipo: string; }
 
 interface NfeItemComNome extends NfeItem {
     insumo_sugerido_nome?: string;
@@ -32,6 +32,21 @@ function fmtCurrency(v: number | null) {
 function fmtDate(s: string | null) {
     if (!s) return '—';
     return new Date(s).toLocaleDateString('pt-BR');
+}
+
+function fmtNum(v: number | null) {
+    if (v == null) return '—';
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+}
+
+// Mostra a unidade tributável só quando ela difere da comercial (ex: CX → KG).
+// É o que revela o peso/preço reais por trás da embalagem de compra.
+function temConversao(item: NfeItem) {
+    return (
+        !!item.unidade_tributavel &&
+        item.unidade_tributavel !== item.unidade &&
+        item.quantidade_tributavel != null
+    );
 }
 
 function fmtFileSize(bytes: number) {
@@ -340,10 +355,20 @@ function ItemRow({
                     {item.codigo_produto && <div className="text-xs text-slate-400">{item.codigo_produto}</div>}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
-                    {item.quantidade} {item.unidade}
+                    <div>{item.quantidade} {item.unidade}</div>
+                    {temConversao(item) && (
+                        <div className="text-xs font-medium text-emerald-600">
+                            = {fmtNum(item.quantidade_tributavel)} {item.unidade_tributavel}
+                        </div>
+                    )}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
-                    {fmtCurrency(item.valor_unitario)}
+                    <div>{fmtCurrency(item.valor_unitario)}</div>
+                    {temConversao(item) && (
+                        <div className="text-xs font-medium text-emerald-600">
+                            {fmtCurrency(item.valor_unitario_tributavel)}/{item.unidade_tributavel}
+                        </div>
+                    )}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
                     {fmtCurrency(item.valor_total)}
@@ -435,6 +460,11 @@ function ItemRow({
                     <div><span className="font-medium">Unit:</span> {fmtCurrency(item.valor_unitario)}</div>
                     <div><span className="font-medium">Total:</span> {fmtCurrency(item.valor_total)}</div>
                 </div>
+                {temConversao(item) && (
+                    <div className="text-xs font-medium text-emerald-600">
+                        = {fmtNum(item.quantidade_tributavel)} {item.unidade_tributavel} · {fmtCurrency(item.valor_unitario_tributavel)}/{item.unidade_tributavel}
+                    </div>
+                )}
                 {item.insumo_sugerido_id && item.status === 'pendente' && (
                     <div className="flex items-center gap-2 text-xs">
                         <span className="text-slate-500">Sugestão:</span>
@@ -947,7 +977,7 @@ function ReviewView({
             const [notaRes, itensRes, ingRes] = await Promise.all([
                 supabase.from('notas_fiscais').select('*').eq('id', notaId).single(),
                 supabase.from('nfe_itens').select('*').eq('nota_fiscal_id', notaId).order('criado_em'),
-                supabase.from('ingredients').select('id, name, unit_type, type').eq('restaurant_id', restauranteId!),
+                supabase.from('ingredients').select('id, name, unit_type, tipo').eq('restaurant_id', restauranteId!),
             ]);
 
             if (notaRes.data) setNota(notaRes.data as NotaFiscal);

@@ -25,6 +25,9 @@ export interface NfeItem {
     unidade: string;
     valor_unitario: number;
     valor_total: number;
+    quantidade_tributavel: number | null;
+    unidade_tributavel: string | null;
+    valor_unitario_tributavel: number | null;
     insumo_sugerido_id: string | null;
     insumo_confirmado_id: string | null;
     confianca_match: number | null;
@@ -146,6 +149,9 @@ export async function uploadNfeXml(file: File): Promise<string> {
             unidade: item.unidade,
             valor_unitario: item.valor_unitario,
             valor_total: item.valor_total,
+            quantidade_tributavel: item.quantidade_tributavel ?? null,
+            unidade_tributavel: item.unidade_tributavel ?? null,
+            valor_unitario_tributavel: item.valor_unitario_tributavel ?? null,
             insumo_sugerido_id: temMatch ? match!.insumo_id : null,
             insumo_confirmado_id: null,
             confianca_match: match ? match.confianca : null,

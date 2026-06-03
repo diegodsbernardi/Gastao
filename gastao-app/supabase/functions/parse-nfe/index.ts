@@ -82,6 +82,12 @@ interface NFeItem {
   unidade: string;
   valor_unitario: number;
   valor_total: number;
+  // Unidade tributável (uTrib/qTrib/vUnTrib): geralmente a unidade física real
+  // (ex: KG) por trás da unidade comercial (ex: CX). É o que permite converter
+  // "2 CX" → "20,03 KG" e calcular o preço por unidade de ficha.
+  quantidade_tributavel: number;
+  unidade_tributavel: string;
+  valor_unitario_tributavel: number;
 }
 
 interface NFeNota {
@@ -163,6 +169,12 @@ function parseNFe(xmlText: string): { nota: NFeNota; itens: NFeItem[] } {
       unidade: getStr(prod, "uCom"),
       valor_unitario: parseFloat(getStr(prod, "vUnCom")) || 0,
       valor_total: parseFloat(getStr(prod, "vProd")) || 0,
+      // Fallback pra unidade comercial quando o XML não traz a tributável
+      quantidade_tributavel:
+        parseFloat(getStr(prod, "qTrib")) || parseFloat(getStr(prod, "qCom")) || 0,
+      unidade_tributavel: getStr(prod, "uTrib") || getStr(prod, "uCom"),
+      valor_unitario_tributavel:
+        parseFloat(getStr(prod, "vUnTrib")) || parseFloat(getStr(prod, "vUnCom")) || 0,
     });
   }
 
