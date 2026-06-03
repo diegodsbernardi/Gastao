@@ -165,6 +165,18 @@ export async function uploadNfeXml(file: File): Promise<string> {
     return notaId;
 }
 
+/** Exclui uma nota fiscal e seu XML. Os itens caem por cascata (FK). */
+export async function deletarNota(notaId: string, xmlPath: string | null): Promise<void> {
+    // Remove o XML do Storage primeiro (best-effort — não bloqueia o delete da nota)
+    if (xmlPath) {
+        const { error: storageError } = await supabase.storage.from('nfe-xml').remove([xmlPath]);
+        if (storageError) console.warn('Não foi possível remover o XML do storage:', storageError.message);
+    }
+
+    const { error } = await supabase.from('notas_fiscais').delete().eq('id', notaId);
+    if (error) throw new Error('Erro ao excluir nota: ' + error.message);
+}
+
 /** Confirma a nota, atualizando estoque e custos dos insumos vinculados. */
 export async function confirmarNfe(notaId: string): Promise<number> {
     const { data, error } = await supabase.rpc('confirmar_nfe', { p_nota_fiscal_id: notaId });

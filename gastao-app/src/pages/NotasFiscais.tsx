@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
     AlertCircle, Check, ChevronDown, CheckCircle2, FileText, Files,
-    Loader2, Plus, Search, Upload, X, XCircle,
+    Loader2, Plus, Search, Trash2, Upload, X, XCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
-    confirmarItem, confirmarNfe, criarInsumoDeNfe, ignorarItem,
+    confirmarItem, confirmarNfe, criarInsumoDeNfe, deletarNota, ignorarItem,
     NotaFiscal, NfeItem, uploadNfeXml,
 } from '../lib/nfe';
 import { useAuth } from '../contexts/AuthContext';
@@ -1218,6 +1218,7 @@ function ListaView({
 }) {
     const [notas, setNotas] = useState<NotaFiscal[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     useEffect(() => {
         (async () => {
@@ -1231,6 +1232,21 @@ function ListaView({
             setLoading(false);
         })();
     }, []);
+
+    const handleDelete = async (nota: NotaFiscal) => {
+        const nome = nota.fornecedor_nome ?? 'Fornecedor desconhecido';
+        if (!confirm(`Excluir a nota de ${nome} (NF-${nota.numero_nota ?? '—'})? Os itens vinculados serão removidos. Esta ação não pode ser desfeita.`)) return;
+        setDeletingId(nota.id);
+        try {
+            await deletarNota(nota.id, nota.xml_url);
+            setNotas(prev => prev.filter(n => n.id !== nota.id));
+            toast.success('Nota excluída.');
+        } catch (err) {
+            toast.error(String(err));
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -1282,10 +1298,13 @@ function ListaView({
             ) : (
                 <div className="space-y-3">
                     {notas.map(nota => (
-                        <button
+                        <div
                             key={nota.id}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => onOpenNota(nota.id)}
-                            className="w-full text-left bg-white rounded-2xl shadow-sm border border-slate-100 p-4 hover:shadow-md transition-shadow"
+                            onKeyDown={e => { if (e.key === 'Enter') onOpenNota(nota.id); }}
+                            className="w-full text-left bg-white rounded-2xl shadow-sm border border-slate-100 p-4 hover:shadow-md transition-shadow cursor-pointer"
                         >
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex items-center gap-3 min-w-0">
@@ -1306,9 +1325,19 @@ function ListaView({
                                         {fmtCurrency(nota.valor_total)}
                                     </span>
                                     <StatusBadgeNota status={nota.status} />
+                                    <button
+                                        onClick={e => { e.stopPropagation(); handleDelete(nota); }}
+                                        disabled={deletingId === nota.id}
+                                        title="Excluir nota"
+                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        {deletingId === nota.id
+                                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                                            : <Trash2 className="w-4 h-4" />}
+                                    </button>
                                 </div>
                             </div>
-                        </button>
+                        </div>
                     ))}
                 </div>
             )}
