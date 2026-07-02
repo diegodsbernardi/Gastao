@@ -212,11 +212,14 @@ export const Ingredients = () => {
         const addedQty = Number(stockEntryQty);
         const newQty = currentQty + addedQty;
 
-        // Custo médio ponderado: só recalcula se preço de compra foi informado
+        // Custo médio ponderado: só recalcula se preço de compra foi informado.
+        // Estoque negativo (comum após vendas) é tratado como 0 na ponderação
+        // pra não distorcer a média nem dividir por zero.
         const updates: { stock_quantity: number; avg_cost_per_unit?: number } = { stock_quantity: newQty };
         let newAvgCost = currentCost;
         if (stockEntryCost !== '' && Number(stockEntryCost) > 0) {
-            newAvgCost = ((currentQty * currentCost) + (addedQty * Number(stockEntryCost))) / newQty;
+            const baseQty = Math.max(currentQty, 0);
+            newAvgCost = ((baseQty * currentCost) + (addedQty * Number(stockEntryCost))) / (baseQty + addedQty);
             updates.avg_cost_per_unit = newAvgCost;
         }
 
@@ -432,6 +435,7 @@ export const Ingredients = () => {
                                         setEditName(item.name);
                                         setEditUnit(item.unit_type);
                                         setEditTipo(item.tipo ?? 'insumo_base');
+                                        setEditCategoria(item.categoria ?? '');
                                         setEditCost(item.avg_cost_per_unit);
                                         setEditStock(item.stock_quantity);
                                         setEditAproveitamento(Math.round((item.aproveitamento ?? 1) * 100));
@@ -465,8 +469,12 @@ export const Ingredients = () => {
                                 <th className="p-4 w-12 text-center">
                                     <input
                                         type="checkbox"
-                                        checked={ingredients.length > 0 && selectedIds.length === ingredients.length}
-                                        onChange={(e) => setSelectedIds(e.target.checked ? ingredients.map(i => i.id) : [])}
+                                        checked={filteredIngredients.length > 0 && filteredIngredients.every(i => selectedIds.includes(i.id))}
+                                        onChange={(e) => {
+                                            const visibleIds = filteredIngredients.map(i => i.id);
+                                            if (e.target.checked) setSelectedIds(prev => [...new Set([...prev, ...visibleIds])]);
+                                            else setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+                                        }}
                                         className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                                     />
                                 </th>
@@ -539,6 +547,7 @@ export const Ingredients = () => {
                                                         setEditCategoria(item.categoria ?? '');
                                                         setEditCost(item.avg_cost_per_unit);
                                                         setEditStock(item.stock_quantity);
+                                                        setEditAproveitamento(Math.round((item.aproveitamento ?? 1) * 100));
                                                     }}
                                                     className="text-slate-400 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors"
                                                     title="Editar Insumo"
@@ -821,7 +830,7 @@ export const Ingredients = () => {
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
                                 />
                                 {stockEntryCost !== '' && Number(stockEntryCost) > 0 && stockEntryQty !== '' && Number(stockEntryQty) > 0 && (() => {
-                                    const currentQty = stockEntryIngredient.stock_quantity;
+                                    const currentQty = Math.max(stockEntryIngredient.stock_quantity, 0);
                                     const addedQty = Number(stockEntryQty);
                                     const newAvg = ((currentQty * stockEntryIngredient.avg_cost_per_unit) + (addedQty * Number(stockEntryCost))) / (currentQty + addedQty);
                                     return (

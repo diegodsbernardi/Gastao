@@ -63,6 +63,7 @@ export const Sales = () => {
         const { data } = await supabase
             .from('recipes')
             .select('id, product_name, sale_price')
+            .eq('tipo', 'ficha_final')
             .order('product_name');
         if (data) {
             setRecipes(data);
@@ -98,34 +99,18 @@ export const Sales = () => {
         if (!selectedRecipeId || quantitySold === '' || Number(quantitySold) <= 0 || !restauranteId) return;
         setSavingSale(true);
 
-        const totalValue = Number(quantitySold) * unitPrice;
-
-        const { error: saleError } = await supabase.from('sales').insert([{
-            restaurant_id: restauranteId,
-            recipe_id: selectedRecipeId,
-            quantity_sold: Number(quantitySold),
-            unit_price: unitPrice,
-            total_value: totalValue,
-        }]);
+        // RPC atômico: insere a venda e baixa o estoque de todos os insumos-folha,
+        // expandindo preparos recursivamente (ver migration 022_registrar_venda_rpc).
+        const { error: saleError } = await supabase.rpc('registrar_venda', {
+            p_recipe_id: selectedRecipeId,
+            p_qty: Number(quantitySold),
+            p_unit_price: unitPrice,
+        });
 
         if (saleError) {
             toast.error('Erro ao registrar venda: ' + saleError.message);
             setSavingSale(false);
             return;
-        }
-
-        // Deduct stock for each ingredient in the recipe
-        const { data: recipeIngs } = await supabase
-            .from('recipe_ingredients')
-            .select('ingredient_id, quantity_needed, ingredients(stock_quantity)')
-            .eq('recipe_id', selectedRecipeId);
-
-        for (const ri of recipeIngs ?? []) {
-            const currentStock = (ri.ingredients as any)?.stock_quantity ?? 0;
-            const newStock = currentStock - (ri.quantity_needed * Number(quantitySold));
-            await supabase.from('ingredients')
-                .update({ stock_quantity: newStock })
-                .eq('id', ri.ingredient_id);
         }
 
         setSelectedRecipeId('');

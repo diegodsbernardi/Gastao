@@ -38,7 +38,7 @@ export interface NfeItem {
 export interface CriarInsumoData {
     name: string;
     unit_type: string;
-    type: string;
+    tipo: string;   // insumo_base | insumo_direto | embalagem (CHECK da tabela ingredients)
     avg_cost_per_unit: number;
     stock_quantity: number;
 }
@@ -208,7 +208,11 @@ export async function criarInsumoDeNfe(itemId: string, dadosInsumo: CriarInsumoD
 
     const { data: insumo, error: insumoError } = await supabase
         .from('ingredients')
-        .insert({ ...dadosInsumo, restaurant_id: restauranteId })
+        .insert({
+            ...dadosInsumo,
+            restaurant_id: restauranteId,
+            use_in_recipes: dadosInsumo.tipo === 'insumo_base',
+        })
         .select('id')
         .single();
 

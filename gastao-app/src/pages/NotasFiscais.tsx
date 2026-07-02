@@ -173,8 +173,8 @@ function ModalCriarInsumo({
     onCreated: () => void;
 }) {
     const [name, setName] = useState(item.descricao_xml);
-    const [unitType, setUnitType] = useState(item.unidade.toUpperCase());
-    const [type, setType] = useState('insumo');
+    const [unitType, setUnitType] = useState(item.unidade.toLowerCase());
+    const [tipo, setTipo] = useState('insumo_base');
     const [avgCost, setAvgCost] = useState(String(item.valor_unitario));
     const [stockQty, setStockQty] = useState(String(item.quantidade));
     const [saving, setSaving] = useState(false);
@@ -186,8 +186,8 @@ function ModalCriarInsumo({
         try {
             await criarInsumoDeNfe(item.id, {
                 name: name.trim(),
-                unit_type: unitType,
-                type,
+                unit_type: unitType.toLowerCase(),
+                tipo,
                 avg_cost_per_unit: parseFloat(avgCost) || item.valor_unitario,
                 stock_quantity: parseFloat(stockQty) || 0,
             });
@@ -225,22 +225,19 @@ function ModalCriarInsumo({
                             <input
                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={unitType}
-                                onChange={e => setUnitType(e.target.value.toUpperCase())}
+                                onChange={e => setUnitType(e.target.value.toLowerCase())}
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
                             <select
                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                value={type}
-                                onChange={e => setType(e.target.value)}
+                                value={tipo}
+                                onChange={e => setTipo(e.target.value)}
                             >
-                                <option value="insumo">Insumo</option>
-                                <option value="bebida">Bebida</option>
+                                <option value="insumo_base">Insumo Base</option>
+                                <option value="insumo_direto">Item Pronto</option>
                                 <option value="embalagem">Embalagem</option>
-                                <option value="descartavel">Descartável</option>
-                                <option value="limpeza">Limpeza</option>
-                                <option value="outros">Outros</option>
                             </select>
                         </div>
                     </div>
