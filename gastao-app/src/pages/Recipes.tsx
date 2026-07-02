@@ -589,46 +589,25 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         if (!editingId) return;
         setSavingEdit(true);
 
-        const [delIngRes, delSubRes] = await Promise.all([
-            supabase.from('recipe_ingredients').delete().eq('recipe_id', editingId),
-            supabase.from('recipe_sub_recipes').delete().eq('recipe_id', editingId),
-        ]);
-
-        if (delIngRes.error || delSubRes.error) {
-            toast.error('Erro ao salvar: ' + (delIngRes.error?.message ?? delSubRes.error?.message));
+        // Salva a composição de forma atômica (DELETE+INSERT numa transação no
+        // banco — ver migration 026). Ficha usa recipe_ingredients p/ insumos e
+        // recipe_sub_recipes p/ preparos.
+        const { error: compError } = await supabase.rpc('salvar_composicao', {
+            p_recipe_id: editingId,
+            p_ri: editIngItems.map(i => ({
+                ingredient_id: i.ingredient_id,
+                quantity_needed: i.quantity_needed,
+            })),
+            p_rsr: editSubItems.map(s => ({
+                sub_recipe_id: s.sub_recipe_id,
+                quantity_needed: s.quantity_needed,
+            })),
+        });
+        if (compError) {
+            toast.error('Erro ao salvar composição: ' + compError.message);
             setSavingEdit(false);
+            fetchData(); // restaura estado do banco
             return;
-        }
-
-        const insertOps = [];
-        if (editIngItems.length > 0) {
-            insertOps.push(supabase.from('recipe_ingredients').insert(
-                editIngItems.map(i => ({
-                    recipe_id: editingId,
-                    ingredient_id: i.ingredient_id,
-                    quantity_needed: i.quantity_needed,
-                }))
-            ));
-        }
-        if (editSubItems.length > 0) {
-            insertOps.push(supabase.from('recipe_sub_recipes').insert(
-                editSubItems.map(s => ({
-                    recipe_id: editingId,
-                    sub_recipe_id: s.sub_recipe_id,
-                    quantity_needed: s.quantity_needed,
-                }))
-            ));
-        }
-
-        if (insertOps.length > 0) {
-            const results = await Promise.all(insertOps);
-            const failed = results.find(r => r.error);
-            if (failed?.error) {
-                toast.error('Erro ao salvar composição: ' + failed.error.message);
-                setSavingEdit(false);
-                fetchData(); // restaura estado do banco
-                return;
-            }
         }
 
         setFichaIngs(prev => ({ ...prev, [editingId]: editIngItems }));

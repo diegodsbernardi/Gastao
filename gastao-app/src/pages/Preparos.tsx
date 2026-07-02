@@ -445,34 +445,29 @@ export const Preparos = () => {
         if (!editingId) return;
         setSavingEdit(true);
 
-        // Apaga TODA a composição (insumos + sub-preparos) e re-insere
-        const { error: delError } = await supabase.from('recipe_ingredients').delete().eq('recipe_id', editingId);
-        if (delError) {
-            toast.error('Erro ao salvar: ' + delError.message);
-            setSavingEdit(false);
-            return;
-        }
-
+        // Salva a composição de forma atômica (DELETE+INSERT numa transação no
+        // banco — ver migration 026). Preparo guarda insumos e sub-preparos no
+        // mesmo recipe_ingredients, então tudo vai em p_ri.
         const rows: any[] = [];
         editItems.forEach(ei => rows.push({
-            recipe_id: editingId,
             ingredient_id: ei.ingredient_id,
             quantity_needed: ei.quantity_needed,
         }));
         editSubItems.forEach(es => rows.push({
-            recipe_id: editingId,
             sub_recipe_id: es.sub_recipe_id,
             quantity_needed: es.quantity_needed,
         }));
 
-        if (rows.length > 0) {
-            const { error: insError } = await supabase.from('recipe_ingredients').insert(rows);
-            if (insError) {
-                toast.error('Erro ao salvar composição: ' + insError.message);
-                setSavingEdit(false);
-                fetchData();
-                return;
-            }
+        const { error: compError } = await supabase.rpc('salvar_composicao', {
+            p_recipe_id: editingId,
+            p_ri: rows,
+            p_rsr: [],
+        });
+        if (compError) {
+            toast.error('Erro ao salvar composição: ' + compError.message);
+            setSavingEdit(false);
+            fetchData();
+            return;
         }
 
         // Salva metadados
