@@ -34,7 +34,15 @@ CREATE TABLE IF NOT EXISTS public.bpos (
 
 ALTER TABLE public.bpos ENABLE ROW LEVEL SECURITY;
 
--- Qualquer usuário autenticado pode SELECT no próprio BPO
+-- ── 2. restaurantes.bpo_id ─────────────────────────────────────────
+-- (criado ANTES da policy de bpos porque a policy referencia essa coluna)
+ALTER TABLE public.restaurantes
+    ADD COLUMN IF NOT EXISTS bpo_id uuid REFERENCES public.bpos(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_restaurantes_bpo_id ON public.restaurantes(bpo_id)
+    WHERE bpo_id IS NOT NULL;
+
+-- Policy: usuário autenticado vê o próprio BPO
 -- (membership em algum restaurante do BPO basta).
 CREATE POLICY "bpos_select_meu" ON public.bpos
     FOR SELECT TO authenticated
@@ -46,13 +54,6 @@ CREATE POLICY "bpos_select_meu" ON public.bpos
             WHERE m.usuario_id = auth.uid() AND r.bpo_id IS NOT NULL
         )
     );
-
--- ── 2. restaurantes.bpo_id ─────────────────────────────────────────
-ALTER TABLE public.restaurantes
-    ADD COLUMN IF NOT EXISTS bpo_id uuid REFERENCES public.bpos(id) ON DELETE SET NULL;
-
-CREATE INDEX IF NOT EXISTS idx_restaurantes_bpo_id ON public.restaurantes(bpo_id)
-    WHERE bpo_id IS NOT NULL;
 
 -- ── 3. profiles.restaurante_ativo_id ───────────────────────────────
 ALTER TABLE public.profiles
