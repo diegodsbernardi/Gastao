@@ -76,7 +76,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const fetchMembro = async (currentUser: User) => {
         setIsFetchingMembro(true);
         try {
-            const { data: rows } = await supabase.rpc('get_my_membership');
+            const { data: rows, error: membershipError } = await supabase.rpc('get_my_membership');
+            if (membershipError) {
+                // Erro transiente (rede/timeout): mantém o estado anterior em vez de
+                // zerar a membership — senão um dono válido cairia no onboarding.
+                console.warn('get_my_membership falhou, mantendo estado:', membershipError.message);
+                return;
+            }
             if (rows && rows.length > 0) {
                 const m = rows[0];
                 setRestauranteId(m.restaurante_id);
@@ -119,8 +125,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setNomeRestaurante(null);
             setBrandColor(null);
             setLogoUrl(null);
-        } catch {
-            clearMembro();
+        } catch (e) {
+            // Exceção de rede: preserva o estado anterior (não desloga do restaurante).
+            console.warn('fetchMembro exceção, mantendo estado:', e);
         } finally {
             setIsFetchingMembro(false);
         }

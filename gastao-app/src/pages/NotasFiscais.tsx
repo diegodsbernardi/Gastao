@@ -728,12 +728,15 @@ function BulkUploadView({ onDone, onOpenNota }: { onDone: () => void; onOpenNota
 
                 if (light) {
                     const cnpjDigits = light.cnpj.replace(/\D/g, '');
-                    const { data: existing } = await supabase
+                    // .limit(1) em vez de .maybeSingle(): com 2+ notas casando o
+                    // filtro, maybeSingle retorna erro e a nota duplicaria mesmo assim.
+                    const { data: existingRows } = await supabase
                         .from('notas_fiscais')
                         .select('id, numero_nota, fornecedor_cnpj')
                         .eq('numero_nota', light.numero)
                         .ilike('fornecedor_cnpj', `%${cnpjDigits.slice(0, 8)}%`)
-                        .maybeSingle();
+                        .limit(1);
+                    const existing = existingRows?.[0];
                     if (existing?.id) {
                         setResults(prev => prev.map((r, idx) => idx === i ? {
                             ...r,

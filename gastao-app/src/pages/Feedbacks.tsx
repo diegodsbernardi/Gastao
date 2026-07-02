@@ -49,17 +49,24 @@ const fmtDate = (iso: string | null | undefined) => {
 
 const fmtPeriodo = (inicio: string, fim: string) => `${fmtDate(inicio)} → ${fmtDate(fim)}`;
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const lastMonthISO = () => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    return d.toISOString().slice(0, 10);
+// Data local no formato YYYY-MM-DD (evita o bug de toISOString() em UTC, que
+// depois das 21h BRT já retorna "amanhã").
+const localISO = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
 };
-const nextMonthISO = () => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    return d.toISOString().slice(0, 10);
+// Soma meses sem estourar o dia (31 jan − 1 mês → 28/29 fev, não 3 mar).
+const addMonthsLocal = (months: number) => {
+    const base = new Date();
+    const target = new Date(base.getFullYear(), base.getMonth() + months, base.getDate());
+    if (target.getDate() !== base.getDate()) target.setDate(0); // volta pro último dia do mês alvo
+    return target;
 };
+const todayISO = () => localISO(new Date());
+const lastMonthISO = () => localISO(addMonthsLocal(-1));
+const nextMonthISO = () => localISO(addMonthsLocal(1));
 
 // ─── Componente principal ─────────────────────────────────────────────────
 export const Feedbacks = () => {
