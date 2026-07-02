@@ -1126,7 +1126,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <span className="text-xs text-slate-400 w-6">{item.ingredients.unit_type}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                                    {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
+                                                    {fmtMoney((item.ingredients.avg_cost_per_unit / (item.ingredients.aproveitamento || 1)) * item.quantity_needed)}
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}
@@ -1164,7 +1164,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <span className="text-xs text-slate-400 w-6">{item.ingredients.unit_type}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
-                                                    {fmtMoney(item.ingredients.avg_cost_per_unit * item.quantity_needed)}
+                                                    {fmtMoney((item.ingredients.avg_cost_per_unit / (item.ingredients.aproveitamento || 1)) * item.quantity_needed)}
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}

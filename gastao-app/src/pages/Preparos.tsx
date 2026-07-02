@@ -69,7 +69,9 @@ export const Preparos = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editItems, setEditItems] = useState<RecipeIngredient[]>([]);
     const [editSubItems, setEditSubItems] = useState<PreparoSubEntry[]>([]);
-    const [editItemUnits, setEditItemUnits] = useState<Record<number, 'kg' | 'g'>>({});
+    // Chaveado por item.id (não por índice): remover um item não desloca o
+    // toggle g/kg dos demais.
+    const [editItemUnits, setEditItemUnits] = useState<Record<string, 'kg' | 'g'>>({});
     const [editPreparoName, setEditPreparoName] = useState('');
     const [editPreparoYield, setEditPreparoYield] = useState<number | ''>(1);
     const [editPreparoUnit, setEditPreparoUnit] = useState('un');
@@ -1092,7 +1094,7 @@ export const Preparos = () => {
                                     </div>
                                 ) : editItems.map((item, idx) => {
                                     const isKg = item.ingredients.unit_type === 'kg';
-                                    const displayUnit = isKg ? (editItemUnits[idx] ?? 'kg') : item.ingredients.unit_type;
+                                    const displayUnit = isKg ? (editItemUnits[item.id] ?? 'kg') : item.ingredients.unit_type;
                                     const displayQty = isKg && displayUnit === 'g' ? item.quantity_needed * 1000 : item.quantity_needed;
                                     return (
                                     <div key={item.id} className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 group">
@@ -1113,8 +1115,8 @@ export const Preparos = () => {
                                         />
                                         {isKg ? (
                                             <div className="flex rounded-lg border border-slate-300 overflow-hidden text-xs font-bold shrink-0">
-                                                <button onClick={() => setEditItemUnits(u => ({ ...u, [idx]: 'g' }))} className={`px-1.5 py-1 transition-colors ${displayUnit === 'g' ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>g</button>
-                                                <button onClick={() => setEditItemUnits(u => ({ ...u, [idx]: 'kg' }))} className={`px-1.5 py-1 transition-colors ${displayUnit === 'kg' ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>kg</button>
+                                                <button onClick={() => setEditItemUnits(u => ({ ...u, [item.id]: 'g' }))} className={`px-1.5 py-1 transition-colors ${displayUnit === 'g' ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>g</button>
+                                                <button onClick={() => setEditItemUnits(u => ({ ...u, [item.id]: 'kg' }))} className={`px-1.5 py-1 transition-colors ${displayUnit === 'kg' ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>kg</button>
                                             </div>
                                         ) : (
                                             <span className="text-xs text-slate-400 w-6 font-medium">{item.ingredients.unit_type}</span>
