@@ -14,9 +14,10 @@ import { Loader2, UploadCloud, CheckCircle2, AlertTriangle, Download } from 'luc
 
 // Conversão entre unidades da mesma família (kg↔g, l↔ml). Outras families: identidade se unidades iguais.
 const convertUnit = (qty: number, from: string, to: string): number | null => {
-    if (!from || !to || from === to) return qty;
+    if (!from || !to) return qty;
     const f = from.toLowerCase();
     const t = to.toLowerCase();
+    if (f === t) return qty;   // mesma unidade (case-insensitive: "Un" == "un")
     if (f === 'g' && t === 'kg') return qty / 1000;
     if (f === 'kg' && t === 'g') return qty * 1000;
     if (f === 'ml' && t === 'l') return qty / 1000;

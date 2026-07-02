@@ -107,6 +107,10 @@ const toNumber = (v: unknown): number => {
         normalized = s.replace(/\./g, '').replace(',', '.');
     } else if (hasComma) {
         normalized = s.replace(',', '.');
+    } else if (hasDot && /^-?\d{1,3}(\.\d{3})+$/.test(s)) {
+        // Ambiguidade BR: "1.234" ou "1.234.567" com grupos de exatamente 3
+        // dígitos é separador de milhar (1234), não decimal EN (1.234).
+        normalized = s.replace(/\./g, '');
     } else {
         normalized = s;
     }

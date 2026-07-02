@@ -194,16 +194,17 @@ function parseBlocks(aoa: unknown[][], type: BlockSheetType): ParsedBlock[] {
             continue;
         }
 
-        // Detect yield/rendimento row
+        // Detect yield/rendimento row — mesma disposição de colunas dos ingredientes
+        // (preparo: qty=col5, und=col4; montagem: qty=col4, und=col5)
         if (current && (col3 === 'Qntd Rendimento' || col3 === 'RENDIMENTO' || col3.toLowerCase().startsWith('qntd rendimento'))) {
-            const yieldQty = parseFloat(String(row[4] ?? row[5] ?? '1').replace(',', '.'));
+            const yieldQty = parseFloat(String(row[qtyCol] ?? '1').replace(',', '.'));
             if (yieldQty > 0) current.yield_quantity = yieldQty;
-            const yieldUnit = String(row[5] ?? row[6] ?? '').trim();
+            const yieldUnit = String(row[undCol] ?? '').trim();
             if (yieldUnit && !/^\d/.test(yieldUnit)) current.yield_unit = yieldUnit.toLowerCase();
             continue;
         }
         if (current && col3 === 'Und Rendimento') {
-            const yUnit = String(row[4] ?? row[5] ?? '').trim();
+            const yUnit = String(row[undCol] ?? '').trim();
             if (yUnit) current.yield_unit = yUnit.toLowerCase();
             continue;
         }
@@ -440,14 +441,17 @@ function fuzzyMatchName(name: string, knownNames: Map<string, string>): string |
         if (normalizeForMatch(known) === normName) return known;
     }
 
-    // 3. Partial match: "camarao" matches "camarao G", "pomodoro" matches "Molho pomodoro"
-    //    Prefer shorter known names (more specific match)
+    // 3. Partial match por PALAVRA INTEIRA: "camarao" casa "camarao G",
+    //    "pomodoro" casa "Molho pomodoro". Evita "sal" casar "salmao fresco"
+    //    (substring cru dava esse falso-positivo). Prefere o known mais curto.
+    const wordsOf = (s: string) => new Set(normalizeForMatch(s).split(/\s+/).filter(Boolean));
+    const isSubset = (a: Set<string>, b: Set<string>) => a.size > 0 && [...a].every(w => b.has(w));
+    const nameWords = wordsOf(name);
     let bestPartial: string | null = null;
     let bestLen = Infinity;
     for (const known of knownNames.keys()) {
-        const normKnown = normalizeForMatch(known);
-        // Component name is a substring of known name, or vice-versa
-        if (normKnown.includes(normName) || normName.includes(normKnown)) {
+        const knownWords = wordsOf(known);
+        if (isSubset(nameWords, knownWords) || isSubset(knownWords, nameWords)) {
             if (known.length < bestLen) {
                 bestPartial = known;
                 bestLen = known.length;
@@ -671,14 +675,18 @@ export async function inserirFichaTecnica(
                 continue;
             }
 
-            // Bug 2 fix: normalize quantity to match ingredient's base unit
-            let qty = comp.quantity_needed;
+            const qtyRaw = comp.quantity_needed;
             const compUnit = comp.unit.toLowerCase().trim();
-            const ingMatchKey = fuzzyMatchName(comp.component_name, ingUnitMap);
-            const ingUnit = ingMatchKey ? ingUnitMap.get(ingMatchKey) : undefined;
-            if (ingUnit) {
-                qty = convertToTargetUnit(qty, compUnit, ingUnit);
-            }
+
+            // Converte a qty para a unidade base do insumo — SÓ quando o componente
+            // resolve pra um insumo real. Para sub_recipe (preparo), a qty fica no
+            // valor declarado (o preparo é consumido em unidades de rendimento, não
+            // na unidade de um insumo que por acaso casou o nome).
+            const toIngredientQty = () => {
+                const ingMatchKey = fuzzyMatchName(comp.component_name, ingUnitMap);
+                const ingUnit = ingMatchKey ? ingUnitMap.get(ingMatchKey) : undefined;
+                return ingUnit ? convertToTargetUnit(qtyRaw, compUnit, ingUnit) : qtyRaw;
+            };
 
             if (comp.component_type === 'sub_recipe') {
                 const subKey = fuzzyMatchName(comp.component_name, recNameToId);
@@ -687,7 +695,7 @@ export async function inserirFichaTecnica(
                     recipeSubRecipes.push({
                         recipe_id: recipeId,
                         sub_recipe_id: subId,
-                        quantity_needed: qty,
+                        quantity_needed: qtyRaw,
                     });
                 } else {
                     errors.push(`Composicao ignorada: preparo "${comp.component_name}" nao encontrado`);
@@ -701,21 +709,22 @@ export async function inserirFichaTecnica(
                         recipe_id: recipeId,
                         ingredient_id: ingId,
                         sub_recipe_id: null,
-                        quantity_needed: qty,
+                        quantity_needed: toIngredientQty(),
                     });
                 } else {
                     // Fallback: check if it's a recipe/preparo (e.g. "pomodoro" → "Molho pomodoro")
                     const subKey = fuzzyMatchName(comp.component_name, recNameToId);
                     const subId = subKey ? recNameToId.get(subKey) : undefined;
                     if (subId) {
+                        // Resolveu pra preparo — qty no valor declarado (sem conversão de insumo)
                         recipeSubRecipes.push({
                             recipe_id: recipeId,
                             sub_recipe_id: subId,
-                            quantity_needed: qty,
+                            quantity_needed: qtyRaw,
                         });
                     } else {
                         // Auto-create missing ingredient and link it
-                        missingIngredients.push({ comp, recipeId, qty });
+                        missingIngredients.push({ comp, recipeId, qty: qtyRaw });
                     }
                 }
             }
