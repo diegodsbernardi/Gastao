@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { Users, UserPlus, Trash2, Loader2, Mail, Crown, Shield, User, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -48,7 +49,12 @@ export const Equipe = () => {
     const handleRemove = async (membro: Membro) => {
         if (!confirm(`Remover ${membro.nome || membro.email} da equipe?`)) return;
         setRemovingId(membro.id);
-        await supabase.from('membros').delete().eq('id', membro.id);
+        const { error } = await supabase.from('membros').delete().eq('id', membro.id);
+        if (error) {
+            toast.error('Não foi possível remover: ' + error.message);
+            setRemovingId(null);
+            return;
+        }
         setMembros(prev => prev.filter(m => m.id !== membro.id));
         setRemovingId(null);
     };
@@ -75,10 +81,17 @@ export const Equipe = () => {
         }
 
         // Envia magic link para o email convidado
-        await supabase.auth.signInWithOtp({
+        const { error: otpError } = await supabase.auth.signInWithOtp({
             email,
             options: { shouldCreateUser: true },
         });
+
+        if (otpError) {
+            // Convite foi criado, mas o email não saiu (rate limit / falha de envio).
+            setInviteError('Convite registrado, mas o email não pôde ser enviado agora: ' + otpError.message);
+            setIsInviting(false);
+            return;
+        }
 
         setIsInviting(false);
         setInviteSuccess(true);

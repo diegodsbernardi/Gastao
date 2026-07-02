@@ -9,7 +9,9 @@ export function usePermissions() {
     const isFuncionario   = perfil === 'funcionario';
     const isDonoOrGerente = isDono || isGerente;
 
-    const viewMode: ViewMode = isFuncionario ? 'operacao' : 'gerencia';
+    // Fail-closed: enquanto o perfil carrega (null), assume operação — nunca
+    // mostra UI de gerência por um instante para quem talvez não deva ver.
+    const viewMode: ViewMode = (perfil == null || isFuncionario) ? 'operacao' : 'gerencia';
 
     return {
         perfil,

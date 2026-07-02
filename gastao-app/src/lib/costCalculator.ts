@@ -4,49 +4,6 @@
 //   Insumo Base → Preparo → (Preparo)* → Ficha Final
 // =============================================================
 
-/**
- * Calcula o custo por unidade de um Preparo composto APENAS de insumos.
- * custo/un = soma(qty * avg_cost) / yield_quantity
- * (Preserva comportamento legacy para callers que não têm sub-preparos.)
- */
-export function calcPreparoCostPerUnit(
-    items: { avg_cost_per_unit: number; quantity_needed: number }[],
-    yieldQuantity: number
-): number {
-    if (yieldQuantity <= 0) return 0;
-    const total = items.reduce((acc, i) => acc + i.avg_cost_per_unit * i.quantity_needed, 0);
-    return total / yieldQuantity;
-}
-
-/**
- * Constrói o mapa { preparo_id → custo_por_unidade } para todos os preparos
- * (versão sem sub-preparos — retrocompatível).
- */
-export function buildPreparoCostMap(
-    preparos: { id: string; yield_quantity: number }[],
-    preparoIngsMap: Record<string, { avg_cost_per_unit: number; quantity_needed: number }[]>
-): Record<string, number> {
-    const map: Record<string, number> = {};
-    for (const p of preparos) {
-        map[p.id] = calcPreparoCostPerUnit(preparoIngsMap[p.id] ?? [], p.yield_quantity);
-    }
-    return map;
-}
-
-/**
- * Calcula o custo total de uma Ficha Final.
- * Soma insumos diretos (recipe_ingredients) + preparos (recipe_sub_recipes).
- */
-export function calcFichaFinalCost(
-    ingItems: { avg_cost_per_unit: number; quantity_needed: number }[],
-    subItems: { sub_recipe_id: string; quantity_needed: number }[],
-    preparoCostMap: Record<string, number>
-): number {
-    const ingCost = ingItems.reduce((acc, i) => acc + i.avg_cost_per_unit * i.quantity_needed, 0);
-    const subCost = subItems.reduce((acc, s) => acc + (preparoCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0);
-    return ingCost + subCost;
-}
-
 /** CMV percentual. 0 se sale_price <= 0. */
 export function calcCMV(cost: number, salePrice: number): number {
     if (salePrice <= 0) return 0;
@@ -125,19 +82,4 @@ export function buildPreparoCostMapRecursive(
     }
 
     return { costPerUnit: memo, cycles };
-}
-
-/**
- * Versão "seed" para quando você já tem um mapa parcial (ex: custos vindos do servidor).
- * Inicializa memo com os valores conhecidos e resolve o resto.
- */
-export function buildPreparoCostMapRecursiveWithSeed(
-    preparos: PreparoNode[],
-    seed: Record<string, number>,
-): RecursiveCostResult {
-    const result = buildPreparoCostMapRecursive(preparos);
-    return {
-        costPerUnit: { ...seed, ...result.costPerUnit },
-        cycles: result.cycles,
-    };
 }

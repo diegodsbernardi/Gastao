@@ -9,8 +9,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-        // Não refresha o token automaticamente quando a aba volta ao foco
-        // Evita re-renders que desmontam modais abertos
+        // Refresha o token automaticamente (sessões longas não caem). A proteção
+        // contra re-render que desmonta modais fica no handler de TOKEN_REFRESHED
+        // do AuthContext, não em desligar o refresh.
         autoRefreshToken: true,
         detectSessionInUrl: true,
     },

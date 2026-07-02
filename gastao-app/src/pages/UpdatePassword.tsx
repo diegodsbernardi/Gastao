@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Package, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -10,18 +10,9 @@ export const UpdatePassword = () => {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    // After reset link is clicked, the user is redirected here.
-    // They will be automatically logged in by Supabase with a special session or we just update the password.
-
-    // We should ensure the user is logged in via the token hash before allowing update,
-    // but the Supabase client handles parsing the token from the URL automatically in most setups. 
-    // We'll just call updateUser.
-
-    useEffect(() => {
-        // If the user lands here, we should make sure we process the implicitly passed hash token 
-        // via Supabase's auth state listener (handled globally usually via context),
-        // but let's just render the form.
-    }, []);
+    // Ao clicar no link de reset, o Supabase processa o token do hash da URL
+    // automaticamente (detectSessionInUrl) e cria a sessão de recovery; aqui
+    // só renderizamos o form e chamamos updateUser.
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();

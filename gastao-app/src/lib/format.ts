@@ -15,10 +15,6 @@ export const fmtMoney = (v: number): string => {
     return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-/** Formata valor monetário sem símbolo: 1.234,56 */
-export const fmtMoneyRaw = (v: number): string =>
-    v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
 /** Formata quantidade conforme unidade:
  *  kg, g, l, ml → 3 casas
  *  un, cx, pct, fardo, porção → sem decimais desnecessários (max 2)
@@ -32,7 +28,3 @@ export const fmtQty = (v: number, unit: string): string => {
         ? v.toLocaleString('pt-BR')
         : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
-
-/** Formata número para CSV no padrão BR (vírgula decimal, ponto milhar) */
-export const fmtCsvNumber = (v: number, decimals = 2): string =>
-    v.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });

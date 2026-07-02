@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { TrendingDown, TrendingUp, AlertCircle, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react';
-import { buildPreparoCostMap, calcFichaFinalCost, calcCMV } from '../lib/costCalculator';
+import { buildPreparoCostMapRecursive, calcCMV, type PreparoNode } from '../lib/costCalculator';
 import { fmtMoney } from '../lib/format';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -18,9 +18,10 @@ interface TopProduct {
 }
 
 export const Dashboard = () => {
-    const { user } = useAuth();
+    const { user, restauranteId } = useAuth();
     const [loadingStats, setLoadingStats] = useState(true);
     const [totalRevenue, setTotalRevenue] = useState(0);
+    const [totalUnitsSold, setTotalUnitsSold] = useState(0);
     const [stockAlerts, setStockAlerts] = useState(0);
     const [cmvPct, setCmvPct] = useState(0);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
@@ -48,9 +49,7 @@ export const Dashboard = () => {
     const fetchDashboardData = async () => {
         setLoadingStats(true);
 
-        const { data: profile } = await supabase
-            .from('profiles').select('restaurant_id').eq('id', user?.id).single();
-        const restaurantId = profile?.restaurant_id;
+        const restaurantId = restauranteId;
         if (!restaurantId) { setLoadingStats(false); return; }
 
         const startOfMonth = new Date(selYear, selMonth, 1).toISOString();
@@ -76,7 +75,7 @@ export const Dashboard = () => {
                 .eq('restaurant_id', restaurantId)
                 .eq('tipo', 'preparo'),
             supabase.from('recipe_ingredients')
-                .select('recipe_id, quantity_needed, ingredients(avg_cost_per_unit)'),
+                .select('recipe_id, sub_recipe_id, quantity_needed, ingredients(avg_cost_per_unit, aproveitamento)'),
             supabase.from('recipe_sub_recipes')
                 .select('recipe_id, sub_recipe_id, quantity_needed'),
         ]);
@@ -88,40 +87,44 @@ export const Dashboard = () => {
         const allIngs     = allIngsRes.data  ?? [];
         const subs        = subsRes.data     ?? [];
 
-        // Separa recipe_ingredients entre fichas e preparos
-        const fichaIds = new Set(fichas.map((r: any) => r.id));
-        const fichaIngsMap:   Record<string, { avg_cost_per_unit: number; quantity_needed: number }[]> = {};
-        const preparoIngsMap: Record<string, { avg_cost_per_unit: number; quantity_needed: number }[]> = {};
+        // Custo LÍQUIDO do insumo (aplica aproveitamento, igual às telas de ficha)
+        const netCost = (ri: any) => {
+            const bruto = ri.ingredients?.avg_cost_per_unit ?? 0;
+            const aprov = ri.ingredients?.aproveitamento ?? 1;
+            return aprov > 0 ? bruto / aprov : bruto;
+        };
+
+        // Insumos diretos (recipe_ingredients com ingredient) agrupados por receita
+        const ingsByRecipe: Record<string, { avg_cost_per_unit: number; quantity_needed: number }[]> = {};
+        // Sub-receitas — vindas dos DOIS locais: recipe_ingredients.sub_recipe_id E recipe_sub_recipes
+        const subsByRecipe: Record<string, { sub_recipe_id: string; quantity_needed: number }[]> = {};
 
         allIngs.forEach((ri: any) => {
-            const entry = { avg_cost_per_unit: ri.ingredients?.avg_cost_per_unit ?? 0, quantity_needed: ri.quantity_needed };
-            if (fichaIds.has(ri.recipe_id)) {
-                if (!fichaIngsMap[ri.recipe_id]) fichaIngsMap[ri.recipe_id] = [];
-                fichaIngsMap[ri.recipe_id].push(entry);
+            if (ri.sub_recipe_id) {
+                (subsByRecipe[ri.recipe_id] ??= []).push({ sub_recipe_id: ri.sub_recipe_id, quantity_needed: ri.quantity_needed });
             } else {
-                if (!preparoIngsMap[ri.recipe_id]) preparoIngsMap[ri.recipe_id] = [];
-                preparoIngsMap[ri.recipe_id].push(entry);
+                (ingsByRecipe[ri.recipe_id] ??= []).push({ avg_cost_per_unit: netCost(ri), quantity_needed: ri.quantity_needed });
             }
         });
-
-        // Agrupa sub-receitas por ficha
-        const subsMap: Record<string, { sub_recipe_id: string; quantity_needed: number }[]> = {};
         subs.forEach((s: any) => {
-            if (!subsMap[s.recipe_id]) subsMap[s.recipe_id] = [];
-            subsMap[s.recipe_id].push(s);
+            (subsByRecipe[s.recipe_id] ??= []).push({ sub_recipe_id: s.sub_recipe_id, quantity_needed: s.quantity_needed });
         });
 
-        // Custo por unidade de cada preparo
-        const preparoCostMap = buildPreparoCostMap(preparos, preparoIngsMap);
+        // Custo/un de cada preparo, resolvido recursivamente (preparo-dentro-de-preparo)
+        const preparoNodes: PreparoNode[] = preparos.map((p: any) => ({
+            id: p.id,
+            yield_quantity: p.yield_quantity ?? 1,
+            ingredients: ingsByRecipe[p.id] ?? [],
+            subRecipes: subsByRecipe[p.id] ?? [],
+        }));
+        const { costPerUnit: preparoCostMap } = buildPreparoCostMapRecursive(preparoNodes);
 
-        // Custo total de cada ficha final (preparos + insumos diretos)
+        // Custo total de cada ficha final (insumos diretos líquidos + preparos)
         const fichaCostMap: Record<string, number> = {};
         fichas.forEach((f: any) => {
-            fichaCostMap[f.id] = calcFichaFinalCost(
-                fichaIngsMap[f.id] ?? [],
-                subsMap[f.id]      ?? [],
-                preparoCostMap
-            );
+            const ingCost = (ingsByRecipe[f.id] ?? []).reduce((acc, i) => acc + i.avg_cost_per_unit * i.quantity_needed, 0);
+            const subCost = (subsByRecipe[f.id] ?? []).reduce((acc, s) => acc + (preparoCostMap[s.sub_recipe_id] ?? 0) * s.quantity_needed, 0);
+            fichaCostMap[f.id] = ingCost + subCost;
         });
 
         // Mapa de vendas do mês
@@ -157,7 +160,10 @@ export const Dashboard = () => {
             .sort((a: TopProduct, b: TopProduct) => b.margin - a.margin)
             .slice(0, 5);
 
+        const unitsSold = salesData.reduce((sum: number, s: any) => sum + s.quantity_sold, 0);
+
         setTotalRevenue(revenue);
+        setTotalUnitsSold(unitsSold);
         setStockAlerts(alertsCount);
         setCmvPct(cmv);
         setTopProducts(products);
@@ -255,7 +261,7 @@ export const Dashboard = () => {
                             R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </span>
                         <div className="mt-1 text-sm text-slate-500">
-                            {topProducts.length > 0 ? `${topProducts.reduce((s, p) => s + p.total_sold, 0)} unidades vendidas` : 'Nenhuma venda registrada'}
+                            {totalUnitsSold > 0 ? `${totalUnitsSold} unidades vendidas` : 'Nenhuma venda registrada'}
                         </div>
                     </div>
                 </div>
