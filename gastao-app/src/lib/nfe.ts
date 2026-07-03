@@ -12,6 +12,8 @@ export interface NotaFiscal {
     valor_total: number | null;
     xml_url: string | null;
     status: 'pendente' | 'confirmada' | 'cancelada';
+    chave_acesso: string | null;
+    origem: 'upload' | 'drive';
     criado_em: string;
 }
 
@@ -72,6 +74,19 @@ export async function uploadNfeXml(file: File): Promise<string> {
     const token = await getAuthToken();
     const restauranteId = await getRestauranteId();
 
+    // Chave de acesso (44 dígitos) — dedup contra o robô do Drive e re-uploads
+    const xmlText = await file.text();
+    const chaveAcesso = xmlText.match(/NFe(\d{44})/)?.[1] ?? null;
+    if (chaveAcesso) {
+        const { data: existente } = await supabase
+            .from('notas_fiscais')
+            .select('id')
+            .eq('restaurante_id', restauranteId)
+            .eq('chave_acesso', chaveAcesso)
+            .maybeSingle();
+        if (existente) throw new Error('Esta nota já foi importada (mesma chave de acesso).');
+    }
+
     // 1. Upload do arquivo para o Storage
     const fileName = `${restauranteId}/${Date.now()}_${file.name}`;
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -128,10 +143,13 @@ export async function uploadNfeXml(file: File): Promise<string> {
             valor_total: nota.valor_total || null,
             xml_url: xmlUrl,
             status: 'pendente',
+            chave_acesso: chaveAcesso,
+            origem: 'upload',
         })
         .select('id')
         .single();
 
+    if (notaError?.code === '23505') throw new Error('Esta nota já foi importada (mesma chave de acesso).');
     if (notaError || !notaData) throw new Error('Erro ao salvar nota fiscal: ' + notaError?.message);
     const notaId = notaData.id as string;
 
@@ -167,8 +185,9 @@ export async function uploadNfeXml(file: File): Promise<string> {
 
 /** Exclui uma nota fiscal e seu XML. Os itens caem por cascata (FK). */
 export async function deletarNota(notaId: string, xmlPath: string | null): Promise<void> {
-    // Remove o XML do Storage primeiro (best-effort — não bloqueia o delete da nota)
-    if (xmlPath) {
+    // Remove o XML do Storage primeiro (best-effort — não bloqueia o delete da nota).
+    // Notas do robô do Drive guardam "drive:<fileId>" — o arquivo-fonte fica no Drive.
+    if (xmlPath && !xmlPath.startsWith('drive:')) {
         const { error: storageError } = await supabase.storage.from('nfe-xml').remove([xmlPath]);
         if (storageError) console.warn('Não foi possível remover o XML do storage:', storageError.message);
     }

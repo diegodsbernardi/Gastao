@@ -28,3 +28,9 @@ Deploy: `gastao.vercel.app` (a partir de `gastao-app/`, tem `vercel.json` própr
 
 ## Build
 - `cd gastao-app && npm run build` (gera template + tsc + vite).
+
+## Ponte Drive → NF-e
+- Robô `gastao-app/scripts/nfe-drive-sync.mjs` roda via cron do VPS (08h/17h BRT),
+  importa XMLs das pastas `NotasEntrada` no Drive como notas `pendente`.
+- Config por restaurante na tabela `nfe_drive_sync`; dedup por `chave_acesso`.
+- Detalhes e setup: `docs/specs/2026-07-03-ponte-drive-nfe.md`.
