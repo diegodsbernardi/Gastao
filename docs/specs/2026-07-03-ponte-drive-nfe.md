@@ -25,15 +25,24 @@ confirma a nota na UI, como sempre.
 O upload manual da UI continua funcionando e agora também grava `chave_acesso`
 (origem `upload`) — robô e upload não se duplicam.
 
-## Estado (03/07)
+## Estado (03/07, fim do dia)
 
 - ✅ Migration 027 aplicada em prod (chave única + tabela `nfe_drive_sync`).
-- ✅ Pastas mapeadas e ativas: Brut, Criminal, Yalinha (CNPJs preenchidos a partir
-  dos próprios XMLs). TOCS ainda não tem pasta no Drive.
+- ✅ Pastas mapeadas e ativas: Criminal e Yalinha (CNPJs preenchidos a partir dos
+  próprios XMLs). TOCS ainda não tem pasta no Drive.
+- ❌ **Brut saiu**: ex-cliente (03/07). Dados deletados do banco com backup em
+  `~/backups/brut-backup-2026-07-03.json`.
 - ✅ Pipeline testado ponta a ponta contra prod (insert + dedup + limpeza).
+- ✅ Backfill parcial via sessão do Claude (modo `--import-dir`): **34 notas
+  importadas** (18 Criminal + 16 Yalinha, ~05–22/mai). Faltam ~57 XMLs no Drive
+  (interrompido por limite de gasto da conta Claude) — **entram sozinhos na
+  primeira rodada do cron depois da service account** (dedup cuida do overlap).
 - ✅ Cron instalado; log em `~/logs/gastao-nfe-drive-sync.log`.
 - ⏳ **Falta só a service account do Google** (checklist abaixo). Sem ela o robô
   sai em silêncio, sem erro.
+- 📌 Próximo (pedido do Diego): atualização de **custos** dos insumos a partir
+  das notas importadas — só `avg_cost_per_unit`, SEM mexer em estoque (não
+  confirmar notas históricas em massa!), com prévia antes de aplicar.
 
 ## Setup pendente (Diego, ~10 min, tudo no navegador)
 

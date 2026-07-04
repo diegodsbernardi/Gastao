@@ -31,6 +31,8 @@ const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
 const TEST_XML = args.includes('--test-xml') ? args[args.indexOf('--test-xml') + 1] : null;
 const TEST_RESTAURANTE = args.includes('--restaurante') ? args[args.indexOf('--restaurante') + 1] : null;
+// Backfill sem Drive API: importa XMLs já baixados em <dir>/<restaurante_id>/<driveFileId>.xml
+const IMPORT_DIR = args.includes('--import-dir') ? args[args.indexOf('--import-dir') + 1] : null;
 
 const log = (msg) => console.log(`[${new Date().toISOString()}] ${msg}`);
 
@@ -258,6 +260,47 @@ try {
         } else {
             const id = await inserirNota(pg, TEST_RESTAURANTE, chave, 'test-local', nota, itens, matches);
             log(id ? `TESTE: nota gravada (${id})` : 'TESTE: já existia (dedup)');
+        }
+        process.exit(0);
+    }
+
+    if (IMPORT_DIR) {
+        // Backfill local: mesma lógica da rodada normal, mas lendo do disco.
+        const restauranteDirs = fs.readdirSync(IMPORT_DIR, { withFileTypes: true })
+            .filter((d) => d.isDirectory()).map((d) => d.name);
+        for (const restauranteId of restauranteDirs) {
+            const { rows: [rest] } = await pg.query(
+                'SELECT nome, cnpj FROM restaurantes WHERE id = $1', [restauranteId]);
+            if (!rest) { log(`✗ diretório ${restauranteId} não é um restaurante, pulando`); continue; }
+            const resumo = { novas: 0, jaImportadas: 0, ignoradas: 0, erros: 0 };
+            const { rows: chavesRows } = await pg.query(
+                'SELECT chave_acesso FROM notas_fiscais WHERE restaurante_id = $1 AND chave_acesso IS NOT NULL',
+                [restauranteId]);
+            const conhecidas = new Set(chavesRows.map((r) => r.chave_acesso));
+            const arquivos = fs.readdirSync(path.join(IMPORT_DIR, restauranteId)).filter((f) => f.endsWith('.xml'));
+            for (const arquivo of arquivos) {
+                try {
+                    const xml = fs.readFileSync(path.join(IMPORT_DIR, restauranteId, arquivo), 'utf8');
+                    const chave = chaveFrom(xml) ?? chaveFrom(arquivo);
+                    if (!chave) { resumo.ignoradas++; continue; }
+                    if (conhecidas.has(chave)) { resumo.jaImportadas++; continue; }
+                    const destCnpj = onlyDigits(xml.match(/<dest>[\s\S]*?<CNPJ>(\d+)<\/CNPJ>/)?.[1]);
+                    if (rest.cnpj && destCnpj && onlyDigits(rest.cnpj) !== destCnpj) {
+                        log(`  ⚠ ${arquivo}: destinatário ${destCnpj} ≠ CNPJ de ${rest.nome}, ignorando`);
+                        resumo.ignoradas++; continue;
+                    }
+                    const { nota, itens } = await parseNfe(xml);
+                    if (DRY_RUN) { resumo.novas++; conhecidas.add(chave); continue; }
+                    const matches = await matchItens(pg, itens, restauranteId);
+                    const driveFileId = path.basename(arquivo, '.xml');
+                    const notaId = await inserirNota(pg, restauranteId, chave, driveFileId, nota, itens, matches);
+                    if (notaId) { resumo.novas++; conhecidas.add(chave); } else resumo.jaImportadas++;
+                } catch (err) {
+                    resumo.erros++;
+                    log(`  ✗ ${arquivo}: ${err.message}`);
+                }
+            }
+            log(`${rest.nome}: ${resumo.novas} novas, ${resumo.jaImportadas} já importadas, ${resumo.ignoradas} ignoradas, ${resumo.erros} erros${DRY_RUN ? ' [DRY-RUN]' : ''}`);
         }
         process.exit(0);
     }
