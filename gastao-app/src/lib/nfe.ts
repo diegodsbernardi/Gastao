@@ -183,6 +183,31 @@ export async function uploadNfeXml(file: File): Promise<string> {
     return notaId;
 }
 
+// ── Sync com o Drive (robô do VPS) ─────────────────────────────────────────
+
+export interface DriveSyncStatus {
+    restaurante_id: string;
+    ativo: boolean;
+    last_sync_at: string | null;
+    last_result: string | null;
+    sync_requested_at: string | null;
+}
+
+/** Status do sync automático com o Drive (null se o restaurante não tem). */
+export async function getDriveSyncStatus(): Promise<DriveSyncStatus | null> {
+    const { data } = await supabase
+        .from('nfe_drive_sync')
+        .select('restaurante_id, ativo, last_sync_at, last_result, sync_requested_at')
+        .maybeSingle();
+    return (data as DriveSyncStatus) ?? null;
+}
+
+/** Pede uma busca imediata de notas no Drive (o robô atende em até 5 min). */
+export async function solicitarSyncNfe(): Promise<void> {
+    const { error } = await supabase.rpc('solicitar_sync_nfe');
+    if (error) throw new Error('Erro ao solicitar busca: ' + error.message);
+}
+
 /** Exclui uma nota fiscal e seu XML. Os itens caem por cascata (FK). */
 export async function deletarNota(notaId: string, xmlPath: string | null): Promise<void> {
     // Remove o XML do Storage primeiro (best-effort — não bloqueia o delete da nota).

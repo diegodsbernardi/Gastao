@@ -33,6 +33,8 @@ const TEST_XML = args.includes('--test-xml') ? args[args.indexOf('--test-xml') +
 const TEST_RESTAURANTE = args.includes('--restaurante') ? args[args.indexOf('--restaurante') + 1] : null;
 // Backfill sem Drive API: importa XMLs já baixados em <dir>/<restaurante_id>/<driveFileId>.xml
 const IMPORT_DIR = args.includes('--import-dir') ? args[args.indexOf('--import-dir') + 1] : null;
+// Modo sob demanda (cron a cada 5 min): só roda se algum restaurante pediu via botão na UI
+const IF_REQUESTED = args.includes('--if-requested');
 
 const log = (msg) => console.log(`[${new Date().toISOString()}] ${msg}`);
 
@@ -305,15 +307,19 @@ try {
         process.exit(0);
     }
 
-    const token = await googleAccessToken();
-    if (!token) process.exit(0); // SA não configurada ainda — sai em silêncio (cron)
-
+    // Consulta ANTES do Google: no modo --if-requested (cron de 5 min), se ninguém
+    // pediu sync pelo botão da UI, sai sem nem autenticar.
     const { rows: syncs } = await pg.query(
         `SELECT s.restaurante_id, s.drive_folder_id, r.nome, r.cnpj
          FROM nfe_drive_sync s JOIN restaurantes r ON r.id = s.restaurante_id
-         WHERE s.ativo`,
+         WHERE s.ativo${IF_REQUESTED ? ' AND s.sync_requested_at IS NOT NULL' : ''}`,
     );
-    log(`${syncs.length} restaurante(s) com sync ativo${DRY_RUN ? ' [DRY-RUN]' : ''}`);
+    if (IF_REQUESTED && syncs.length === 0) process.exit(0); // ninguém pediu — silêncio total
+
+    const token = await googleAccessToken();
+    if (!token) process.exit(0); // SA não configurada ainda — sai em silêncio (cron)
+
+    log(`${syncs.length} restaurante(s) com sync ${IF_REQUESTED ? 'solicitado' : 'ativo'}${DRY_RUN ? ' [DRY-RUN]' : ''}`);
 
     for (const sync of syncs) {
         const resumo = { novas: 0, jaImportadas: 0, ignoradas: 0, erros: 0 };
@@ -374,7 +380,9 @@ try {
         log(`${sync.nome}: ${resultado}`);
         if (!DRY_RUN) {
             await pg.query(
-                'UPDATE nfe_drive_sync SET last_sync_at = now(), last_result = $2 WHERE restaurante_id = $1',
+                `UPDATE nfe_drive_sync
+                 SET last_sync_at = now(), last_result = $2, sync_requested_at = NULL
+                 WHERE restaurante_id = $1`,
                 [sync.restaurante_id, resultado],
             );
         }

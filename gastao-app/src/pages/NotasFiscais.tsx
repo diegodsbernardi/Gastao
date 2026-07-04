@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
     AlertCircle, Check, ChevronDown, CheckCircle2, FileText, Files,
-    Loader2, Plus, Search, Trash2, Upload, X, XCircle,
+    Loader2, Plus, RefreshCw, Search, Trash2, Upload, X, XCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
-    confirmarItem, confirmarNfe, criarInsumoDeNfe, deletarNota, ignorarItem,
-    NotaFiscal, NfeItem, uploadNfeXml,
+    confirmarItem, confirmarNfe, criarInsumoDeNfe, deletarNota, getDriveSyncStatus,
+    ignorarItem, NotaFiscal, NfeItem, solicitarSyncNfe, uploadNfeXml, DriveSyncStatus,
 } from '../lib/nfe';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -1219,19 +1219,55 @@ function ListaView({
     const [notas, setNotas] = useState<NotaFiscal[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [driveSync, setDriveSync] = useState<DriveSyncStatus | null>(null);
+    const [buscandoDrive, setBuscandoDrive] = useState(false);
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const fetchNotas = useCallback(async () => {
+        const { data, error } = await supabase
+            .from('notas_fiscais')
+            .select('*')
+            .order('criado_em', { ascending: false });
+        if (error) toast.error('Erro ao carregar notas: ' + error.message);
+        setNotas((data ?? []) as NotaFiscal[]);
+    }, []);
 
     useEffect(() => {
         (async () => {
-            const { data, error } = await supabase
-                .from('notas_fiscais')
-                .select('*')
-                .order('criado_em', { ascending: false });
-
-            if (error) toast.error('Erro ao carregar notas: ' + error.message);
-            setNotas((data ?? []) as NotaFiscal[]);
+            await fetchNotas();
+            setDriveSync(await getDriveSyncStatus());
             setLoading(false);
         })();
-    }, []);
+        return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    }, [fetchNotas]);
+
+    const handleBuscarDrive = async () => {
+        setBuscandoDrive(true);
+        try {
+            await solicitarSyncNfe();
+            toast.success('Busca solicitada! O robô puxa as notas do Drive em até 5 minutos.');
+            // Poll: quando last_sync_at mudar, recarrega a lista e para.
+            const syncAntes = driveSync?.last_sync_at ?? null;
+            let tentativas = 0;
+            pollRef.current = setInterval(async () => {
+                tentativas++;
+                const status = await getDriveSyncStatus();
+                if (status && status.last_sync_at !== syncAntes) {
+                    if (pollRef.current) clearInterval(pollRef.current);
+                    setDriveSync(status);
+                    setBuscandoDrive(false);
+                    await fetchNotas();
+                    toast.success(`Busca concluída: ${status.last_result ?? 'ok'}`);
+                } else if (tentativas >= 30) { // ~10 min, desiste do poll (busca segue no servidor)
+                    if (pollRef.current) clearInterval(pollRef.current);
+                    setBuscandoDrive(false);
+                }
+            }, 20000);
+        } catch (err) {
+            setBuscandoDrive(false);
+            toast.error(String(err));
+        }
+    };
 
     const handleDelete = async (nota: NotaFiscal) => {
         const nome = nota.fornecedor_nome ?? 'Fornecedor desconhecido';
@@ -1264,6 +1300,19 @@ function ListaView({
                     <p className="text-sm text-slate-500 mt-0.5">Importe e gerencie NF-e XML</p>
                 </div>
                 <div className="flex gap-2">
+                    {driveSync?.ativo && (
+                        <button
+                            onClick={handleBuscarDrive}
+                            disabled={buscandoDrive}
+                            title={driveSync.last_result
+                                ? `Última busca: ${driveSync.last_result}`
+                                : 'Buscar notas novas no Drive agora'}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-300 bg-white rounded-xl hover:bg-slate-50 disabled:opacity-60 transition-colors shadow-sm"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${buscandoDrive ? 'animate-spin' : ''}`} />
+                            {buscandoDrive ? 'Buscando…' : 'Buscar do Drive'}
+                        </button>
+                    )}
                     <button
                         onClick={onImportarLote}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 border border-primary-300 bg-white rounded-xl hover:bg-primary-50 transition-colors shadow-sm"

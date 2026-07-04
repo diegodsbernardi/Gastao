@@ -86,3 +86,11 @@ O upload manual da UI continua funcionando e agora também grava `chave_acesso`
   service-role e redeployar (precisa de `supabase login`, não tem token no VPS).
 - O XML não é copiado pro Storage; a fonte é o Drive (`xml_url = drive:<fileId>`).
   Se apagarem o arquivo do Drive, perde-se o XML original (a nota importada fica).
+
+## Busca sob demanda (04/07)
+
+Botão **"Buscar do Drive"** na tela de Notas Fiscais (aparece só pra restaurante
+com sync configurado). Fluxo: botão chama a RPC `solicitar_sync_nfe()` (migration
+029, anti-spam de 1/min) → grava `sync_requested_at` → cron de **5 em 5 min** roda
+o robô com `--if-requested`, que só autentica no Google se houver pedido → UI
+faz poll e recarrega a lista quando o sync termina.
