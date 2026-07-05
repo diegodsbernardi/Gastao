@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
     AlertCircle, Check, ChevronDown, CheckCircle2, FileText, Files,
-    Loader2, Plus, RefreshCw, Search, Trash2, Upload, X, XCircle,
+    DollarSign, Loader2, Plus, RefreshCw, Search, Trash2, Upload, X, XCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
     confirmarItem, confirmarNfe, criarInsumoDeNfe, deletarNota, getDriveSyncStatus,
     ignorarItem, NotaFiscal, NfeItem, solicitarSyncNfe, uploadNfeXml, DriveSyncStatus,
 } from '../lib/nfe';
+import { AtualizarCustosNfe } from './AtualizarCustosNfe';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 
@@ -73,7 +74,7 @@ function StatusBadgeNota({ status }: { status: NotaFiscal['status'] }) {
 
 // ── Badge de confiança da IA ───────────────────────────────────────────────
 
-function ConfidenceBadge({ v }: { v: number | null }) {
+export function ConfidenceBadge({ v }: { v: number | null }) {
     if (v == null) return null;
     const pct = Math.round(v * 100);
     const color = v >= 0.8 ? 'bg-green-100 text-green-700'
@@ -1210,11 +1211,12 @@ function ReviewView({
 // ── View: Lista de notas ───────────────────────────────────────────────────
 
 function ListaView({
-    onImportar, onImportarLote, onOpenNota,
+    onImportar, onImportarLote, onOpenNota, onAtualizarCustos,
 }: {
     onImportar: () => void;
     onImportarLote: () => void;
     onOpenNota: (id: string) => void;
+    onAtualizarCustos: () => void;
 }) {
     const [notas, setNotas] = useState<NotaFiscal[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1300,6 +1302,15 @@ function ListaView({
                     <p className="text-sm text-slate-500 mt-0.5">Importe e gerencie NF-e XML</p>
                 </div>
                 <div className="flex gap-2">
+                    {notas.some(n => n.status === 'pendente') && (
+                        <button
+                            onClick={onAtualizarCustos}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-300 bg-white rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+                        >
+                            <DollarSign className="w-4 h-4" />
+                            Atualizar custos
+                        </button>
+                    )}
                     {driveSync?.ativo && (
                         <button
                             onClick={handleBuscarDrive}
@@ -1396,7 +1407,7 @@ function ListaView({
 
 // ── Page principal ─────────────────────────────────────────────────────────
 
-type View = 'list' | 'upload' | 'bulk' | 'review';
+type View = 'list' | 'upload' | 'bulk' | 'review' | 'custos';
 
 export function NotasFiscais() {
     const navigate = useNavigate();
@@ -1429,6 +1440,15 @@ export function NotasFiscais() {
         );
     }
 
+    if (view === 'custos') {
+        return (
+            <AtualizarCustosNfe
+                onBack={() => setView('list')}
+                onDone={() => setView('list')}
+            />
+        );
+    }
+
     if (view === 'review' && reviewNotaId) {
         return (
             <ReviewView
@@ -1443,6 +1463,7 @@ export function NotasFiscais() {
         <ListaView
             onImportar={() => setView('upload')}
             onImportarLote={() => setView('bulk')}
+            onAtualizarCustos={() => setView('custos')}
             onOpenNota={(id) => {
                 setReviewNotaId(id);
                 setView('review');

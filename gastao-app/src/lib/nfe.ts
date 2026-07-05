@@ -183,6 +183,45 @@ export async function uploadNfeXml(file: File): Promise<string> {
     return notaId;
 }
 
+// ── Atualização de custos a partir de notas pendentes (migration 031) ──────
+
+export interface PreviaCustoNfe {
+    item_id: string;
+    nota_id: string;
+    numero_nota: string | null;
+    fornecedor: string | null;
+    data_emissao: string | null;
+    origem: 'upload' | 'drive';
+    insumo_id: string;
+    insumo_nome: string;
+    insumo_unidade: string;
+    origem_match: 'confirmado' | 'sugerido';
+    confianca: number | null;
+    descricao_xml: string;
+    qtd_nota: number;
+    unidade_nota: string;
+    valor_unit_nota: number;
+    fator: number | null;
+    custo_atual: number | null;
+    custo_novo: number | null;
+    variacao_pct: number | null;
+    eh_mais_recente: boolean;
+}
+
+/** Prévia de atualização de custos: itens de notas pendentes ainda não aplicados. */
+export async function previaCustosNfe(): Promise<PreviaCustoNfe[]> {
+    const { data, error } = await supabase.rpc('previa_custos_nfe');
+    if (error) throw new Error('Erro ao gerar prévia de custos: ' + error.message);
+    return (data ?? []) as PreviaCustoNfe[];
+}
+
+/** Aplica os custos dos itens escolhidos (server-side recalcula tudo; não toca estoque). */
+export async function aplicarCustosNfe(itemIds: string[]): Promise<number> {
+    const { data, error } = await supabase.rpc('aplicar_custos_nfe', { p_item_ids: itemIds });
+    if (error) throw new Error('Erro ao aplicar custos: ' + error.message);
+    return data as number;
+}
+
 // ── Sync com o Drive (robô do VPS) ─────────────────────────────────────────
 
 export interface DriveSyncStatus {
