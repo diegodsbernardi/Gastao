@@ -1,0 +1,9 @@
+# Crontab de referência da ponte Drive → NF-e (o crontab REAL vive no VPS: crontab -l)
+# Horários em UTC (BRT = UTC-3).
+
+# Rodadas automáticas: 08h e 17h BRT
+0 11,20 * * * /home/diego/.nvm/versions/node/v24.15.0/bin/node /home/diego/projects/Gastao/gastao-app/scripts/nfe-drive-sync.mjs >> /home/diego/logs/gastao-nfe-drive-sync.log 2>&1
+
+# Busca sob demanda (botão "Buscar do Drive" na UI): checa pedidos a cada 5 min,
+# só autentica no Google se alguém pediu
+*/5 * * * * /home/diego/.nvm/versions/node/v24.15.0/bin/node /home/diego/projects/Gastao/gastao-app/scripts/nfe-drive-sync.mjs --if-requested >> /home/diego/logs/gastao-nfe-drive-sync.log 2>&1

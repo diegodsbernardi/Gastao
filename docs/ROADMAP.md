@@ -1,7 +1,7 @@
 # Gastão — Roadmap de Execução
 
 > **Como ler:** `[x]` = concluído, `[ ]` = pendente, `[~]` = em progresso. Atualizado conforme as features fecham.
-> **Última atualização:** 2026-05-26
+> **Última atualização:** 2026-07-05
 
 ---
 
@@ -33,7 +33,7 @@ Entrega: replicar BRUT em outro cliente do BPO Cinco, provando escalabilidade.
 - [x] Smoke test passado (Dashboard, /recipes, sort por CMV, composição visível) — 2026-05-20
 - [x] Demo CRIMINAL executada — 2026-05-20
 
-## 🚧 Marco 3 — NFe Bulk (Cinco operando) 🟡 EM PROGRESSO
+## 🏁 Marco 3 — NFe Bulk (Cinco operando) ✅ FECHADO (e superado: ponte Drive automática + busca sob demanda, jul/2026)
 
 Entrega: Cinco BPO consegue subir múltiplos XMLs de NFe de uma vez pelo painel atual.
 
@@ -46,7 +46,7 @@ Entrega: Cinco BPO consegue subir múltiplos XMLs de NFe de uma vez pelo painel 
 
 **Estimativa:** 2-3h código + 1h teste com XMLs reais.
 
-## 🔭 Marco 4 — B2B2B real (painel Cinco) 🔵 PRÓXIMO
+## 🏁 Marco 4 — B2B2B real (painel Cinco) ✅ FECHADO (jul/2026: perfil bpo, switcher no header, white-label BPO, criar_restaurante_bpo + onboarding via /importar)
 
 Entrega: Cinco entra no Gastão e vê N restaurantes do BPO num lugar só, com isolamento.
 
@@ -70,7 +70,7 @@ Entrega: blindagens que evitam regressão e melhoram UX.
 
 **Estimativa:** 4-6h.
 
-## 🚀 Marco 6 — NFe automática SEFAZ 🔴 FUTURO
+## ⏸ Marco 6 — NFe automática SEFAZ — ADIADO (substituído pela ponte Drive custo-zero, jul/2026; decisão em docs/specs/2026-07-02-decisao-provider-nfe.md)
 
 Entrega: NFe chega no Gastão sem ninguém precisar subir XML — provider busca direto na SEFAZ.
 

@@ -25,7 +25,16 @@ confirma a nota na UI, como sempre.
 O upload manual da UI continua funcionando e agora também grava `chave_acesso`
 (origem `upload`) — robô e upload não se duplicam.
 
-## Estado (03/07, fim do dia)
+## Estado (05/07) — PONTE OPERACIONAL ✅
+
+- Service account criada e conectada (04/07); **91 notas** importadas
+  (51 Criminal + 40 Yalinha), zero erros; cron 08h/17h + sob demanda (*/5) ativos.
+- Alertas de CMV no ar (migration 030) e atualização de custos in-app
+  (migration 031 + tela "Atualizar custos" nas Notas Fiscais).
+- Painel BPO entregue (migration 032 + switcher no header + criar restaurante).
+- Crontab de referência versionado em `gastao-app/scripts/crontab.example`.
+
+## Estado (03/07, fim do dia — histórico)
 
 - ✅ Migration 027 aplicada em prod (chave única + tabela `nfe_drive_sync`).
 - ✅ Pastas mapeadas e ativas: Criminal e Yalinha (CNPJs preenchidos a partir dos
