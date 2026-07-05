@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { TrendingDown, TrendingUp, AlertCircle, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingDown, TrendingUp, AlertCircle, AlertTriangle, Check, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { buildPreparoCostMapRecursive, calcCMV, type PreparoNode } from '../lib/costCalculator';
 import { fmtMoney } from '../lib/format';
+import { CmvAlerta, getAlertasNovos, marcarAlertaVisto } from '../lib/alertas';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
@@ -25,6 +27,9 @@ export const Dashboard = () => {
     const [stockAlerts, setStockAlerts] = useState(0);
     const [cmvPct, setCmvPct] = useState(0);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+    const [cmvAlertas, setCmvAlertas] = useState<CmvAlerta[]>([]);
+    // Custo/preço atuais por ficha — usados nos cards de alerta (CMV + sugestão de preço)
+    const [fichaInfo, setFichaInfo] = useState<Record<string, { cost: number; sale_price: number }>>({});
 
     const now = new Date();
     const [selYear, setSelYear] = useState(now.getFullYear());
@@ -55,8 +60,8 @@ export const Dashboard = () => {
         const startOfMonth = new Date(selYear, selMonth, 1).toISOString();
         const endOfMonth   = new Date(selYear, selMonth + 1, 1).toISOString();
 
-        // 6 fetches em paralelo — sem waterfall
-        const [salesRes, stockAlertsRes, fichasRes, preparosRes, allIngsRes, subsRes] = await Promise.all([
+        // 7 fetches em paralelo — sem waterfall
+        const [salesRes, stockAlertsRes, fichasRes, preparosRes, allIngsRes, subsRes, alertasRes] = await Promise.all([
             supabase.from('sales')
                 .select('recipe_id, quantity_sold, total_value')
                 .eq('restaurant_id', restaurantId)
@@ -78,6 +83,7 @@ export const Dashboard = () => {
                 .select('recipe_id, sub_recipe_id, quantity_needed, ingredients(avg_cost_per_unit, aproveitamento)'),
             supabase.from('recipe_sub_recipes')
                 .select('recipe_id, sub_recipe_id, quantity_needed'),
+            getAlertasNovos().catch(() => [] as CmvAlerta[]),
         ]);
 
         const salesData   = salesRes.data   ?? [];
@@ -167,7 +173,20 @@ export const Dashboard = () => {
         setStockAlerts(alertsCount);
         setCmvPct(cmv);
         setTopProducts(products);
+        setCmvAlertas(alertasRes);
+        const info: Record<string, { cost: number; sale_price: number }> = {};
+        fichas.forEach((f: any) => { info[f.id] = { cost: fichaCostMap[f.id] ?? 0, sale_price: f.sale_price ?? 0 }; });
+        setFichaInfo(info);
         setLoadingStats(false);
+    };
+
+    const handleAlertaVisto = async (id: string) => {
+        try {
+            await marcarAlertaVisto(id);
+            setCmvAlertas(prev => prev.filter(a => a.id !== id));
+        } catch (err) {
+            toast.error(String(err));
+        }
     };
 
     const cmvColor = cmvPct === 0
@@ -228,6 +247,77 @@ export const Dashboard = () => {
     return (
         <div className="max-w-7xl mx-auto space-y-6">
             {header}
+
+            {/* Alertas de variação de custo (CMV) — nascem na confirmação de NF-e */}
+            {cmvAlertas.length > 0 && (
+                <div className="space-y-3">
+                    {cmvAlertas.map(a => {
+                        const subiu = a.variacao_pct > 0;
+                        return (
+                            <div
+                                key={a.id}
+                                className={`bg-white rounded-2xl border shadow-sm p-4 sm:p-5 border-l-4 ${subiu ? 'border-l-red-500 border-red-100' : 'border-l-green-500 border-green-100'}`}
+                            >
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className={`mt-0.5 p-2 rounded-xl ${subiu ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                            {subiu ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-slate-800">
+                                                {a.ingredients?.name ?? 'Insumo'} {subiu ? 'subiu' : 'caiu'} {Math.abs(a.variacao_pct).toFixed(1)}%
+                                            </p>
+                                            <p className="text-sm text-slate-500 mt-0.5">
+                                                Custo: {fmtMoney(a.custo_antes)} → <span className="font-semibold text-slate-700">{fmtMoney(a.custo_depois)}</span>
+                                                {a.ingredients?.unit_type ? ` por ${a.ingredients.unit_type}` : ''}
+                                                {' · '}{new Date(a.criado_em).toLocaleDateString('pt-BR')}
+                                            </p>
+                                            {a.fichas_afetadas.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                                                    {a.fichas_afetadas.map(f => {
+                                                        const info = fichaInfo[f.id];
+                                                        const cmv = info && info.sale_price > 0 ? (info.cost / info.sale_price) * 100 : null;
+                                                        const sugerido = info && cmv !== null && cmv > 30 ? info.cost / 0.30 : null;
+                                                        return (
+                                                            <span
+                                                                key={f.id}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600"
+                                                                title={sugerido ? `Preço sugerido pra voltar a CMV 30%: ${fmtMoney(sugerido)}` : undefined}
+                                                            >
+                                                                <span className="font-medium text-slate-700">{f.nome}</span>
+                                                                {cmv !== null && (
+                                                                    <span className={cmv < 30 ? 'text-green-600' : cmv < 40 ? 'text-amber-600' : 'text-red-600'}>
+                                                                        CMV {cmv.toFixed(0)}%
+                                                                    </span>
+                                                                )}
+                                                                {sugerido && (
+                                                                    <span className="text-primary-600 font-medium">→ {fmtMoney(sugerido)}</span>
+                                                                )}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                            {a.fichas_afetadas.length === 0 && (
+                                                <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+                                                    <AlertTriangle className="w-3 h-3" /> Nenhuma ficha usa este insumo ainda.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleAlertaVisto(a.id)}
+                                        className="self-start flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+                                    >
+                                        <Check className="w-3.5 h-3.5" />
+                                        Marcar visto
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* CMV */}
