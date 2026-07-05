@@ -37,7 +37,7 @@ interface ImportSummary {
 }
 
 export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
-    const { user } = useAuth();
+    const { user, restauranteId } = useAuth();
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
@@ -55,8 +55,9 @@ export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
         addLog('📂 Lendo arquivo...');
 
         try {
-            const { data: profile } = await supabase.from('profiles').select('restaurant_id').eq('id', user?.id).single();
-            const restaurantId = profile?.restaurant_id;
+            // restauranteId do AuthContext segue o restaurante ATIVO (multi-tenant/BPO);
+            // a coluna legada profiles.restaurant_id importava no tenant errado após switch.
+            const restaurantId = restauranteId;
             if (!restaurantId) throw new Error('Usuário não vinculado a um restaurante.');
 
             const buf = await file.arrayBuffer();

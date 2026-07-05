@@ -126,7 +126,7 @@ function AppRoutes() {
                             <Route
                                 path="/ingredients"
                                 element={
-                                    <RoleRoute allowed={['dono', 'gerente']}>
+                                    <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
                                         <Ingredients />
                                     </RoleRoute>
                                 }
@@ -135,7 +135,7 @@ function AppRoutes() {
                             <Route
                                 path="/importar"
                                 element={
-                                    <RoleRoute allowed={['dono', 'gerente']}>
+                                    <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
                                         <Suspense fallback={<FullScreenLoader />}>
                                             <ImportarFichaTecnica />
                                         </Suspense>
@@ -147,7 +147,7 @@ function AppRoutes() {
                             <Route
                                 path="/recipes"
                                 element={
-                                    <RoleRoute allowed={['dono', 'gerente']}>
+                                    <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
                                         <Recipes />
                                     </RoleRoute>
                                 }
@@ -155,7 +155,7 @@ function AppRoutes() {
                             <Route
                                 path="/sales"
                                 element={
-                                    <RoleRoute allowed={['dono', 'gerente']}>
+                                    <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
                                         <Sales />
                                     </RoleRoute>
                                 }
@@ -163,7 +163,7 @@ function AppRoutes() {
                             <Route
                                 path="/notas-fiscais"
                                 element={
-                                    <RoleRoute allowed={['dono', 'gerente']}>
+                                    <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
                                         <NotasFiscais />
                                     </RoleRoute>
                                 }
@@ -171,7 +171,7 @@ function AppRoutes() {
                             <Route
                                 path="/equipe"
                                 element={
-                                    <RoleRoute allowed={['dono', 'gerente']}>
+                                    <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
                                         <Equipe />
                                     </RoleRoute>
                                 }

@@ -2,7 +2,18 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-export type Perfil = 'dono' | 'gerente' | 'funcionario';
+export type Perfil = 'dono' | 'gerente' | 'funcionario' | 'bpo';
+
+export interface Membership {
+    membro_id: string;
+    restaurante_id: string;
+    restaurante_nome: string;
+    bpo_id: string | null;
+    bpo_nome: string | null;
+    perfil: Perfil;
+    eh_ativo: boolean;
+    brand_color: string | null;
+}
 
 export interface PendingInvite {
     id: string;
@@ -22,6 +33,8 @@ interface AuthContextType {
     brandColor: string | null;
     logoUrl: string | null;
     pendingInvite: PendingInvite | null;
+    memberships: Membership[];
+    switchRestaurante: (restauranteId: string) => Promise<void>;
     refreshMembro: () => Promise<void>;
     acceptPendingInvite: () => Promise<{ error?: string }>;
     rejectPendingInvite: () => Promise<{ error?: string }>;
@@ -39,6 +52,8 @@ const AuthContext = createContext<AuthContextType>({
     brandColor: null,
     logoUrl: null,
     pendingInvite: null,
+    memberships: [],
+    switchRestaurante: async () => {},
     refreshMembro: async () => {},
     acceptPendingInvite: async () => ({}),
     rejectPendingInvite: async () => ({}),
@@ -54,6 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [brandColor, setBrandColor] = useState<string | null>(null);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
+    const [memberships, setMemberships] = useState<Membership[]>([]);
     const [isFetchingMembro, setIsFetchingMembro] = useState(false);
     const initializedRef = useRef(false);
     // Rastreia qual user.id já carregamos. Supabase re-emite SIGNED_IN em
@@ -68,6 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setBrandColor(null);
         setLogoUrl(null);
         setPendingInvite(null);
+        setMemberships([]);
     };
 
     // fetchMembro é chamado FORA do onAuthStateChange para evitar deadlock.
@@ -76,7 +93,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const fetchMembro = async (currentUser: User) => {
         setIsFetchingMembro(true);
         try {
-            const { data: rows, error: membershipError } = await supabase.rpc('get_my_membership');
+            const [{ data: rows, error: membershipError }, { data: allRows }] = await Promise.all([
+                supabase.rpc('get_my_membership'),
+                supabase.rpc('get_my_memberships'),
+            ]);
+            setMemberships((allRows ?? []) as Membership[]);
             if (membershipError) {
                 // Erro transiente (rede/timeout): mantém o estado anterior em vez de
                 // zerar a membership — senão um dono válido cairia no onboarding.
@@ -88,8 +109,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setRestauranteId(m.restaurante_id);
                 setPerfil(m.perfil as Perfil);
                 setNomeRestaurante(m.restaurante_nome);
-                setBrandColor(m.brand_color ?? '#FF6B35');
-                setLogoUrl(m.logo_url ?? null);
+                // White-label: identidade do BPO tem precedência sobre a do restaurante
+                setBrandColor(m.bpo_cor ?? m.brand_color ?? '#FF6B35');
+                setLogoUrl(m.bpo_logo ?? m.logo_url ?? null);
                 setPendingInvite(null);
                 return;
             }
@@ -135,6 +157,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const refreshMembro = async () => {
         if (user) await fetchMembro(user);
+    };
+
+    // Troca o restaurante ativo e recarrega a página inteira: as telas usam
+    // useEffect local sem cache compartilhado — reload garante zero vazamento
+    // de estado entre tenants.
+    const switchRestaurante = async (id: string) => {
+        const { error } = await supabase.rpc('switch_restaurante', { p_restaurante_id: id });
+        if (error) throw new Error(error.message ?? 'Erro ao trocar de restaurante');
+        window.location.assign('/');
     };
 
     const acceptPendingInvite = async (): Promise<{ error?: string }> => {
@@ -239,6 +270,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             brandColor,
             logoUrl,
             pendingInvite,
+            memberships,
+            switchRestaurante,
             refreshMembro,
             acceptPendingInvite,
             rejectPendingInvite,

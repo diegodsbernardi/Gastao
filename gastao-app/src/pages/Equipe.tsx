@@ -10,7 +10,7 @@ interface Membro {
     usuario_id: string;
     email: string;
     nome: string;
-    perfil: 'dono' | 'gerente' | 'funcionario';
+    perfil: 'dono' | 'gerente' | 'funcionario' | 'bpo';
     criado_em: string;
 }
 
@@ -18,11 +18,12 @@ const PERFIL_CONFIG = {
     dono:        { label: 'Dono',        color: 'text-primary-700 bg-primary-100',   Icon: Crown  },
     gerente:     { label: 'Gerente',     color: 'text-amber-700 bg-amber-100', Icon: Shield },
     funcionario: { label: 'Funcionário', color: 'text-slate-600 bg-slate-100', Icon: User   },
+    bpo:         { label: 'BPO',         color: 'text-cyan-700 bg-cyan-100',   Icon: Shield },
 } as const;
 
 export const Equipe = () => {
     const { user, restauranteId } = useAuth();
-    const { isDono } = usePermissions();
+    const { isDono, canInvite } = usePermissions();
 
     const [membros, setMembros] = useState<Membro[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +32,7 @@ export const Equipe = () => {
     // Modal de convite
     const [showModal, setShowModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
-    const [invitePerfil, setInvitePerfil] = useState<'gerente' | 'funcionario'>('funcionario');
+    const [invitePerfil, setInvitePerfil] = useState<'gerente' | 'funcionario' | 'bpo'>('funcionario');
     const [isInviting, setIsInviting] = useState(false);
     const [inviteError, setInviteError] = useState('');
     const [inviteSuccess, setInviteSuccess] = useState(false);
@@ -115,7 +116,7 @@ export const Equipe = () => {
                         {membros.length} {membros.length === 1 ? 'membro' : 'membros'}
                     </p>
                 </div>
-                {isDono && (
+                {canInvite && (
                     <button
                         onClick={() => setShowModal(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
@@ -136,7 +137,7 @@ export const Equipe = () => {
                     <div className="text-center py-16">
                         <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                         <p className="text-slate-500 font-medium">Nenhum membro ainda</p>
-                        {isDono && (
+                        {canInvite && (
                             <p className="text-slate-400 text-sm mt-1">
                                 Clique em "Convidar" para adicionar alguém
                             </p>
@@ -275,7 +276,7 @@ export const Equipe = () => {
                                             Perfil de acesso
                                         </label>
                                         <div className="grid grid-cols-2 gap-2">
-                                            {(['gerente', 'funcionario'] as const).map(p => {
+                                            {(['gerente', 'funcionario', 'bpo'] as const).map(p => {
                                                 const cfg = PERFIL_CONFIG[p];
                                                 return (
                                                     <button
@@ -297,6 +298,8 @@ export const Equipe = () => {
                                         <p className="text-xs text-slate-400 mt-2">
                                             {invitePerfil === 'gerente'
                                                 ? 'Acesso ao dashboard, insumos, fichas e vendas. Pode ver a equipe.'
+                                                : invitePerfil === 'bpo'
+                                                ? 'Perfil da contabilidade parceira: gestão completa e acesso multi-restaurante.'
                                                 : 'Acesso limitado. Expandido nas próximas versões.'
                                             }
                                         </p>

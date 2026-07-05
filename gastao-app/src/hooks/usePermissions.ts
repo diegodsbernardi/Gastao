@@ -7,7 +7,9 @@ export function usePermissions() {
     const isDono          = perfil === 'dono';
     const isGerente       = perfil === 'gerente';
     const isFuncionario   = perfil === 'funcionario';
-    const isDonoOrGerente = isDono || isGerente;
+    const isBpo           = perfil === 'bpo';
+    // BPO tem todos os poderes de gestão (opera o restaurante pelo cliente)
+    const isDonoOrGerente = isDono || isGerente || isBpo;
 
     // Fail-closed: enquanto o perfil carrega (null), assume operação — nunca
     // mostra UI de gerência por um instante para quem talvez não deva ver.
@@ -18,6 +20,7 @@ export function usePermissions() {
         isDono,
         isGerente,
         isFuncionario,
+        isBpo,
         isDonoOrGerente,
         viewMode,
         // Visibilidade de dados financeiros
@@ -30,7 +33,7 @@ export function usePermissions() {
         canViewSales:      isDonoOrGerente,
         canViewDashboard:  isDonoOrGerente,
         // Gestão de equipe
-        canInvite:         isDono,
+        canInvite:         isDono || isBpo,
         canRemoveMembro:   isDono,
     };
 }
