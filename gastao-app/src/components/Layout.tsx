@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
     Menu, Home, ShoppingBag, LogOut, Package, Users, X,
     FileText, UtensilsCrossed, ChefHat, BarChart3, ClipboardList, MessageCircle, FileSpreadsheet,
+    Check, ChevronDown, Loader2, Plus, Store,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
     const location = useLocation();
-    const { signOut, user, nomeRestaurante, brandColor, logoUrl } = useAuth();
+    const { signOut, user, nomeRestaurante, brandColor, logoUrl, memberships, switchRestaurante, perfil } = useAuth();
     const { isDonoOrGerente, canViewEquipe, canViewDashboard, canViewSales } = usePermissions();
     const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -192,7 +194,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                     >
                         <Menu className="w-5 h-5" />
                     </button>
-                    <div className="ml-auto">
+                    <div className="ml-auto flex items-center gap-3">
+                        {(memberships.length > 1 || perfil === 'bpo') && (
+                            <RestauranteSwitcher
+                                memberships={memberships}
+                                onSwitch={switchRestaurante}
+                                isBpo={perfil === 'bpo'}
+                            />
+                        )}
                         <div
                             className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white"
                             style={{ backgroundColor: primary }}
@@ -239,3 +248,164 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
     );
 };
+
+// ── Seletor de restaurante (multi-tenant / BPO) ─────────────────────────────
+
+import { supabase } from '../lib/supabase';
+import type { Membership } from '../contexts/AuthContext';
+
+function RestauranteSwitcher({
+    memberships, onSwitch, isBpo,
+}: {
+    memberships: Membership[];
+    onSwitch: (id: string) => Promise<void>;
+    isBpo: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const [switching, setSwitching] = useState<string | null>(null);
+    const [showNovo, setShowNovo] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const ativo = memberships.find(m => m.eh_ativo) ?? null;
+
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+
+    const handleSwitch = async (id: string) => {
+        if (id === ativo?.restaurante_id) { setOpen(false); return; }
+        setSwitching(id);
+        try {
+            await onSwitch(id); // faz reload completo — não volta daqui
+        } catch (err) {
+            toast.error(String(err));
+            setSwitching(null);
+        }
+    };
+
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                onClick={() => setOpen(v => !v)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors max-w-[220px]"
+            >
+                <Store className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="truncate">{ativo?.restaurante_nome ?? 'Restaurante'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            </button>
+
+            {open && (
+                <div className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
+                    <ul className="max-h-72 overflow-y-auto py-1">
+                        {memberships.map(m => (
+                            <li key={m.restaurante_id}>
+                                <button
+                                    onClick={() => handleSwitch(m.restaurante_id)}
+                                    disabled={switching !== null}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-slate-50 transition-colors disabled:opacity-60"
+                                >
+                                    <span
+                                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                                        style={{ backgroundColor: m.brand_color ?? '#FF6B35' }}
+                                    />
+                                    <span className="flex-1 truncate font-medium text-slate-700">{m.restaurante_nome}</span>
+                                    {switching === m.restaurante_id
+                                        ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                                        : m.eh_ativo && <Check className="w-4 h-4 text-primary-600" />}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                    {isBpo && (
+                        <button
+                            onClick={() => { setOpen(false); setShowNovo(true); }}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-primary-700 border-t border-slate-100 hover:bg-primary-50 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Novo restaurante
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {showNovo && <ModalNovoRestaurante onClose={() => setShowNovo(false)} />}
+        </div>
+    );
+}
+
+function ModalNovoRestaurante({ onClose }: { onClose: () => void }) {
+    const [nome, setNome] = useState('');
+    const [cnpj, setCnpj] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!nome.trim()) return;
+        setSaving(true);
+        try {
+            const { error } = await supabase.rpc('criar_restaurante_bpo', {
+                p_nome: nome.trim(),
+                p_cnpj: cnpj.trim() || null,
+            });
+            if (error) throw new Error(error.message);
+            // Restaurante criado + switch feito no servidor → onboarding assistido
+            window.location.assign('/importar');
+        } catch (err) {
+            toast.error(String(err));
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+                <h2 className="text-lg font-bold text-slate-800">Novo restaurante</h2>
+                <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">Nome *</label>
+                    <input
+                        autoFocus
+                        value={nome}
+                        onChange={e => setNome(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="Ex.: Cantina da Nona"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">CNPJ (opcional)</label>
+                    <input
+                        value={cnpj}
+                        onChange={e => setCnpj(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="00.000.000/0000-00"
+                    />
+                </div>
+                <p className="text-xs text-slate-400">
+                    Depois de criar, você cai direto na importação da planilha-mãe do cliente.
+                </p>
+                <div className="flex justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={saving}
+                        className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={saving || !nome.trim()}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 disabled:opacity-60 transition-colors"
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Criar restaurante
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+}
