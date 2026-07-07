@@ -41,6 +41,7 @@ export interface CriarInsumoData {
     name: string;
     unit_type: string;
     tipo: string;   // insumo_base | insumo_direto | embalagem (CHECK da tabela ingredients)
+    categoria?: string | null;   // ex.: "Bebidas" — texto livre, opções em ingredient_categories
     avg_cost_per_unit: number;
     stock_quantity: number;
 }

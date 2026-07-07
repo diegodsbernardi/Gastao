@@ -173,6 +173,7 @@ function ModalCriarInsumo({
     onClose: () => void;
     onCreated: () => void;
 }) {
+    const { restauranteId } = useAuth();
     const [name, setName] = useState(item.descricao_xml);
     const [unitType, setUnitType] = useState(item.unidade.toLowerCase());
     const [tipo, setTipo] = useState('insumo_base');
@@ -180,15 +181,45 @@ function ModalCriarInsumo({
     const [stockQty, setStockQty] = useState(String(item.quantidade));
     const [saving, setSaving] = useState(false);
 
+    // Categoria (ex.: "Bebidas") — mesmas opções da tela de Insumos, por tipo.
+    const PREDEFINED_BASE = ['Hortifruti', 'Proteínas', 'Queijos'];
+    const NOVA = '__nova__';
+    const [customCats, setCustomCats] = useState<{ name: string; ingredient_tipo: string }[]>([]);
+    const [categoria, setCategoria] = useState('');
+    const [novaCategoria, setNovaCategoria] = useState('');
+
+    useEffect(() => {
+        supabase.from('ingredient_categories').select('name, ingredient_tipo').order('name')
+            .then(({ data }) => setCustomCats(data ?? []));
+    }, []);
+
+    const categoriasDoTipo = [
+        ...(tipo === 'insumo_base' ? PREDEFINED_BASE : []),
+        ...customCats.filter(c => c.ingredient_tipo === tipo).map(c => c.name),
+    ].filter((v, i, a) => a.indexOf(v) === i);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) return;
         setSaving(true);
         try {
+            let categoriaFinal: string | null = categoria || null;
+            if (categoria === NOVA) {
+                categoriaFinal = novaCategoria.trim() || null;
+                // Registra a categoria nova pro dropdown das próximas vezes
+                if (categoriaFinal && !categoriasDoTipo.includes(categoriaFinal)) {
+                    await supabase.from('ingredient_categories').insert({
+                        restaurant_id: restauranteId,
+                        name: categoriaFinal,
+                        ingredient_tipo: tipo,
+                    });
+                }
+            }
             await criarInsumoDeNfe(item.id, {
                 name: name.trim(),
                 unit_type: unitType.toLowerCase(),
                 tipo,
+                categoria: tipo !== 'embalagem' ? categoriaFinal : null,
                 avg_cost_per_unit: parseFloat(avgCost) || item.valor_unitario,
                 stock_quantity: parseFloat(stockQty) || 0,
             });
@@ -234,7 +265,7 @@ function ModalCriarInsumo({
                             <select
                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={tipo}
-                                onChange={e => setTipo(e.target.value)}
+                                onChange={e => { setTipo(e.target.value); setCategoria(''); setNovaCategoria(''); }}
                             >
                                 <option value="insumo_base">Insumo Base</option>
                                 <option value="insumo_direto">Item Pronto</option>
@@ -242,6 +273,29 @@ function ModalCriarInsumo({
                             </select>
                         </div>
                     </div>
+                    {tipo !== 'embalagem' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
+                            <select
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                value={categoria}
+                                onChange={e => setCategoria(e.target.value)}
+                            >
+                                <option value="">Sem categoria</option>
+                                {categoriasDoTipo.map(c => <option key={c} value={c}>{c}</option>)}
+                                <option value={NOVA}>+ Nova categoria…</option>
+                            </select>
+                            {categoria === NOVA && (
+                                <input
+                                    autoFocus
+                                    className="mt-2 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    placeholder='Ex.: Bebidas'
+                                    value={novaCategoria}
+                                    onChange={e => setNovaCategoria(e.target.value)}
+                                />
+                            )}
+                        </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Custo unitário (R$)</label>
