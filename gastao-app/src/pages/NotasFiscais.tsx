@@ -1350,12 +1350,12 @@ function ListaView({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Notas Fiscais</h1>
                     <p className="text-sm text-slate-500 mt-0.5">Importe e gerencie NF-e XML</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {notas.some(n => n.status === 'pendente') && (
                         <button
                             onClick={onAtualizarCustos}
@@ -1430,7 +1430,7 @@ function ListaView({
                                             {nota.fornecedor_nome ?? 'Fornecedor desconhecido'}
                                         </p>
                                         <p className="text-xs text-slate-400 mt-0.5">
-                                            NF-{nota.numero_nota ?? '—'} · {fmtDate(nota.criado_em)}
+                                            NF-{nota.numero_nota ?? '—'} · {fmtDate(nota.data_emissao ?? nota.criado_em)}
                                         </p>
                                     </div>
                                 </div>
