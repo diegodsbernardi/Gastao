@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Package, UtensilsCrossed, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { traduzErro } from '../lib/erros';
 
 export const Register = () => {
     const [fullName, setFullName] = useState('');
@@ -29,7 +30,7 @@ export const Register = () => {
         });
 
         if (error) {
-            setError(error.message);
+            setError(traduzErro(error));
         } else {
             setSuccess(true);
         }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Package, Loader2, ChefHat, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { traduzErro } from '../lib/erros';
 
 export const Onboarding = () => {
     const { user, refreshMembro } = useAuth();
@@ -29,7 +30,7 @@ export const Onboarding = () => {
         });
 
         if (rpcError) {
-            setError(rpcError.message ?? 'Erro ao criar restaurante');
+            setError(traduzErro(rpcError));
             setIsLoading(false);
             return;
         }

@@ -784,7 +784,7 @@ export const Preparos = () => {
                                             <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                                 {fmtMoney((costMap[item.sub_recipe_id]?.perUnit ?? 0) * item.quantity_needed)}
                                             </span>
-                                            <button onClick={() => setNewSubItems(newSubItems.filter((_, i) => i !== idx))} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+                                            <button onClick={() => setNewSubItems(newSubItems.filter((_, i) => i !== idx))} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
@@ -859,7 +859,7 @@ export const Preparos = () => {
                                         <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                             {fmtMoney((item.ingredients.avg_cost_per_unit / (item.ingredients.aproveitamento || 1)) * item.quantity_needed)}
                                         </span>
-                                        <button onClick={() => setNewItems(newItems.filter((_, i) => i !== idx))} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+                                        <button onClick={() => setNewItems(newItems.filter((_, i) => i !== idx))} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
@@ -1015,7 +1015,7 @@ export const Preparos = () => {
                                             </span>
                                             <button
                                                 onClick={() => setEditSubItems(editSubItems.filter((_, i) => i !== idx))}
-                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -1121,7 +1121,7 @@ export const Preparos = () => {
                                         </span>
                                         <button
                                             onClick={() => setEditItems(editItems.filter((_, i) => i !== idx))}
-                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>

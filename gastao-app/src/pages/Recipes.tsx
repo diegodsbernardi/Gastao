@@ -8,6 +8,7 @@ import {
 import type { Ingredient, Recipe, RecipeIngredient, RecipeSubRecipe } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
 import { usePermissions } from '../hooks/usePermissions';
+import { traduzErro } from '../lib/erros';
 import { buildPreparoCostMapRecursive, type PreparoNode } from '../lib/costCalculator';
 
 // ─── tipos locais para o modal ────────────────────────────────────────────────
@@ -398,7 +399,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             setNewName(''); setNewPrice(0); setNewCategory('Lanche');
             toast.success('Ficha técnica criada!');
         } else {
-            toast.error('Erro ao criar: ' + error?.message);
+            toast.error(traduzErro(error));
         }
         setSavingNew(false);
     };
@@ -419,7 +420,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             setEditingInfoId(null);
             toast.success('Ficha atualizada!');
         } else {
-            toast.error('Erro: ' + error.message);
+            toast.error(traduzErro(error));
         }
         setSavingInfo(false);
     };
@@ -440,7 +441,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         });
 
         if (error) {
-            toast.error('Erro ao duplicar: ' + error.message);
+            toast.error(traduzErro(error));
             return;
         }
 
@@ -485,7 +486,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             );
             return;
         }
-        toast.error('Erro: ' + error.message);
+        toast.error(traduzErro(error));
     };
 
     const handleBulkDelete = async () => {
@@ -525,7 +526,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                 return;
             }
         }
-        toast.error('Erro: ' + error.message);
+        toast.error(traduzErro(error));
     };
 
     // ─── modal editar ─────────────────────────────────────────────────────────
@@ -604,7 +605,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             })),
         });
         if (compError) {
-            toast.error('Erro ao salvar composição: ' + compError.message);
+            toast.error(traduzErro(compError));
             setSavingEdit(false);
             fetchData(); // restaura estado do banco
             return;
@@ -1071,7 +1072,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </span>
                                                 <button
                                                     onClick={() => setEditSubItems(editSubItems.filter((_, i) => i !== idx))}
-                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -1109,7 +1110,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}
-                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -1147,7 +1148,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}
-                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>

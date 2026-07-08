@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { ShoppingBag, Search, X, RotateCcw } from 'lucide-react';
 import { fmtMoney } from '../lib/format';
+import { traduzErro } from '../lib/erros';
 
 interface RecipeOption {
     id: string;
@@ -108,7 +109,7 @@ export const Sales = () => {
         });
 
         if (saleError) {
-            toast.error('Erro ao registrar venda: ' + saleError.message);
+            toast.error(traduzErro(saleError));
             setSavingSale(false);
             return;
         }
@@ -128,7 +129,7 @@ export const Sales = () => {
         setEstornandoId(sale.id);
         const { error } = await supabase.rpc('estornar_venda', { p_sale_id: sale.id });
         if (error) {
-            toast.error('Erro ao estornar: ' + error.message);
+            toast.error(traduzErro(error));
             setEstornandoId(null);
             return;
         }

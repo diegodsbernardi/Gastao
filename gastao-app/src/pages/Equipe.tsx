@@ -4,6 +4,7 @@ import { Users, UserPlus, Trash2, Loader2, Mail, Crown, Shield, User, X } from '
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
+import { traduzErro } from '../lib/erros';
 
 interface Membro {
     id: string;
@@ -76,7 +77,11 @@ export const Equipe = () => {
         });
 
         if (conviteError) {
-            setInviteError(conviteError.message ?? 'Erro ao criar convite');
+            setInviteError(
+                conviteError.code === '23505'
+                    ? 'Esse email já foi convidado.'
+                    : traduzErro(conviteError),
+            );
             setIsInviting(false);
             return;
         }
@@ -89,7 +94,7 @@ export const Equipe = () => {
 
         if (otpError) {
             // Convite foi criado, mas o email não saiu (rate limit / falha de envio).
-            setInviteError('Convite registrado, mas o email não pôde ser enviado agora: ' + otpError.message);
+            setInviteError('Convite registrado, mas o email não pôde ser enviado agora. ' + traduzErro(otpError));
             setIsInviting(false);
             return;
         }

@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { PackageSearch, Plus, Filter, Trash2, X, Pencil, PlusCircle, Settings2 } from 'lucide-react';
 import type { Ingredient, IngredientTipo } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
+import { traduzErro } from '../lib/erros';
 
 const UNIT_OPTIONS = ['kg', 'g', 'l', 'ml', 'un', 'cx', 'pct', 'fardo'];
 
@@ -108,7 +109,7 @@ export const Ingredients = () => {
         } else if (error.code === '23505') {
             toast.error('Categoria já existe.');
         } else {
-            toast.error('Erro: ' + error.message);
+            toast.error(traduzErro(error));
         }
         setSavingCat(false);
     };
@@ -121,7 +122,7 @@ export const Ingredients = () => {
             .from('ingredient_categories')
             .delete().eq('name', name).eq('ingredient_tipo', tipo);
         if (errDel) {
-            toast.error('Erro ao remover categoria: ' + errDel.message);
+            toast.error(traduzErro(errDel));
             return;
         }
 
@@ -181,7 +182,7 @@ export const Ingredients = () => {
             setNewName(''); setNewUnit('kg'); setNewTipo('insumo_base'); setNewCategoria(''); setNewCost(''); setNewStock(0); setNewAproveitamento(100);
             toast.success('Insumo criado com sucesso!');
         } else {
-            toast.error('Erro ao criar insumo: ' + error?.message);
+            toast.error(traduzErro(error));
         }
         setSavingNew(false);
     };
@@ -211,7 +212,7 @@ export const Ingredients = () => {
             setEditingIngredient(null);
             toast.success('Insumo atualizado com sucesso!');
         } else {
-            toast.error('Erro ao editar: ' + error.message);
+            toast.error(traduzErro(error));
         }
         setSavingEdit(false);
     };
@@ -249,7 +250,7 @@ export const Ingredients = () => {
             setStockEntryCost('');
             toast.success('Entrada de estoque registrada!');
         } else {
-            toast.error('Erro ao registrar entrada: ' + error.message);
+            toast.error(traduzErro(error));
         }
         setSavingStockEntry(false);
     };
@@ -264,7 +265,7 @@ export const Ingredients = () => {
         } else if (error.code === '23503') {
             toast.error('Este insumo está sendo usado em receitas e não pode ser excluído.');
         } else {
-            toast.error('Erro ao excluir: ' + error.message);
+            toast.error(traduzErro(error));
         }
     };
 
@@ -279,7 +280,7 @@ export const Ingredients = () => {
         } else if (error.code === '23503') {
             toast.error('Um ou mais insumos estão sendo usados em receitas e não podem ser excluídos.');
         } else {
-            toast.error('Erro ao excluir: ' + error.message);
+            toast.error(traduzErro(error));
         }
         setLoading(false);
     };
