@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { ShoppingBag, Search, X } from 'lucide-react';
+import { ShoppingBag, Search, X, RotateCcw } from 'lucide-react';
 import { fmtMoney } from '../lib/format';
 
 interface RecipeOption {
@@ -56,6 +56,7 @@ export const Sales = () => {
     const [quantitySold, setQuantitySold] = useState<number | ''>('');
     const [unitPrice, setUnitPrice] = useState(0);
     const [savingSale, setSavingSale] = useState(false);
+    const [estornandoId, setEstornandoId] = useState<string | null>(null);
 
     const [dateFilter, setDateFilter] = useState<DateFilter>('month');
 
@@ -85,15 +86,14 @@ export const Sales = () => {
     }, []);
 
     useEffect(() => {
-        if (user) {
-            fetchRecipes();
-            fetchSales(dateFilter);
-        }
+        if (user) fetchRecipes();
     }, [user]);
 
+    // Um único effect pra vendas (evita o double-fetch da montagem e corridas
+    // entre trocas rápidas de filtro).
     useEffect(() => {
         if (user) fetchSales(dateFilter);
-    }, [dateFilter]);
+    }, [user, dateFilter, fetchSales]);
 
     const handleSaveSale = async () => {
         if (!selectedRecipeId || quantitySold === '' || Number(quantitySold) <= 0 || !restauranteId) return;
@@ -120,6 +120,21 @@ export const Sales = () => {
         toast.success('Venda registrada com sucesso!');
         await fetchSales(dateFilter);
         setSavingSale(false);
+    };
+
+    const handleEstornar = async (sale: SaleRecord) => {
+        const nome = recipesMap[sale.recipe_id] ?? 'produto';
+        if (!confirm(`Estornar a venda de ${sale.quantity_sold}× ${nome}? O estoque consumido será devolvido e a venda apagada.`)) return;
+        setEstornandoId(sale.id);
+        const { error } = await supabase.rpc('estornar_venda', { p_sale_id: sale.id });
+        if (error) {
+            toast.error('Erro ao estornar: ' + error.message);
+            setEstornandoId(null);
+            return;
+        }
+        toast.success('Venda estornada — estoque devolvido.');
+        await fetchSales(dateFilter);
+        setEstornandoId(null);
     };
 
     const totalRevenue = sales.reduce((sum, s) => sum + s.total_value, 0);
@@ -224,9 +239,16 @@ export const Sales = () => {
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço Unitário</label>
                         <div className="flex items-center gap-3">
-                            <div className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 font-semibold">
-                                {fmtMoney(unitPrice)}
-                            </div>
+                            <input
+                                type="number"
+                                value={unitPrice || ''}
+                                onChange={e => setUnitPrice(e.target.value === '' ? 0 : Number(e.target.value))}
+                                min="0"
+                                step="0.01"
+                                placeholder="0,00"
+                                title="Ajuste para registrar venda em promoção ou combo"
+                                className="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm text-slate-700 font-semibold"
+                            />
                             <button
                                 onClick={handleSaveSale}
                                 disabled={savingSale || !selectedRecipeId || quantitySold === '' || Number(quantitySold) <= 0}
@@ -280,18 +302,19 @@ export const Sales = () => {
                                 <th className="p-4 font-bold text-right">Qtd</th>
                                 <th className="p-4 font-bold text-right">Preço Unit.</th>
                                 <th className="p-4 font-bold text-right">Total</th>
+                                <th className="p-4 font-bold text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loadingSales ? (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center text-slate-500 animate-pulse">
+                                    <td colSpan={6} className="p-8 text-center text-slate-500 animate-pulse">
                                         Carregando vendas...
                                     </td>
                                 </tr>
                             ) : sales.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-12 text-center text-slate-500">
+                                    <td colSpan={6} className="p-12 text-center text-slate-500">
                                         <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                                         <p className="font-medium">Nenhuma venda registrada</p>
                                         <p className="text-sm text-slate-400 mt-1">{filterLabels[dateFilter].toLowerCase()}</p>
@@ -305,6 +328,17 @@ export const Sales = () => {
                                         <td className="p-4 text-right text-slate-600">{sale.quantity_sold}</td>
                                         <td className="p-4 text-right text-slate-600">{fmtMoney(sale.unit_price)}</td>
                                         <td className="p-4 text-right font-semibold text-green-700">{fmtMoney(sale.total_value)}</td>
+                                        <td className="p-4 text-right">
+                                            <button
+                                                onClick={() => handleEstornar(sale)}
+                                                disabled={estornandoId === sale.id}
+                                                title="Estornar venda (devolve o estoque)"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 transition-colors"
+                                            >
+                                                <RotateCcw className="w-3.5 h-3.5" />
+                                                {estornandoId === sale.id ? 'Estornando...' : 'Estornar'}
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))
                             )}

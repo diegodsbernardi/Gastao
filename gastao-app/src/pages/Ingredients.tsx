@@ -148,8 +148,19 @@ export const Ingredients = () => {
         toast.success('Categoria removida e insumos atualizados.');
     };
 
+    // Sanidade de custo/estoque: valores negativos corrompem o CMV de todas as
+    // fichas que usam o insumo. Aproveitamento fora de (0,100] quebra o cálculo.
+    const validarValores = (cost: number, stock: number, aprov: number): string | null => {
+        if (cost < 0) return 'O custo não pode ser negativo.';
+        if (stock < 0) return 'O estoque não pode ser negativo.';
+        if (aprov <= 0 || aprov > 100) return 'O aproveitamento deve ficar entre 1% e 100%.';
+        return null;
+    };
+
     const handleCreateIngredient = async () => {
         if (!newName.trim() || !restauranteId) return;
+        const erro = validarValores(Number(newCost) || 0, Number(newStock) || 0, Number(newAproveitamento) || 100);
+        if (erro) { toast.error(erro); return; }
         setSavingNew(true);
 
         const { data, error } = await supabase.from('ingredients').insert([{
@@ -177,6 +188,8 @@ export const Ingredients = () => {
 
     const handleEditIngredient = async () => {
         if (!editingIngredient || !editName.trim()) return;
+        const erro = validarValores(Number(editCost) || 0, Number(editStock) || 0, Number(editAproveitamento) || 100);
+        if (erro) { toast.error(erro); return; }
         setSavingEdit(true);
         const { error } = await supabase.from('ingredients').update({
             name: editName.trim(),
@@ -627,6 +640,7 @@ export const Ingredients = () => {
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Custo Médio (R$)</label>
                                     <input
                                         type="number"
+                                        min="0" step="0.01"
                                         value={newCost}
                                         onChange={e => setNewCost(e.target.value === '' ? '' : Number(e.target.value))}
                                         placeholder="0.00"
@@ -648,6 +662,7 @@ export const Ingredients = () => {
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Estoque Inicial</label>
                                     <input
                                         type="number"
+                                        min="0"
                                         value={newStock}
                                         onChange={e => setNewStock(e.target.value === '' ? '' : Number(e.target.value))}
                                         placeholder="0"
@@ -727,6 +742,7 @@ export const Ingredients = () => {
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Custo Médio (R$)</label>
                                     <input
                                         type="number"
+                                        min="0" step="0.01"
                                         value={editCost}
                                         onChange={e => setEditCost(e.target.value === '' ? '' : Number(e.target.value))}
                                         onFocus={e => e.target.select()}
@@ -748,6 +764,7 @@ export const Ingredients = () => {
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Estoque Atual</label>
                                     <input
                                         type="number"
+                                        min="0"
                                         value={editStock}
                                         onChange={e => setEditStock(e.target.value === '' ? '' : Number(e.target.value))}
                                         onFocus={e => e.target.select()}
@@ -824,9 +841,10 @@ export const Ingredients = () => {
                                 </label>
                                 <input
                                     type="number"
+                                    min="0" step="0.01"
                                     value={stockEntryCost}
                                     onChange={e => setStockEntryCost(e.target.value === '' ? '' : Number(e.target.value))}
-                                    placeholder={stockEntryIngredient.avg_cost_per_unit.toFixed(2)}
+                                    placeholder={(stockEntryIngredient.avg_cost_per_unit ?? 0).toFixed(2)}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
                                 />
                                 {stockEntryCost !== '' && Number(stockEntryCost) > 0 && stockEntryQty !== '' && Number(stockEntryQty) > 0 && (() => {
