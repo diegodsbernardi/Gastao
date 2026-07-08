@@ -341,7 +341,7 @@ export const Preparos = () => {
             quantity_needed: qty,
             ingredients: ing,
         }]);
-        setNewSelIngId(''); setNewIngSearch(''); setNewSelQty('');
+        setNewSelIngId(''); setNewIngSearch(''); setNewSelQty(''); setNewInputUnit('kg');
     };
 
     const handleAddNewSubItem = () => {
@@ -419,7 +419,7 @@ export const Preparos = () => {
             quantity_needed: qty,
             ingredients: ing,
         }]);
-        setSelectedIngId(''); setIngSearch(''); setSelectedQty('');
+        setSelectedIngId(''); setIngSearch(''); setSelectedQty(''); setEditInputUnit('kg');
     };
 
     const handleAddSubItem = () => {
