@@ -18,6 +18,16 @@ export const fmtMoney = (v: number | null | undefined): string => {
     return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
+/** Normaliza rótulo de categoria só quando vem GRITANDO em caixa alta
+ *  (import/cadastro antigo: "SOBREMESA", "PRODUÇÃO"). Preserva os já
+ *  formatados ("Lanche", "(sem classificação)", "Item Pronto"). Só exibição —
+ *  o valor guardado no dado não muda (filtros seguem comparando o original). */
+export const fmtCategoria = (c: string | null | undefined): string => {
+    if (!c) return c ?? '';
+    if (/[a-zà-ÿ]/.test(c)) return c;               // já tem minúscula → deixa
+    return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
+};
+
 /** Custo por unidade, legível. Custo por grama/ml vira número minúsculo e
  *  ilegível (R$ 0,0042); convertemos pra kg/L pra virar R$ 4,20/kg.
  *  /un e valores já legíveis ficam como estão. */

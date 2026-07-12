@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { PackageSearch, Plus, Filter, Trash2, X, Pencil, PlusCircle, Settings2 } from 'lucide-react';
 import type { Ingredient, IngredientTipo } from '../lib/types';
-import { fmtCustoUnitario, fmtMoney, fmtQty } from '../lib/format';
+import { fmtCustoUnitario, fmtMoney, fmtQty, fmtCategoria } from '../lib/format';
 import { traduzErro } from '../lib/erros';
 import { DecimalInput } from '../components/DecimalInput';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -394,7 +394,7 @@ export const Ingredients = () => {
                                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/50'
                                         }`}
                                 >
-                                    {tab}
+                                    {fmtCategoria(tab)}
                                 </button>
                             ))}
                         </div>
@@ -536,7 +536,7 @@ export const Ingredients = () => {
                                         </td>
                                         <td className="p-4">
                                             {item.categoria
-                                                ? <span className={`px-2 py-1 text-xs font-semibold rounded-full ${item.tipo === 'insumo_base' ? (CATEGORIA_BADGE[item.categoria] ?? 'bg-teal-100 text-teal-700') : 'bg-amber-100 text-amber-700'}`}>{item.categoria}</span>
+                                                ? <span className={`px-2 py-1 text-xs font-semibold rounded-full ${item.tipo === 'insumo_base' ? (CATEGORIA_BADGE[item.categoria] ?? 'bg-teal-100 text-teal-700') : 'bg-amber-100 text-amber-700'}`}>{fmtCategoria(item.categoria)}</span>
                                                 : <span className={`px-2 py-1 text-xs font-semibold rounded-full ${TIPO_BADGE[item.tipo] ?? 'bg-slate-100 text-slate-500'}`}>{TIPO_OPTIONS.find(t => t.value === item.tipo)?.label ?? item.tipo}</span>
                                             }
                                         </td>

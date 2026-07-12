@@ -6,7 +6,7 @@ import {
     UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2, ArrowDownUp, Copy,
 } from 'lucide-react';
 import type { Ingredient, Recipe, RecipeIngredient, RecipeSubRecipe } from '../lib/types';
-import { fmtMoney, fmtQty } from '../lib/format';
+import { fmtMoney, fmtQty, fmtCategoria } from '../lib/format';
 import { usePermissions } from '../hooks/usePermissions';
 import { traduzErro } from '../lib/erros';
 import { buildPreparoCostMapRecursive, type PreparoNode } from '../lib/costCalculator';
@@ -722,7 +722,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                 }}
                                 className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${isActive ? 'bg-slate-800 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                             >
-                                {cat}
+                                {fmtCategoria(cat)}
                             </button>
                         );
                     })}
@@ -795,7 +795,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 />
                                                 <div className="flex gap-2">
                                                     <select value={editInfoCategory} onChange={e => setEditInfoCategory(e.target.value)} className="flex-1 px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-primary-500">
-                                                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                                                        {allCategories.map(c => <option key={c} value={c}>{fmtCategoria(c)}</option>)}
                                                     </select>
                                                     <DecimalInput
                                                         value={editInfoPrice}
@@ -834,7 +834,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     </div>
                                                 )}
                                                 {viewMode === 'operacao' && (
-                                                    <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{ficha.category}</span>
+                                                    <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{fmtCategoria(ficha.category)}</span>
                                                 )}
                                                 {(usedByMap[ficha.id]?.length ?? 0) > 0 && (
                                                     <span
@@ -992,7 +992,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
                                     <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white">
-                                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {allCategories.map(c => <option key={c} value={c}>{fmtCategoria(c)}</option>)}
                                     </select>
                                 </div>
                                 <div>
