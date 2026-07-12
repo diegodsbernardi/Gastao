@@ -1,10 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Origins autorizadas a chamar esta function. Qualquer outra origin recebe
+// a primeira da lista (fallback) no header CORS.
+const ALLOWED_ORIGINS = [
+  "https://gastao-app.vercel.app",
+  "http://localhost:5173",
+];
+
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,21 +121,38 @@ interface InterpretationResult {
 // ---------------------------------------------------------------------------
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return jsonError("Token de autenticacao necessario", 401);
+    return jsonError(corsHeaders, "Token de autenticacao necessario", 401);
   }
 
   try {
+    // ------------------------------------------------------------------
+    // Valida IDENTIDADE real ANTES de chamar o Claude Sonnet (caro).
+    // A anon key pública satisfaz o verify_jwt mas não tem usuário
+    // associado → getUser() falha → rejeitamos, barrando abuso de custo.
+    // ------------------------------------------------------------------
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+      return jsonError(corsHeaders, "Autenticacao invalida", 401);
+    }
+
     const body: RequestBody = await req.json();
     const { sheets, existing_ingredient_names, existing_recipe_names } = body;
 
     if (!Array.isArray(sheets) || sheets.length === 0) {
-      return jsonError('Campo "sheets" deve ser um array nao-vazio', 400);
+      return jsonError(corsHeaders, 'Campo "sheets" deve ser um array nao-vazio', 400);
     }
 
     // ------------------------------------------------------------------
@@ -143,9 +174,9 @@ serve(async (req) => {
       existing_recipe_names ?? [],
     );
 
-    return jsonOK(result);
+    return jsonOK(corsHeaders, result);
   } catch (err) {
-    return jsonError(String(err), 500);
+    return jsonError(corsHeaders, String(err), 500);
   }
 });
 
@@ -459,13 +490,17 @@ function extractData(
 // Utility functions
 // ---------------------------------------------------------------------------
 
-function jsonOK(data: unknown) {
+function jsonOK(corsHeaders: Record<string, string>, data: unknown) {
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
-function jsonError(message: string, status: number) {
+function jsonError(
+  corsHeaders: Record<string, string>,
+  message: string,
+  status: number,
+) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },

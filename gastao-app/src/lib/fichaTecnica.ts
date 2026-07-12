@@ -89,6 +89,12 @@ export function getPreprocessedRecipeNames(): Set<string> {
 }
 
 export async function parseExcelSheets(file: File): Promise<SheetData[]> {
+    // TODO(segurança): migrar de xlsx pro fork mantido em cdn.sheetjs.com — vuln GHSA-4r6h-8v6p-xvw6 sem fix no npm
+    // Guarda de tamanho: reduz superfície de ReDoS do parser xlsx antes de ler o arquivo.
+    const MAX_XLSX_BYTES = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_XLSX_BYTES) {
+        throw new Error(`Arquivo grande demais (${(file.size / 1024 / 1024).toFixed(1)} MB). Limite: 10 MB.`);
+    }
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
 

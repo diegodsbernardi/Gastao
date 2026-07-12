@@ -1,0 +1,17 @@
+# Config das Edge Functions do Gastão.
+# Versiona a INTENÇÃO de segurança pra futuros deploys.
+#
+# verify_jwt = true → o gateway do Supabase exige um JWT válido (assinado)
+# no header Authorization antes de invocar a function. Isso NÃO garante
+# identidade real: a anon key pública também é um JWT válido. Por isso as
+# functions que gastam com LLM validam a identidade via supabase.auth.getUser()
+# antes de chamar o modelo (ver index.ts de cada uma).
+
+[functions.parse-nfe]
+verify_jwt = true
+
+[functions.match-nfe-items]
+verify_jwt = true
+
+[functions.interpret-ficha-tecnica]
+verify_jwt = true

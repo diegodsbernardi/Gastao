@@ -1,11 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Origins autorizadas a chamar esta function. Qualquer outra origin recebe
+// a primeira da lista (fallback) no header CORS — bloqueia leitura via browser
+// de terceiros mantendo a resposta válida.
+const ALLOWED_ORIGINS = [
+  "https://gastao-app.vercel.app",
+  "http://localhost:5173",
+];
+
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,13 +50,15 @@ interface AIMatch {
 // ---------------------------------------------------------------------------
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return jsonError("Token de autenticação necessário", 401);
+    return jsonError(corsHeaders, "Token de autenticação necessário", 401);
   }
 
   try {
@@ -53,14 +69,14 @@ serve(async (req) => {
     };
 
     if (!Array.isArray(itens) || itens.length === 0) {
-      return jsonError('Campo "itens" deve ser um array não-vazio', 400);
+      return jsonError(corsHeaders, 'Campo "itens" deve ser um array não-vazio', 400);
     }
     if (!restaurant_id) {
-      return jsonError('Campo "restaurant_id" é obrigatório', 400);
+      return jsonError(corsHeaders, 'Campo "restaurant_id" é obrigatório', 400);
     }
 
     // ------------------------------------------------------------------
-    // 1. Busca insumos do restaurante
+    // 1. Client com a Authorization do chamador
     // ------------------------------------------------------------------
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -68,6 +84,20 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
+    // ------------------------------------------------------------------
+    // 1a. Valida IDENTIDADE real antes de gastar com IA.
+    // A anon key pura satisfaz o verify_jwt mas NÃO tem usuário associado,
+    // então getUser() retorna erro/null e rejeitamos aqui — barra abuso de
+    // custo por quem só extraiu a anon key pública do bundle.
+    // ------------------------------------------------------------------
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+      return jsonError(corsHeaders, "Autenticação inválida", 401);
+    }
+
+    // ------------------------------------------------------------------
+    // 2. Busca insumos do restaurante
+    // ------------------------------------------------------------------
     const { data: ingredients, error: ingError } = await supabase
       .from("ingredients")
       .select("id, name, unit_type, tipo")
@@ -79,7 +109,7 @@ serve(async (req) => {
 
     // Sem insumos cadastrados → retorna sem matches
     if (!ingredients || ingredients.length === 0) {
-      return jsonOK({
+      return jsonOK(corsHeaders, {
         matches: itens.map((_, i) => ({
           item_index: i,
           insumo_id: null,
@@ -90,13 +120,13 @@ serve(async (req) => {
     }
 
     // ------------------------------------------------------------------
-    // 2. Chama Claude em batch (1 chamada para todos os itens)
+    // 3. Chama Claude em batch (1 chamada para todos os itens)
     // ------------------------------------------------------------------
     const matches = await matchWithAI(itens, ingredients as Ingredient[]);
 
-    return jsonOK({ matches });
+    return jsonOK(corsHeaders, { matches });
   } catch (err) {
-    return jsonError(String(err), 500);
+    return jsonError(corsHeaders, String(err), 500);
   }
 });
 
@@ -104,13 +134,17 @@ serve(async (req) => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function jsonOK(data: unknown) {
+function jsonOK(corsHeaders: Record<string, string>, data: unknown) {
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
-function jsonError(message: string, status: number) {
+function jsonError(
+  corsHeaders: Record<string, string>,
+  message: string,
+  status: number,
+) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },

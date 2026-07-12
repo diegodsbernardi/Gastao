@@ -49,6 +49,15 @@ export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // TODO(segurança): migrar de xlsx pro fork mantido em cdn.sheetjs.com — vuln GHSA-4r6h-8v6p-xvw6 sem fix no npm
+        // Guarda de tamanho: reduz superfície de ReDoS do parser xlsx antes de tocar no arquivo.
+        const MAX_XLSX_BYTES = 10 * 1024 * 1024; // 10 MB
+        if (file.size > MAX_XLSX_BYTES) {
+            setStatus('error');
+            setLogs([`❌ Arquivo grande demais (${(file.size / 1024 / 1024).toFixed(1)} MB). Limite: 10 MB.`]);
+            return;
+        }
+
         setLoading(true);
         setStatus('processing');
         setLogs([]);

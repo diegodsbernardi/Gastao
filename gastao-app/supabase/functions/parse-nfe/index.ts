@@ -1,15 +1,45 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { XMLParser } from "https://esm.sh/fast-xml-parser@4.3.4";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Origins autorizadas a chamar esta function. Qualquer outra origin recebe
+// a primeira da lista (fallback) no header CORS.
+const ALLOWED_ORIGINS = [
+  "https://gastao-app.vercel.app",
+  "http://localhost:5173",
+];
+
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+  };
+}
+
+// Limite anti-DoS: XML acima disso é rejeitado com 413 antes de parsear.
+const MAX_BODY_BYTES = 3 * 1024 * 1024; // 3 MB
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Exige ao menos a presença do header Authorization (verify_jwt já valida a
+  // presença/assinatura no gateway; este check é uma guarda explícita).
+  if (!req.headers.get("Authorization")) {
+    return jsonError(corsHeaders, "Token de autenticação necessário", 401);
+  }
+
+  // Rejeita cedo por Content-Length quando disponível (evita ler o body todo).
+  const declaredLen = Number(req.headers.get("content-length") ?? "");
+  if (Number.isFinite(declaredLen) && declaredLen > MAX_BODY_BYTES) {
+    return jsonError(corsHeaders, "XML muito grande (máx. 3 MB)", 413);
   }
 
   try {
@@ -21,7 +51,10 @@ serve(async (req) => {
       const formData = await req.formData();
       const file = formData.get("file");
       if (!file || typeof file === "string") {
-        return jsonError('Campo "file" ausente ou inválido no multipart', 400);
+        return jsonError(corsHeaders, 'Campo "file" ausente ou inválido no multipart', 400);
+      }
+      if ((file as File).size > MAX_BODY_BYTES) {
+        return jsonError(corsHeaders, "XML muito grande (máx. 3 MB)", 413);
       }
       xmlText = await (file as File).text();
     } else {
@@ -29,8 +62,13 @@ serve(async (req) => {
       xmlText = await req.text();
     }
 
+    // Guarda pós-leitura: cobre o caso sem Content-Length confiável.
+    if (new TextEncoder().encode(xmlText).length > MAX_BODY_BYTES) {
+      return jsonError(corsHeaders, "XML muito grande (máx. 3 MB)", 413);
+    }
+
     if (!xmlText.trim()) {
-      return jsonError("Body vazio — envie o XML da NF-e", 400);
+      return jsonError(corsHeaders, "Body vazio — envie o XML da NF-e", 400);
     }
 
     const result = parseNFe(xmlText);
@@ -38,7 +76,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return jsonError(String(err), 400);
+    return jsonError(corsHeaders, String(err), 400);
   }
 });
 
@@ -46,7 +84,11 @@ serve(async (req) => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function jsonError(message: string, status: number) {
+function jsonError(
+  corsHeaders: Record<string, string>,
+  message: string,
+  status: number,
+) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },

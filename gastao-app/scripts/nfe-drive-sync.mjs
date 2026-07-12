@@ -286,7 +286,12 @@ try {
                     const chave = chaveFrom(xml) ?? chaveFrom(arquivo);
                     if (!chave) { resumo.ignoradas++; continue; }
                     if (conhecidas.has(chave)) { resumo.jaImportadas++; continue; }
+                    // Falha FECHADO: CNPJ cadastrado mas destinatário não extraível → ignora.
                     const destCnpj = onlyDigits(xml.match(/<dest>[\s\S]*?<CNPJ>(\d+)<\/CNPJ>/)?.[1]);
+                    if (rest.cnpj && !destCnpj) {
+                        log(`  ⚠ ${arquivo}: CNPJ do destinatário não extraível — ignorando por segurança`);
+                        resumo.ignoradas++; continue;
+                    }
                     if (rest.cnpj && destCnpj && onlyDigits(rest.cnpj) !== destCnpj) {
                         log(`  ⚠ ${arquivo}: destinatário ${destCnpj} ≠ CNPJ de ${rest.nome}, ignorando`);
                         resumo.ignoradas++; continue;
@@ -343,7 +348,14 @@ try {
                     if (conhecidas.has(chave)) { resumo.jaImportadas++; continue; }
 
                     // Roteamento certo: destinatário do XML tem que ser o CNPJ do restaurante.
+                    // Falha FECHADO: se o restaurante tem CNPJ cadastrado mas o do
+                    // destinatário não pôde ser extraído, ignora por segurança.
                     const destCnpj = onlyDigits(xml.match(/<dest>[\s\S]*?<CNPJ>(\d+)<\/CNPJ>/)?.[1]);
+                    if (sync.cnpj && !destCnpj) {
+                        log(`  ⚠ ${file.name}: CNPJ do destinatário não extraível — ignorando por segurança`);
+                        resumo.ignoradas++;
+                        continue;
+                    }
                     if (sync.cnpj && destCnpj && onlyDigits(sync.cnpj) !== destCnpj) {
                         log(`  ⚠ ${file.name}: destinatário ${destCnpj} ≠ CNPJ do ${sync.nome}, ignorando`);
                         resumo.ignoradas++;
