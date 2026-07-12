@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -120,25 +120,63 @@ function InsumoDropdown({
         i.name.toLowerCase().includes(q.toLowerCase())
     );
     const ref = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    // Posição fixa calculada a partir do botão-âncora (pai imediato, o div
+    // "relative"). Escapa de qualquer overflow da tabela; abre pra cima
+    // quando falta espaço abaixo na viewport.
+    const [pos, setPos] = useState<React.CSSProperties>({ visibility: 'hidden' });
+
+    const updatePos = useCallback(() => {
+        const anchor = ref.current?.parentElement;
+        if (!anchor) return;
+        const r = anchor.getBoundingClientRect();
+        const width = 256; // w-64
+        const left = Math.max(8, Math.min(r.right - width, window.innerWidth - width - 8));
+        const openUp = window.innerHeight - r.bottom < 300 && r.top >= 300;
+        setPos(openUp
+            ? { left, bottom: window.innerHeight - r.top + 4 }
+            : { left, top: r.bottom + 4 });
+    }, []);
+
+    useLayoutEffect(() => { updatePos(); }, [updatePos]);
+
+    // Foco sem scroll, só depois de posicionado (elemento hidden não é focável).
+    // autoFocus nativo scrollaria o container pra revelar o input.
+    const focou = useRef(false);
+    useEffect(() => {
+        if (!focou.current && pos.visibility !== 'hidden' && inputRef.current) {
+            focou.current = true;
+            inputRef.current.focus({ preventScroll: true });
+        }
+    }, [pos]);
 
     useEffect(() => {
-        const handler = (e: MouseEvent) => {
+        const handleClick = (e: MouseEvent) => {
             if (ref.current && !ref.current.contains(e.target as Node)) onClose();
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [onClose]);
+        document.addEventListener('mousedown', handleClick);
+        // Com position fixed, scroll/resize descolam o dropdown do botão —
+        // reposiciona pra ele acompanhar a âncora.
+        window.addEventListener('scroll', updatePos, true);
+        window.addEventListener('resize', updatePos);
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            window.removeEventListener('scroll', updatePos, true);
+            window.removeEventListener('resize', updatePos);
+        };
+    }, [onClose, updatePos]);
 
     return (
         <div
             ref={ref}
-            className="absolute z-50 right-0 mt-1 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
+            style={pos}
+            className="fixed z-50 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
         >
             <div className="p-2 border-b border-slate-100">
                 <div className="flex items-center gap-2 px-2 py-1.5 bg-slate-50 rounded-lg">
                     <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <input
-                        autoFocus
+                        ref={inputRef}
                         className="flex-1 bg-transparent text-sm outline-none placeholder-slate-400"
                         placeholder="Buscar insumo…"
                         value={q}
