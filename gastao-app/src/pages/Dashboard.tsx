@@ -25,6 +25,7 @@ export const Dashboard = () => {
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [totalUnitsSold, setTotalUnitsSold] = useState(0);
     const [stockAlerts, setStockAlerts] = useState(0);
+    const [totalIngredients, setTotalIngredients] = useState(0);
     const [cmvPct, setCmvPct] = useState(0);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
     const [cmvAlertas, setCmvAlertas] = useState<CmvAlerta[]>([]);
@@ -61,7 +62,7 @@ export const Dashboard = () => {
         const endOfMonth   = new Date(selYear, selMonth + 1, 1).toISOString();
 
         // 7 fetches em paralelo — sem waterfall
-        const [salesRes, stockAlertsRes, fichasRes, preparosRes, allIngsRes, subsRes, alertasRes] = await Promise.all([
+        const [salesRes, stockAlertsRes, totalIngsRes, fichasRes, preparosRes, allIngsRes, subsRes, alertasRes] = await Promise.all([
             supabase.from('sales')
                 .select('recipe_id, quantity_sold, total_value')
                 .eq('restaurant_id', restaurantId)
@@ -71,6 +72,9 @@ export const Dashboard = () => {
                 .select('id', { count: 'exact', head: true })
                 .eq('restaurant_id', restaurantId)
                 .lte('stock_quantity', 0),
+            supabase.from('ingredients')
+                .select('id', { count: 'exact', head: true })
+                .eq('restaurant_id', restaurantId),
             supabase.from('recipes')
                 .select('id, product_name, sale_price, yield_quantity')
                 .eq('restaurant_id', restaurantId)
@@ -88,6 +92,7 @@ export const Dashboard = () => {
 
         const salesData   = salesRes.data   ?? [];
         const alertsCount = stockAlertsRes.count ?? 0;
+        const totalIngs   = totalIngsRes.count ?? 0;
         const fichas      = fichasRes.data   ?? [];
         const preparos    = preparosRes.data ?? [];
         const allIngs     = allIngsRes.data  ?? [];
@@ -171,6 +176,7 @@ export const Dashboard = () => {
         setTotalRevenue(revenue);
         setTotalUnitsSold(unitsSold);
         setStockAlerts(alertsCount);
+        setTotalIngredients(totalIngs);
         setCmvPct(cmv);
         setTopProducts(products);
         setCmvAlertas(alertasRes);
@@ -356,23 +362,47 @@ export const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Alertas de Estoque */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-slate-500 font-medium text-sm">Alertas de Estoque</h2>
-                        <span className={`p-2 ${stockAlerts > 0 ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'} rounded-lg`}>
-                            <AlertCircle className="w-5 h-5" />
-                        </span>
-                    </div>
-                    <div className="mt-4">
-                        <span className={`text-3xl font-bold tabular-nums ${stockAlerts > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                            {stockAlerts} {stockAlerts === 1 ? 'Item' : 'Itens'}
-                        </span>
-                        <div className={`mt-1 text-sm ${stockAlerts > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                            {stockAlerts > 0 ? 'Com estoque zerado ou negativo' : 'Estoque sem alertas'}
+                {/* Alertas de Estoque — só vira alarme quando é uma MINORIA zerada.
+                    Se ~todos os insumos estão em zero, o restaurante não controla
+                    estoque (o comum nos nossos clientes) → card neutro, sem susto. */}
+                {(() => {
+                    const usaEstoque = totalIngredients > 0 && stockAlerts < totalIngredients * 0.9;
+                    const temAlerta = usaEstoque && stockAlerts > 0;
+                    // Classes completas (Tailwind não gera nomes interpolados em build)
+                    const iconCls = temAlerta ? 'bg-amber-50 text-amber-600'
+                        : usaEstoque ? 'bg-green-50 text-green-600'
+                        : 'bg-slate-100 text-slate-400';
+                    const numCls = temAlerta ? 'text-amber-600' : usaEstoque ? 'text-green-600' : 'text-slate-400';
+                    return (
+                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-slate-500 font-medium text-sm">Alertas de Estoque</h2>
+                                <span className={`p-2 rounded-lg ${iconCls}`}>
+                                    <AlertCircle className="w-5 h-5" />
+                                </span>
+                            </div>
+                            <div className="mt-4">
+                                {usaEstoque ? (
+                                    <>
+                                        <span className={`text-3xl font-bold tabular-nums ${numCls}`}>
+                                            {stockAlerts} {stockAlerts === 1 ? 'Item' : 'Itens'}
+                                        </span>
+                                        <div className={`mt-1 text-sm ${numCls}`}>
+                                            {temAlerta ? 'Com estoque zerado ou negativo' : 'Estoque sem alertas'}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className={`text-3xl font-bold ${numCls}`}>—</span>
+                                        <div className={`mt-1 text-sm ${numCls}`}>
+                                            Controle de estoque não ativado
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    );
+                })()}
             </div>
 
             {/* Top Produtos */}

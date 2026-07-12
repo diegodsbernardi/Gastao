@@ -18,6 +18,19 @@ export const fmtMoney = (v: number | null | undefined): string => {
     return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
+/** Custo por unidade, legível. Custo por grama/ml vira número minúsculo e
+ *  ilegível (R$ 0,0042); convertemos pra kg/L pra virar R$ 4,20/kg.
+ *  /un e valores já legíveis ficam como estão. */
+export const fmtCustoUnitario = (custo: number | null | undefined, unit: string | null | undefined): string => {
+    if (custo == null || Number.isNaN(custo)) custo = 0;
+    const u = (unit ?? '').toLowerCase();
+    const escala: Record<string, string> = { g: 'kg', ml: 'L' };
+    if (escala[u] && custo > 0 && custo < 0.1) {
+        return `${fmtMoney(custo * 1000)}/${escala[u]}`;
+    }
+    return `${fmtMoney(custo)}/${u || 'un'}`;
+};
+
 /** Formata quantidade conforme unidade:
  *  kg, g, l, ml → 3 casas
  *  un, cx, pct, fardo, porção → sem decimais desnecessários (max 2)

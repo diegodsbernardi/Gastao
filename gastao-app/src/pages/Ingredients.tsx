@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { PackageSearch, Plus, Filter, Trash2, X, Pencil, PlusCircle, Settings2 } from 'lucide-react';
 import type { Ingredient, IngredientTipo } from '../lib/types';
-import { fmtMoney, fmtQty } from '../lib/format';
+import { fmtCustoUnitario, fmtMoney, fmtQty } from '../lib/format';
 import { traduzErro } from '../lib/erros';
 import { DecimalInput } from '../components/DecimalInput';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -438,11 +438,11 @@ export const Ingredients = () => {
                                     <span className="px-1.5 py-0.5 bg-slate-100 rounded font-bold border border-slate-200 text-slate-600">
                                         {item.unit_type.toUpperCase()}
                                     </span>
-                                    <span className={item.stock_quantity <= 0 ? 'text-red-600 font-semibold' : ''}>
+                                    <span className={item.stock_quantity < 0 ? 'text-red-600 font-semibold' : 'text-slate-400'}>
                                         {fmtQty(item.stock_quantity, item.unit_type)}
                                     </span>
                                     <span className="text-slate-200">·</span>
-                                    <span className="font-semibold text-slate-700">{fmtMoney(item.avg_cost_per_unit)}</span>
+                                    <span className="font-semibold text-slate-700">{fmtCustoUnitario(item.avg_cost_per_unit, item.unit_type)}</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-0.5 shrink-0">
@@ -546,12 +546,12 @@ export const Ingredients = () => {
                                             </span>
                                         </td>
                                         <td className="p-4 text-right">
-                                            <span className={`font-medium ${item.stock_quantity <= 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                                            <span className={`font-medium ${item.stock_quantity < 0 ? 'text-red-600' : item.stock_quantity === 0 ? 'text-slate-400' : 'text-slate-900'}`}>
                                                 {fmtQty(item.stock_quantity, item.unit_type)}
                                             </span>
                                         </td>
                                         <td className="p-4 text-right font-semibold text-slate-900">
-                                            {fmtMoney(item.avg_cost_per_unit)}
+                                            {fmtCustoUnitario(item.avg_cost_per_unit, item.unit_type)}
                                         </td>
                                         <td className="p-4 text-right">
                                             <div className="flex items-center justify-end gap-1">
