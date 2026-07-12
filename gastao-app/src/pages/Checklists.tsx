@@ -5,6 +5,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
+import { useConfirm } from '../components/ConfirmDialog';
 import { toast } from 'sonner';
 
 type Frequencia = 'diario' | 'semanal' | 'mensal' | 'avulso';
@@ -61,6 +62,7 @@ const todayISO = () => {
 export const Checklists = () => {
     const { restauranteId } = useAuth();
     const { isDonoOrGerente } = usePermissions();
+    const { confirm } = useConfirm();
 
     const [templates, setTemplates] = useState<Template[]>([]);
     const [todaysRuns, setTodaysRuns] = useState<Run[]>([]);
@@ -194,7 +196,11 @@ export const Checklists = () => {
     const finishRun = async () => {
         if (!activeRunId) return;
         const pending = activeItems.filter(i => !i.feito).length;
-        if (pending > 0 && !confirm(`Ainda faltam ${pending} item(ns). Concluir mesmo assim?`)) return;
+        if (pending > 0 && !(await confirm({
+            title: 'Concluir mesmo assim?',
+            message: `Ainda faltam ${pending} item(ns) sem marcar.`,
+            confirmText: 'Concluir',
+        }))) return;
 
         const { error } = await supabase.rpc('complete_checklist_run', { p_run_id: activeRunId });
         if (error) {
@@ -274,7 +280,12 @@ export const Checklists = () => {
     };
 
     const deleteTemplate = async (tpl: Template) => {
-        if (!confirm(`Apagar o checklist "${tpl.nome}"? Histórico de runs será mantido.`)) return;
+        if (!(await confirm({
+            title: `Apagar "${tpl.nome}"?`,
+            message: 'O histórico de runs será mantido.',
+            tone: 'danger',
+            confirmText: 'Apagar',
+        }))) return;
         const { error } = await supabase
             .from('checklist_templates')
             .update({ ativo: false })

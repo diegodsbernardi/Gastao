@@ -6,6 +6,8 @@ import { PackageSearch, Plus, Filter, Trash2, X, Pencil, PlusCircle, Settings2 }
 import type { Ingredient, IngredientTipo } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
 import { traduzErro } from '../lib/erros';
+import { DecimalInput } from '../components/DecimalInput';
+import { useConfirm } from '../components/ConfirmDialog';
 
 const UNIT_OPTIONS = ['kg', 'g', 'l', 'ml', 'un', 'cx', 'pct', 'fardo'];
 
@@ -31,6 +33,7 @@ const CATEGORIA_BADGE: Record<string, string> = {
 
 export const Ingredients = () => {
     const { user, restauranteId } = useAuth();
+    const { confirm } = useConfirm();
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -115,7 +118,7 @@ export const Ingredients = () => {
     };
 
     const handleDeleteCategory = async (name: string, tipo: 'insumo_base' | 'insumo_direto') => {
-        if (!confirm(`Excluir categoria "${name}"? Os insumos com esta categoria ficarão sem categoria.`)) return;
+        if (!(await confirm({ title: `Excluir categoria "${name}"?`, message: 'Os insumos com esta categoria ficarão sem categoria.', tone: 'danger', confirmText: 'Excluir' }))) return;
 
         // 1. Remove o registro da tabela de categorias
         const { error: errDel } = await supabase
@@ -256,7 +259,7 @@ export const Ingredients = () => {
     };
 
     const handleDeleteIngredient = async (id: string) => {
-        if (!confirm('Deseja realmente excluir este insumo?')) return;
+        if (!(await confirm({ title: 'Excluir este insumo?', tone: 'danger', confirmText: 'Excluir' }))) return;
         const { error } = await supabase.from('ingredients').delete().eq('id', id);
         if (!error) {
             setIngredients(ingredients.filter(i => i.id !== id));
@@ -270,7 +273,7 @@ export const Ingredients = () => {
     };
 
     const handleBulkDelete = async () => {
-        if (!confirm(`Deseja realmente excluir ${selectedIds.length} insumo(s)?`)) return;
+        if (!(await confirm({ title: `Excluir ${selectedIds.length} insumo(s)?`, tone: 'danger', confirmText: 'Excluir' }))) return;
         setLoading(true);
         const { error } = await supabase.from('ingredients').delete().in('id', selectedIds);
         if (!error) {
@@ -639,33 +642,27 @@ export const Ingredients = () => {
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Custo Médio (R$)</label>
-                                    <input
-                                        type="number"
-                                        min="0" step="0.01"
+                                    <DecimalInput
                                         value={newCost}
-                                        onChange={e => setNewCost(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setNewCost}
                                         placeholder="0.00"
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Aproveitamento (%)</label>
-                                    <input
-                                        type="number"
-                                        min="1" max="100" step="1"
+                                    <DecimalInput
                                         value={newAproveitamento}
-                                        onChange={e => setNewAproveitamento(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setNewAproveitamento}
                                         placeholder="100"
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Estoque Inicial</label>
-                                    <input
-                                        type="number"
-                                        min="0"
+                                    <DecimalInput
                                         value={newStock}
-                                        onChange={e => setNewStock(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setNewStock}
                                         placeholder="0"
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
@@ -741,33 +738,27 @@ export const Ingredients = () => {
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Custo Médio (R$)</label>
-                                    <input
-                                        type="number"
-                                        min="0" step="0.01"
+                                    <DecimalInput
                                         value={editCost}
-                                        onChange={e => setEditCost(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setEditCost}
                                         onFocus={e => e.target.select()}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Aproveitamento (%)</label>
-                                    <input
-                                        type="number"
-                                        min="1" max="100" step="1"
+                                    <DecimalInput
                                         value={editAproveitamento}
-                                        onChange={e => setEditAproveitamento(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setEditAproveitamento}
                                         onFocus={e => e.target.select()}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Estoque Atual</label>
-                                    <input
-                                        type="number"
-                                        min="0"
+                                    <DecimalInput
                                         value={editStock}
-                                        onChange={e => setEditStock(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setEditStock}
                                         onFocus={e => e.target.select()}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
@@ -817,10 +808,9 @@ export const Ingredients = () => {
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Quantidade a Adicionar</label>
                                 <div className="flex items-center gap-2">
-                                    <input
-                                        type="number"
+                                    <DecimalInput
                                         value={stockEntryQty}
-                                        onChange={e => setStockEntryQty(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setStockEntryQty}
                                         placeholder="0"
                                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
                                         autoFocus
@@ -840,11 +830,9 @@ export const Ingredients = () => {
                                     Custo desta compra (R$/{stockEntryIngredient.unit_type}){' '}
                                     <span className="text-slate-400 font-normal">(opcional)</span>
                                 </label>
-                                <input
-                                    type="number"
-                                    min="0" step="0.01"
+                                <DecimalInput
                                     value={stockEntryCost}
-                                    onChange={e => setStockEntryCost(e.target.value === '' ? '' : Number(e.target.value))}
+                                    onChange={setStockEntryCost}
                                     placeholder={(stockEntryIngredient.avg_cost_per_unit ?? 0).toFixed(2)}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
                                 />

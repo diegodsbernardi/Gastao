@@ -6,6 +6,8 @@ import { ChefHat, Plus, Trash2, Edit, Search, X, ArrowRight, Link2, Layers } fro
 import type { Ingredient, Recipe, RecipeIngredient } from '../lib/types';
 import { fmtMoney, fmtQty } from '../lib/format';
 import { buildPreparoCostMapRecursive, type PreparoNode } from '../lib/costCalculator';
+import { DecimalInput } from '../components/DecimalInput';
+import { useConfirm } from '../components/ConfirmDialog';
 
 const UNIT_OPTIONS = ['un', 'porção', 'g', 'ml', 'kg', 'l'];
 
@@ -36,6 +38,7 @@ let preparosCache: PreparosCache | null = null;
 
 export const Preparos = () => {
     const { user, restauranteId } = useAuth();
+    const { confirm } = useConfirm();
 
     const [preparos, setPreparos] = useState<Recipe[]>(() => preparosCache?.preparos ?? []);
     const [ingredients, setIngredients] = useState<Ingredient[]>(() => preparosCache?.ingredients ?? []);
@@ -364,7 +367,7 @@ export const Preparos = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Excluir este preparo? Esta ação não pode ser desfeita.')) return;
+        if (!(await confirm({ title: 'Excluir preparo?', message: 'Esta ação não pode ser desfeita.', tone: 'danger', confirmText: 'Excluir' }))) return;
 
         // Remove auto-referência antes do delete (evita FK RESTRICT no loop)
         await supabase
@@ -751,7 +754,7 @@ export const Preparos = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Rendimento</label>
-                                        <input type="number" value={newYield} onChange={e => setNewYield(e.target.value === '' ? '' : Number(e.target.value))} placeholder='1' min={1} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none text-sm" />
+                                        <DecimalInput value={newYield} onChange={setNewYield} placeholder='1' className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none text-sm" />
                                         <p className="text-xs text-slate-400 mt-1">Quantas unidades produz</p>
                                     </div>
                                 </div>
@@ -768,14 +771,12 @@ export const Preparos = () => {
                                         <div key={item.id} className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-xl border border-indigo-200 group">
                                             <Layers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                                             <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.sub_recipe.product_name}</span>
-                                            <input
-                                                type="number"
+                                            <DecimalInput
                                                 value={item.quantity_needed}
-                                                min="0.001"
                                                 onFocus={e => e.target.select()}
-                                                onChange={e => {
+                                                onChange={v => {
                                                     const next = [...newSubItems];
-                                                    next[idx] = { ...next[idx], quantity_needed: Number(e.target.value) || 0 };
+                                                    next[idx] = { ...next[idx], quantity_needed: v === '' ? 0 : v };
                                                     setNewSubItems(next);
                                                 }}
                                                 className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-right text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
@@ -824,7 +825,7 @@ export const Preparos = () => {
                                             )}
                                         </div>
                                         <div className="flex gap-2">
-                                            <input type="number" value={newSelSubQty} onChange={e => setNewSelSubQty(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Qtd" className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-indigo-400 outline-none" />
+                                            <DecimalInput value={newSelSubQty} onChange={setNewSelSubQty} placeholder="Qtd" className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-indigo-400 outline-none" />
                                             <button onClick={handleAddNewSubItem} disabled={!newSelSubId || newSelSubQty === '' || Number(newSelSubQty) <= 0} className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
                                                 + Add sub-preparo
                                             </button>
@@ -843,14 +844,12 @@ export const Preparos = () => {
                                 ) : newItems.map((item, idx) => (
                                     <div key={item.id} className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 group">
                                         <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.ingredients.name}</span>
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={item.quantity_needed}
-                                            min="0.001"
                                             onFocus={e => e.target.select()}
-                                            onChange={e => {
+                                            onChange={v => {
                                                 const next = [...newItems];
-                                                next[idx] = { ...next[idx], quantity_needed: Number(e.target.value) || 0 };
+                                                next[idx] = { ...next[idx], quantity_needed: v === '' ? 0 : v };
                                                 setNewItems(next);
                                             }}
                                             className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-right text-sm focus:ring-2 focus:ring-amber-400 outline-none"
@@ -902,7 +901,7 @@ export const Preparos = () => {
                                         )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <input type="number" value={newSelQty} onChange={e => setNewSelQty(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Qtd" className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-amber-400 outline-none" />
+                                        <DecimalInput value={newSelQty} onChange={setNewSelQty} placeholder="Qtd" className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-amber-400 outline-none" />
                                         {ingredients.find(i => i.id === newSelIngId)?.unit_type === 'kg' && (
                                             <div className="flex rounded-lg border border-slate-300 overflow-hidden text-xs font-bold shrink-0">
                                                 <button onClick={() => setNewInputUnit('g')} className={`px-2 py-2 transition-colors ${newInputUnit === 'g' ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>g</button>
@@ -962,12 +961,10 @@ export const Preparos = () => {
                                     />
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-slate-400 whitespace-nowrap">Rende</span>
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={editPreparoYield}
-                                            min="1"
                                             onFocus={e => e.target.select()}
-                                            onChange={e => setEditPreparoYield(e.target.value === '' ? '' : Number(e.target.value))}
+                                            onChange={setEditPreparoYield}
                                             className="w-16 px-2 py-1.5 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-amber-400 outline-none"
                                         />
                                         <select
@@ -997,14 +994,12 @@ export const Preparos = () => {
                                         <div key={item.id} className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl border border-indigo-200 group">
                                             <Layers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                                             <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.sub_recipe.product_name}</span>
-                                            <input
-                                                type="number"
+                                            <DecimalInput
                                                 value={item.quantity_needed}
-                                                min="0.001"
                                                 onFocus={e => e.target.select()}
-                                                onChange={e => {
+                                                onChange={v => {
                                                     const next = [...editSubItems];
-                                                    next[idx] = { ...next[idx], quantity_needed: Number(e.target.value) || 0 };
+                                                    next[idx] = { ...next[idx], quantity_needed: v === '' ? 0 : v };
                                                     setEditSubItems(next);
                                                 }}
                                                 className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-right text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
@@ -1062,10 +1057,9 @@ export const Preparos = () => {
                                         )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={selectedSubQty}
-                                            onChange={e => setSelectedSubQty(e.target.value === '' ? '' : Number(e.target.value))}
+                                            onChange={setSelectedSubQty}
                                             placeholder="Qtd"
                                             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-indigo-400 outline-none"
                                         />
@@ -1094,13 +1088,11 @@ export const Preparos = () => {
                                     return (
                                     <div key={item.id} className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 group">
                                         <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.ingredients.name}</span>
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={displayQty || ''}
-                                            min="0.001"
                                             onFocus={e => e.target.select()}
-                                            onChange={e => {
-                                                const v = Number(e.target.value) || 0;
+                                            onChange={val => {
+                                                const v = val === '' ? 0 : val;
                                                 const stored = isKg && displayUnit === 'g' ? v / 1000 : v;
                                                 const next = [...editItems];
                                                 next[idx] = { ...next[idx], quantity_needed: stored };
@@ -1171,10 +1163,9 @@ export const Preparos = () => {
                                         )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={selectedQty}
-                                            onChange={e => setSelectedQty(e.target.value === '' ? '' : Number(e.target.value))}
+                                            onChange={setSelectedQty}
                                             placeholder="Qtd"
                                             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-amber-400 outline-none"
                                         />

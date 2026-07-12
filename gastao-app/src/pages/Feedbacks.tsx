@@ -7,6 +7,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
+import { useConfirm } from '../components/ConfirmDialog';
 import { toast } from 'sonner';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ const nextMonthISO = () => localISO(addMonthsLocal(1));
 export const Feedbacks = () => {
     const { user } = useAuth();
     const { isDonoOrGerente } = usePermissions();
+    const { confirm } = useConfirm();
 
     const [view, setView] = useState<View>('list');
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
@@ -191,7 +193,12 @@ export const Feedbacks = () => {
     };
 
     const remove = async (fb: Feedback) => {
-        if (!confirm('Apagar essa ficha?')) return;
+        if (!(await confirm({
+            title: 'Apagar essa ficha?',
+            message: 'Essa ação não pode ser desfeita.',
+            tone: 'danger',
+            confirmText: 'Apagar',
+        }))) return;
         const { error } = await supabase.rpc('delete_feedback', { p_id: fb.id });
         if (error) {
             toast.error('Não consegui deletar.', { description: error.message });

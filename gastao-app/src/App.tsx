@@ -18,6 +18,7 @@ import { Preparos } from './pages/Preparos';
 import { Checklists } from './pages/Checklists';
 import { Feedbacks } from './pages/Feedbacks';
 import { AuthProvider, useAuth, Perfil } from './contexts/AuthContext';
+import { ConfirmProvider } from './components/ConfirmDialog';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load do importador de fichas: SheetJS (xlsx) é pesado (~400KB)
@@ -187,10 +188,12 @@ function AppRoutes() {
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <AppRoutes />
-            </Router>
-            <Toaster position="top-right" richColors closeButton />
+            <ConfirmProvider>
+                <Router>
+                    <AppRoutes />
+                </Router>
+                <Toaster position="top-right" richColors closeButton />
+            </ConfirmProvider>
         </AuthProvider>
     );
 }

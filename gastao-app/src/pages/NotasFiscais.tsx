@@ -11,6 +11,8 @@ import {
     ignorarItem, NotaFiscal, NfeItem, solicitarSyncNfe, uploadNfeXml, DriveSyncStatus,
 } from '../lib/nfe';
 import { AtualizarCustosNfe } from './AtualizarCustosNfe';
+import { DecimalInput } from '../components/DecimalInput';
+import { useConfirm } from '../components/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 
@@ -177,8 +179,8 @@ function ModalCriarInsumo({
     const [name, setName] = useState(item.descricao_xml);
     const [unitType, setUnitType] = useState(item.unidade.toLowerCase());
     const [tipo, setTipo] = useState('insumo_base');
-    const [avgCost, setAvgCost] = useState(String(item.valor_unitario));
-    const [stockQty, setStockQty] = useState(String(item.quantidade));
+    const [avgCost, setAvgCost] = useState<number | ''>(item.valor_unitario);
+    const [stockQty, setStockQty] = useState<number | ''>(item.quantidade);
     const [saving, setSaving] = useState(false);
 
     // Categoria (ex.: "Bebidas") — mesmas opções da tela de Insumos, por tipo.
@@ -220,8 +222,8 @@ function ModalCriarInsumo({
                 unit_type: unitType.toLowerCase(),
                 tipo,
                 categoria: tipo !== 'embalagem' ? categoriaFinal : null,
-                avg_cost_per_unit: parseFloat(avgCost) || item.valor_unitario,
-                stock_quantity: parseFloat(stockQty) || 0,
+                avg_cost_per_unit: avgCost || item.valor_unitario,
+                stock_quantity: stockQty || 0,
             });
             toast.success('Insumo criado e vinculado com sucesso!');
             onCreated();
@@ -299,24 +301,18 @@ function ModalCriarInsumo({
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Custo unitário (R$)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
+                            <DecimalInput
                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={avgCost}
-                                onChange={e => setAvgCost(e.target.value)}
+                                onChange={setAvgCost}
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Qtd inicial</label>
-                            <input
-                                type="number"
-                                step="0.001"
-                                min="0"
+                            <DecimalInput
                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 value={stockQty}
-                                onChange={e => setStockQty(e.target.value)}
+                                onChange={setStockQty}
                             />
                         </div>
                     </div>
@@ -1278,6 +1274,7 @@ function ListaView({
     const [driveSync, setDriveSync] = useState<DriveSyncStatus | null>(null);
     const [buscandoDrive, setBuscandoDrive] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const { confirm } = useConfirm();
 
     const fetchNotas = useCallback(async () => {
         const { data, error } = await supabase
@@ -1327,7 +1324,12 @@ function ListaView({
 
     const handleDelete = async (nota: NotaFiscal) => {
         const nome = nota.fornecedor_nome ?? 'Fornecedor desconhecido';
-        if (!confirm(`Excluir a nota de ${nome} (NF-${nota.numero_nota ?? '—'})? Os itens vinculados serão removidos. Esta ação não pode ser desfeita.`)) return;
+        if (!(await confirm({
+            title: `Excluir a nota de ${nome} (NF-${nota.numero_nota ?? '—'})?`,
+            message: 'Os itens vinculados serão removidos. Esta ação não pode ser desfeita.',
+            tone: 'danger',
+            confirmText: 'Excluir',
+        }))) return;
         setDeletingId(nota.id);
         try {
             await deletarNota(nota.id, nota.xml_url);

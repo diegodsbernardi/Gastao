@@ -4,6 +4,7 @@ import { Users, UserPlus, Trash2, Loader2, Mail, Crown, Shield, User, X } from '
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
+import { useConfirm } from '../components/ConfirmDialog';
 import { traduzErro } from '../lib/erros';
 
 interface Membro {
@@ -25,6 +26,7 @@ const PERFIL_CONFIG = {
 export const Equipe = () => {
     const { user, restauranteId } = useAuth();
     const { isDono, canInvite } = usePermissions();
+    const { confirm } = useConfirm();
 
     const [membros, setMembros] = useState<Membro[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +51,12 @@ export const Equipe = () => {
     }, []);
 
     const handleRemove = async (membro: Membro) => {
-        if (!confirm(`Remover ${membro.nome || membro.email} da equipe?`)) return;
+        if (!(await confirm({
+            title: 'Remover da equipe?',
+            message: `${membro.nome || membro.email} perderá o acesso ao restaurante.`,
+            tone: 'danger',
+            confirmText: 'Remover',
+        }))) return;
         setRemovingId(membro.id);
         const { error } = await supabase.from('membros').delete().eq('id', membro.id);
         if (error) {

@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { ShoppingBag, Search, X, RotateCcw } from 'lucide-react';
 import { fmtMoney } from '../lib/format';
 import { traduzErro } from '../lib/erros';
+import { useConfirm } from '../components/ConfirmDialog';
+import { DecimalInput } from '../components/DecimalInput';
 
 interface RecipeOption {
     id: string;
@@ -44,6 +46,7 @@ const formatDateTime = (isoStr: string) => {
 
 export const Sales = () => {
     const { user, restauranteId } = useAuth();
+    const { confirm } = useConfirm();
 
     const [recipes, setRecipes] = useState<RecipeOption[]>([]);
     const [recipesMap, setRecipesMap] = useState<Record<string, string>>({});
@@ -125,7 +128,12 @@ export const Sales = () => {
 
     const handleEstornar = async (sale: SaleRecord) => {
         const nome = recipesMap[sale.recipe_id] ?? 'produto';
-        if (!confirm(`Estornar a venda de ${sale.quantity_sold}× ${nome}? O estoque consumido será devolvido e a venda apagada.`)) return;
+        if (!(await confirm({
+            title: 'Estornar venda?',
+            message: `${sale.quantity_sold}× ${nome} — o estoque consumido será devolvido e a venda apagada.`,
+            tone: 'danger',
+            confirmText: 'Estornar',
+        }))) return;
         setEstornandoId(sale.id);
         const { error } = await supabase.rpc('estornar_venda', { p_sale_id: sale.id });
         if (error) {
@@ -225,13 +233,10 @@ export const Sales = () => {
                     {/* Quantity */}
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quantidade</label>
-                        <input
-                            type="number"
+                        <DecimalInput
                             value={quantitySold}
-                            onChange={e => setQuantitySold(e.target.value === '' ? '' : Number(e.target.value))}
+                            onChange={setQuantitySold}
                             placeholder="1"
-                            min="0.001"
-                            step="1"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                         />
                     </div>
@@ -240,12 +245,9 @@ export const Sales = () => {
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço Unitário</label>
                         <div className="flex items-center gap-3">
-                            <input
-                                type="number"
+                            <DecimalInput
                                 value={unitPrice || ''}
-                                onChange={e => setUnitPrice(e.target.value === '' ? 0 : Number(e.target.value))}
-                                min="0"
-                                step="0.01"
+                                onChange={v => setUnitPrice(v === '' ? 0 : v)}
                                 placeholder="0,00"
                                 title="Ajuste para registrar venda em promoção ou combo"
                                 className="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm text-slate-700 font-semibold"

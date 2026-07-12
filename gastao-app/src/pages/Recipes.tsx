@@ -10,6 +10,8 @@ import { fmtMoney, fmtQty } from '../lib/format';
 import { usePermissions } from '../hooks/usePermissions';
 import { traduzErro } from '../lib/erros';
 import { buildPreparoCostMapRecursive, type PreparoNode } from '../lib/costCalculator';
+import { DecimalInput } from '../components/DecimalInput';
+import { useConfirm } from '../components/ConfirmDialog';
 
 // ─── tipos locais para o modal ────────────────────────────────────────────────
 type EditIngItem = RecipeIngredient;
@@ -40,6 +42,7 @@ let recipesCache: RecipesCache | null = null;
 export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) => {
     const { user, restauranteId } = useAuth();
     const { viewMode, canViewCMV, canViewCosts, canEdit } = usePermissions();
+    const { confirm, promptDialog } = useConfirm();
 
     // ── dados principais (hidratam do cache em memória pra evitar "blink") ───
     const [fichas, setFichas] = useState<Recipe[]>(() => recipesCache?.fichas ?? []);
@@ -427,7 +430,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
 
     const handleDuplicate = async (ficha: Recipe) => {
         const defaultName = `${ficha.product_name} (cópia)`;
-        const nome = prompt(`Nome da nova ficha:`, defaultName);
+        const nome = await promptDialog({ title: 'Nome da nova ficha', defaultValue: defaultName, confirmText: 'Criar' });
         if (nome === null) return; // cancelou
         const nomeTrim = nome.trim();
         if (!nomeTrim) {
@@ -458,7 +461,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Excluir esta ficha técnica?')) return;
+        if (!(await confirm({ title: 'Excluir esta ficha técnica?', tone: 'danger', confirmText: 'Excluir' }))) return;
 
         // Remove auto-referência (ficha que aponta pra si mesma) antes de deletar —
         // o FK RESTRICT do recipe_sub_recipes bloquearia o delete por esse loop.
@@ -490,7 +493,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     };
 
     const handleBulkDelete = async () => {
-        if (!confirm(`Excluir ${selectedIds.length} ficha(s)?`)) return;
+        if (!(await confirm({ title: `Excluir ${selectedIds.length} ficha(s)?`, tone: 'danger', confirmText: 'Excluir' }))) return;
 
         // Limpa auto-referências dos selecionados antes do bulk delete
         for (const id of selectedIds) {
@@ -794,10 +797,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     <select value={editInfoCategory} onChange={e => setEditInfoCategory(e.target.value)} className="flex-1 px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-primary-500">
                                                         {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                                     </select>
-                                                    <input
-                                                        type="number"
+                                                    <DecimalInput
                                                         value={editInfoPrice}
-                                                        onChange={e => setEditInfoPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                                                        onChange={setEditInfoPrice}
                                                         onFocus={e => e.target.select()}
                                                         placeholder="Preço"
                                                         className="w-24 px-2 py-1 border border-slate-300 rounded-lg text-xs text-right focus:ring-2 focus:ring-primary-500 outline-none"
@@ -995,10 +997,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Preço de Venda (R$)</label>
-                                    <input
-                                        type="number"
+                                    <DecimalInput
                                         value={newPrice}
-                                        onChange={e => setNewPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                                        onChange={setNewPrice}
                                         placeholder="0.00"
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
                                     />
@@ -1054,14 +1055,12 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                         <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded shrink-0">combo</span>
                                                     )}
                                                 </span>
-                                                <input
-                                                    type="number"
+                                                <DecimalInput
                                                     value={item.quantity_needed}
-                                                    min="0.001"
                                                     onFocus={e => e.target.select()}
-                                                    onChange={e => {
+                                                    onChange={v => {
                                                         const next = [...editSubItems];
-                                                        next[idx] = { ...next[idx], quantity_needed: Number(e.target.value) || 0 };
+                                                        next[idx] = { ...next[idx], quantity_needed: v === '' ? 0 : v };
                                                         setEditSubItems(next);
                                                     }}
                                                     className="w-16 px-2 py-1 border border-amber-200 rounded-lg text-right text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white"
@@ -1092,14 +1091,12 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         {editIngItems.map((item, idx) => item.ingredients.tipo === 'embalagem' ? null : (
                                             <div key={item.id} className="flex items-center gap-3 px-4 py-3 bg-amber-50 rounded-xl border border-amber-100 group">
                                                 <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.ingredients.name}</span>
-                                                <input
-                                                    type="number"
+                                                <DecimalInput
                                                     value={item.quantity_needed}
-                                                    min="0.001"
                                                     onFocus={e => e.target.select()}
-                                                    onChange={e => {
+                                                    onChange={v => {
                                                         const next = [...editIngItems];
-                                                        next[idx] = { ...next[idx], quantity_needed: Number(e.target.value) || 0 };
+                                                        next[idx] = { ...next[idx], quantity_needed: v === '' ? 0 : v };
                                                         setEditIngItems(next);
                                                     }}
                                                     className="w-16 px-2 py-1 border border-amber-200 rounded-lg text-right text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white"
@@ -1130,14 +1127,12 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         {editIngItems.map((item, idx) => item.ingredients.tipo !== 'embalagem' ? null : (
                                             <div key={item.id} className="flex items-center gap-3 px-4 py-3 bg-purple-50 rounded-xl border border-purple-100 group">
                                                 <span className="flex-1 font-medium text-slate-800 text-sm truncate">{item.ingredients.name}</span>
-                                                <input
-                                                    type="number"
+                                                <DecimalInput
                                                     value={item.quantity_needed}
-                                                    min="0.001"
                                                     onFocus={e => e.target.select()}
-                                                    onChange={e => {
+                                                    onChange={v => {
                                                         const next = [...editIngItems];
-                                                        next[idx] = { ...next[idx], quantity_needed: Number(e.target.value) || 0 };
+                                                        next[idx] = { ...next[idx], quantity_needed: v === '' ? 0 : v };
                                                         setEditIngItems(next);
                                                     }}
                                                     className="w-16 px-2 py-1 border border-purple-200 rounded-lg text-right text-sm focus:ring-2 focus:ring-purple-400 outline-none bg-white"
@@ -1230,10 +1225,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </div>
                                             )}
                                         </div>
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={selPrepQty}
-                                            onChange={e => setSelPrepQty(e.target.value === '' ? '' : Number(e.target.value))}
+                                            onChange={setSelPrepQty}
                                             placeholder="Qtd"
                                             className="w-20 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-amber-400 outline-none"
                                         />
@@ -1287,10 +1281,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </div>
                                             )}
                                         </div>
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={selIngQty}
-                                            onChange={e => setSelIngQty(e.target.value === '' ? '' : Number(e.target.value))}
+                                            onChange={setSelIngQty}
                                             placeholder="Qtd"
                                             className="w-20 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-amber-400 outline-none"
                                         />
@@ -1344,10 +1337,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </div>
                                             )}
                                         </div>
-                                        <input
-                                            type="number"
+                                        <DecimalInput
                                             value={selEmbalQty}
-                                            onChange={e => setSelEmbalQty(e.target.value === '' ? '' : Number(e.target.value))}
+                                            onChange={setSelEmbalQty}
                                             placeholder="Qtd"
                                             className="w-20 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-purple-400 outline-none"
                                         />
