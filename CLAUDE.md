@@ -29,6 +29,10 @@ Deploy: `gastao.vercel.app` (a partir de `gastao-app/`, tem `vercel.json` própr
 ## Build
 - `cd gastao-app && npm run build` (gera template + tsc + vite).
 
+## Deploy de edge functions
+- `SUPABASE_ACCESS_TOKEN=$(cat ~/.supabase/access-token) npx supabase functions deploy <nome> --project-ref hvnxvqycvnwquugnygzf` — funciona sem Docker/login interativo. `supabase/config.toml` versiona `verify_jwt=true`.
+- Segurança (auditoria 12/07): `match-nfe-items`/`interpret-ficha-tecnica` exigem `getUser()` (barram anon key pura → sem abuso de LLM); `parse-nfe` só exige header (o robô usa anon key nele).
+
 ## Ponte Drive → NF-e
 - Robô `gastao-app/scripts/nfe-drive-sync.mjs` roda via cron do VPS (08h/17h BRT),
   importa XMLs das pastas `NotasEntrada` no Drive como notas `pendente`.
