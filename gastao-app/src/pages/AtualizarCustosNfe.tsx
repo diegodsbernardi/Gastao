@@ -130,7 +130,7 @@ export function AtualizarCustosNfe({ onBack, onDone }: { onBack: () => void; onD
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-16 text-center">
                     <Check className="w-12 h-12 text-green-400 mx-auto mb-3" />
                     <p className="font-medium text-slate-600">Nada pra atualizar</p>
-                    <p className="text-sm text-slate-400 mt-1">
+                    <p className="text-sm text-slate-500 mt-1">
                         Todos os itens de notas pendentes já tiveram o custo aplicado (ou não têm insumo vinculado).
                     </p>
                 </div>
@@ -148,16 +148,16 @@ export function AtualizarCustosNfe({ onBack, onDone }: { onBack: () => void; onD
                                     className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-slate-50 transition-colors"
                                 >
                                     <div className="flex items-center gap-2 min-w-0">
-                                        {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+                                        {isOpen ? <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />}
                                         <span className="font-semibold text-slate-800 truncate">{g.nome}</span>
-                                        <span className="text-xs text-slate-400">[{g.unidade}]</span>
-                                        <span className="text-xs text-slate-400">· {g.itens.length} item{g.itens.length !== 1 ? 's' : ''}</span>
+                                        <span className="text-xs text-slate-500">[{g.unidade}]</span>
+                                        <span className="text-xs text-slate-500">· {g.itens.length} item{g.itens.length !== 1 ? 's' : ''}</span>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0 text-sm">
                                         {v ? (
                                             <>
                                                 <span className="text-slate-500">{fmtMoney(g.custoAtual ?? 0)}/{g.unidade}</span>
-                                                <span className="text-slate-400">→</span>
+                                                <span className="text-slate-500">→</span>
                                                 <span className="font-semibold text-slate-800">{fmtMoney(v.custo_novo ?? 0)}/{g.unidade}</span>
                                                 {variacao != null && (
                                                     <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${subiu ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>

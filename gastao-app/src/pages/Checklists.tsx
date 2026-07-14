@@ -515,7 +515,7 @@ export const Checklists = () => {
                             <h2 className="font-bold text-lg text-ink">Novo checklist</h2>
                             <button
                                 onClick={() => setShowCreate(false)}
-                                className="text-slate-400 hover:text-slate-600 p-1"
+                                className="text-slate-500 hover:text-slate-600 p-1"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -580,7 +580,7 @@ export const Checklists = () => {
                                             {newItems.length > 1 && (
                                                 <button
                                                     onClick={() => removeItemInput(idx)}
-                                                    className="text-slate-400 hover:text-red-500 p-1"
+                                                    className="text-slate-500 hover:text-red-500 p-1"
                                                 >
                                                     <X className="w-4 h-4" />
                                                 </button>

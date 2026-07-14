@@ -150,7 +150,7 @@ export const Equipe = () => {
                         <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                         <p className="text-slate-500 font-medium">Nenhum membro ainda</p>
                         {canInvite && (
-                            <p className="text-slate-400 text-sm mt-1">
+                            <p className="text-slate-500 text-sm mt-1">
                                 Clique em "Convidar" para adicionar alguém
                             </p>
                         )}
@@ -186,7 +186,7 @@ export const Equipe = () => {
                                                     <p className="font-medium text-slate-900 text-sm truncate">
                                                         {membro.nome || membro.email}
                                                     </p>
-                                                    <p className="text-xs text-slate-400 truncate">
+                                                    <p className="text-xs text-slate-500 truncate">
                                                         {membro.email}
                                                     </p>
                                                 </div>
@@ -207,7 +207,7 @@ export const Equipe = () => {
                                                     <button
                                                         onClick={() => handleRemove(membro)}
                                                         disabled={removingId === membro.id}
-                                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                        className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                         title="Remover membro"
                                                     >
                                                         {removingId === membro.id
@@ -240,7 +240,7 @@ export const Equipe = () => {
                             </h2>
                             <button
                                 onClick={closeModal}
-                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -307,7 +307,7 @@ export const Equipe = () => {
                                                 );
                                             })}
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-2">
+                                        <p className="text-xs text-slate-500 mt-2">
                                             {invitePerfil === 'gerente'
                                                 ? 'Acesso ao dashboard, insumos, fichas e vendas. Pode ver a equipe.'
                                                 : invitePerfil === 'bpo'

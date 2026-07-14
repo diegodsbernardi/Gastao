@@ -340,7 +340,7 @@ const FeedbackCard = ({ fb, onClick }: { fb: Feedback; onClick: () => void }) =>
                             <CalendarRange className="w-3.5 h-3.5" />
                             {fmtPeriodo(fb.periodo_inicio, fb.periodo_fim)}
                         </p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
                             <span>Por {fb.autor_nome}</span>
                             {fb.proximo_encontro && (
                                 <span className="flex items-center gap-1">
@@ -520,7 +520,7 @@ const Section = ({
                 <h2 className="font-bold text-ink">{title}</h2>
             </div>
             {isEmpty ? (
-                <p className="text-sm text-slate-400 italic mt-3">{placeholder}</p>
+                <p className="text-sm text-slate-500 italic mt-3">{placeholder}</p>
             ) : (
                 <p className="text-ink whitespace-pre-wrap mt-3 leading-relaxed">{content}</p>
             )}

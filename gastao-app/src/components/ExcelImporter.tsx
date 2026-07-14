@@ -168,7 +168,7 @@ export const ExcelImporter = ({ onComplete }: { onComplete: () => void }) => {
                     ].map(t => (
                         <div key={t.title} className="bg-white border border-slate-200 rounded-lg p-3">
                             <div className="font-semibold text-slate-700 text-xs mb-1 truncate">📄 {t.title}</div>
-                            <div className="text-xs text-slate-400">{t.hint}</div>
+                            <div className="text-xs text-slate-500">{t.hint}</div>
                         </div>
                     ))}
                 </div>

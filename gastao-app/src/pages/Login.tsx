@@ -95,7 +95,7 @@ export const Login = () => {
                                         type="button"
                                         onClick={() => setShowPassword(v => !v)}
                                         aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-r-xl"
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-r-xl"
                                     >
                                         {showPassword
                                             ? <EyeOff className="w-4 h-4" />

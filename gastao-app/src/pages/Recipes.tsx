@@ -729,7 +729,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="relative">
-                        <ArrowDownUp className="w-4 h-4 absolute left-2.5 top-2.5 text-slate-400 pointer-events-none" />
+                        <ArrowDownUp className="w-4 h-4 absolute left-2.5 top-2.5 text-slate-500 pointer-events-none" />
                         <select
                             value={sortMode}
                             onChange={e => setSortMode(e.target.value as typeof sortMode)}
@@ -742,7 +742,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                         </select>
                     </div>
                     <div className="relative flex-1 sm:w-72">
-                        <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                        <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
                         <input
                             type="text"
                             placeholder="Buscar fichas..."
@@ -757,7 +757,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             {/* Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredFichas.length === 0 ? (
-                    <div className="col-span-full py-16 text-center text-slate-400 bg-white border-2 border-dashed border-slate-200 rounded-2xl">
+                    <div className="col-span-full py-16 text-center text-slate-500 bg-white border-2 border-dashed border-slate-200 rounded-2xl">
                         <UtensilsCrossed className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="font-medium">Nenhuma ficha técnica encontrada.</p>
                     </div>
@@ -821,6 +821,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     {canEdit && (
                                                         <button
                                                             onClick={() => { setEditingInfoId(ficha.id); setEditInfoName(ficha.product_name); setEditInfoPrice(ficha.sale_price); setEditInfoCategory(ficha.category ?? 'Lanche'); }}
+                                                            aria-label={`Editar ${ficha.product_name}`}
                                                             className="p-1 text-slate-300 hover:text-primary-500 rounded transition-colors mb-1"
                                                         >
                                                             <Edit className="w-3.5 h-3.5" />
@@ -834,7 +835,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     </div>
                                                 )}
                                                 {viewMode === 'operacao' && (
-                                                    <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{fmtCategoria(ficha.category)}</span>
+                                                    <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{fmtCategoria(ficha.category)}</span>
                                                 )}
                                                 {(usedByMap[ficha.id]?.length ?? 0) > 0 && (
                                                     <span
@@ -855,18 +856,18 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                             ? <span className={`px-3 py-1.5 rounded-lg font-bold text-sm ${Number(cmv) < 30 ? 'bg-green-100 text-green-700' : Number(cmv) < 40 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                                                 CMV {cmv}%
                                               </span>
-                                            : <span className="px-3 py-1.5 rounded-lg text-sm bg-slate-100 text-slate-400 font-medium">CMV —</span>
+                                            : <span className="px-3 py-1.5 rounded-lg text-sm bg-slate-100 text-slate-500 font-medium">CMV —</span>
                                     )}
                                     {canEdit && (
                                         <>
                                             <button
                                                 onClick={() => handleDuplicate(ficha)}
                                                 className="p-2 text-slate-300 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                                                title="Duplicar ficha"
+                                                aria-label={`Duplicar ${ficha.product_name}`}
                                             >
                                                 <Copy className="w-4 h-4" />
                                             </button>
-                                            <button onClick={() => handleDelete(ficha.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                            <button onClick={() => handleDelete(ficha.id)} aria-label={`Excluir ${ficha.product_name}`} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </>
@@ -948,7 +949,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                 )}
 
                                 {ings.length === 0 && subs.length === 0 && (
-                                    <p className="text-sm text-slate-400 italic">Sem composição. Clique em "Editar" para montar.</p>
+                                    <p className="text-sm text-slate-500 italic">Sem composição. Clique em "Editar" para montar.</p>
                                 )}
                             </div>
 
@@ -972,7 +973,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                     <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                             <h2 className="text-lg font-bold text-slate-900">Nova Ficha Técnica</h2>
-                            <button onClick={() => setShowNewModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                            <button onClick={() => setShowNewModal(false)} className="p-1.5 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1033,9 +1034,9 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
                                 <div>
                                     <h2 className="text-lg font-bold text-slate-900">Composição</h2>
-                                    <p className="text-sm text-slate-400">{editingFicha.product_name}</p>
+                                    <p className="text-sm text-slate-500">{editingFicha.product_name}</p>
                                 </div>
-                                <button onClick={() => setEditingId(null)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                                <button onClick={() => setEditingId(null)} className="p-2 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
@@ -1065,7 +1066,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     }}
                                                     className="w-16 px-2 py-1 border border-amber-200 rounded-lg text-right text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white"
                                                 />
-                                                <span className="text-xs text-slate-400 w-6">{item.sub_recipe.unit_type || 'un'}</span>
+                                                <span className="text-xs text-slate-500 w-6">{item.sub_recipe.unit_type || 'un'}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                                     {fmtMoney((unifiedCostMap[item.sub_recipe_id] ?? 0) * item.quantity_needed)}
                                                 </span>
@@ -1101,7 +1102,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     }}
                                                     className="w-16 px-2 py-1 border border-amber-200 rounded-lg text-right text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white"
                                                 />
-                                                <span className="text-xs text-slate-400 w-6">{item.ingredients.unit_type}</span>
+                                                <span className="text-xs text-slate-500 w-6">{item.ingredients.unit_type}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                                     {fmtMoney((item.ingredients.avg_cost_per_unit / (item.ingredients.aproveitamento || 1)) * item.quantity_needed)}
                                                 </span>
@@ -1137,7 +1138,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     }}
                                                     className="w-16 px-2 py-1 border border-purple-200 rounded-lg text-right text-sm focus:ring-2 focus:ring-purple-400 outline-none bg-white"
                                                 />
-                                                <span className="text-xs text-slate-400 w-6">{item.ingredients.unit_type}</span>
+                                                <span className="text-xs text-slate-500 w-6">{item.ingredients.unit_type}</span>
                                                 <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                                     {fmtMoney((item.ingredients.avg_cost_per_unit / (item.ingredients.aproveitamento || 1)) * item.quantity_needed)}
                                                 </span>
@@ -1154,7 +1155,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                             )}
 
                             {editSubItems.length === 0 && editIngItems.length === 0 && (
-                                <div className="px-6 py-8 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl mx-6 mt-4 text-sm">
+                                <div className="px-6 py-8 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-xl mx-6 mt-4 text-sm">
                                     Composição vazia. Adicione preparos ou itens prontos abaixo.
                                 </div>
                             )}
@@ -1188,7 +1189,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                     <div className="flex gap-2">
                                         <div className="flex-1 relative">
                                             <div className="flex items-center gap-2 px-3 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-amber-400 focus-within:border-transparent">
-                                                <ChefHat className="w-4 h-4 text-slate-400 shrink-0" />
+                                                <ChefHat className="w-4 h-4 text-slate-500 shrink-0" />
                                                 <input
                                                     type="text"
                                                     placeholder={selPrepId ? allRecipesForPicker.find(p => p.id === selPrepId)?.product_name : 'Buscar receita ou preparo...'}
@@ -1199,7 +1200,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     className="flex-1 outline-none text-sm text-slate-700 bg-transparent min-w-0"
                                                 />
                                                 {selPrepId && (
-                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelPrepId(''); setPrepSearch(''); }} className="text-slate-400 hover:text-slate-600">
+                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelPrepId(''); setPrepSearch(''); }} className="text-slate-500 hover:text-slate-600">
                                                         <X className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
@@ -1207,7 +1208,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                             {prepDropdown && !selPrepId && (
                                                 <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
                                                     {filteredPrepDropdown.length === 0
-                                                        ? <p className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum preparo disponível.</p>
+                                                        ? <p className="px-4 py-3 text-sm text-slate-500 text-center">Nenhum preparo disponível.</p>
                                                         : filteredPrepDropdown.map(p => (
                                                             <div
                                                                 key={p.id}
@@ -1234,7 +1235,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         <button
                                             onClick={handleAddPreparo}
                                             disabled={!selPrepId || selPrepQty === '' || Number(selPrepQty) <= 0}
-                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg shrink-0"
+                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium rounded-lg shrink-0"
                                         >
                                             + Add
                                         </button>
@@ -1246,7 +1247,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                     <div className="flex gap-2">
                                         <div className="flex-1 relative">
                                             <div className="flex items-center gap-2 px-3 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-amber-400 focus-within:border-transparent">
-                                                <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                                                <Package className="w-4 h-4 text-slate-500 shrink-0" />
                                                 <input
                                                     type="text"
                                                     placeholder={selIngId ? insumosDiretos.find(i => i.id === selIngId)?.name : 'Buscar item pronto...'}
@@ -1257,7 +1258,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     className="flex-1 outline-none text-sm text-slate-700 bg-transparent min-w-0"
                                                 />
                                                 {selIngId && (
-                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelIngId(''); setIngSearch(''); }} className="text-slate-400 hover:text-slate-600">
+                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelIngId(''); setIngSearch(''); }} className="text-slate-500 hover:text-slate-600">
                                                         <X className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
@@ -1265,7 +1266,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                             {ingDropdown && !selIngId && (
                                                 <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
                                                     {filteredIngDropdown.length === 0
-                                                        ? <p className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum item pronto encontrado.</p>
+                                                        ? <p className="px-4 py-3 text-sm text-slate-500 text-center">Nenhum item pronto encontrado.</p>
                                                         : filteredIngDropdown.map(ing => (
                                                             <div
                                                                 key={ing.id}
@@ -1290,7 +1291,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         <button
                                             onClick={handleAddInsumo}
                                             disabled={!selIngId || selIngQty === '' || Number(selIngQty) <= 0}
-                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg shrink-0"
+                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium rounded-lg shrink-0"
                                         >
                                             + Add
                                         </button>
@@ -1302,7 +1303,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                     <div className="flex gap-2">
                                         <div className="flex-1 relative">
                                             <div className="flex items-center gap-2 px-3 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-purple-400 focus-within:border-transparent">
-                                                <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                                                <Package className="w-4 h-4 text-slate-500 shrink-0" />
                                                 <input
                                                     type="text"
                                                     placeholder={selEmbalId ? embalagens.find(e => e.id === selEmbalId)?.name : 'Buscar embalagem...'}
@@ -1313,7 +1314,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                     className="flex-1 outline-none text-sm text-slate-700 bg-transparent min-w-0"
                                                 />
                                                 {selEmbalId && (
-                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelEmbalId(''); setEmbalSearch(''); }} className="text-slate-400 hover:text-slate-600">
+                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelEmbalId(''); setEmbalSearch(''); }} className="text-slate-500 hover:text-slate-600">
                                                         <X className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
@@ -1321,7 +1322,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                             {embalDropdown && !selEmbalId && (
                                                 <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
                                                     {filteredEmbalDropdown.length === 0
-                                                        ? <p className="px-4 py-3 text-sm text-slate-400 text-center">Nenhuma embalagem encontrada.</p>
+                                                        ? <p className="px-4 py-3 text-sm text-slate-500 text-center">Nenhuma embalagem encontrada.</p>
                                                         : filteredEmbalDropdown.map(emb => (
                                                             <div
                                                                 key={emb.id}
@@ -1346,7 +1347,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         <button
                                             onClick={handleAddEmbalagem}
                                             disabled={!selEmbalId || selEmbalQty === '' || Number(selEmbalQty) <= 0}
-                                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg shrink-0"
+                                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium rounded-lg shrink-0"
                                         >
                                             + Add
                                         </button>

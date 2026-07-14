@@ -184,7 +184,7 @@ export const Sales = () => {
                             className="relative flex items-center w-full px-3 py-2 border border-slate-300 rounded-lg bg-white cursor-text focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition-shadow"
                             onClick={() => setIsRecipeDropdownOpen(true)}
                         >
-                            <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+                            <Search className="w-4 h-4 text-slate-500 mr-2 flex-shrink-0" />
                             <input
                                 type="text"
                                 placeholder="Buscar produto..."
@@ -201,7 +201,7 @@ export const Sales = () => {
                             {selectedRecipeId && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setSelectedRecipeId(''); setRecipeSearch(''); setUnitPrice(0); }}
-                                    className="p-1 hover:bg-slate-100 rounded-md text-slate-400 transition-colors ml-1"
+                                    className="p-1 hover:bg-slate-100 rounded-md text-slate-500 transition-colors ml-1"
                                 >
                                     <X className="w-3 h-3" />
                                 </button>
@@ -222,7 +222,7 @@ export const Sales = () => {
                                             className="px-4 py-3 hover:bg-primary-50 cursor-pointer flex justify-between items-center border-b border-slate-50 last:border-0 transition-colors"
                                         >
                                             <span className="font-medium text-slate-700 text-sm">{r.product_name}</span>
-                                            <span className="text-xs text-slate-400 font-medium">{fmtMoney(r.sale_price)}</span>
+                                            <span className="text-xs text-slate-500 font-medium">{fmtMoney(r.sale_price)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -320,7 +320,7 @@ export const Sales = () => {
                                     <td colSpan={6} className="p-12 text-center text-slate-500">
                                         <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                                         <p className="font-medium">Nenhuma venda registrada</p>
-                                        <p className="text-sm text-slate-400 mt-1">{filterLabels[dateFilter].toLowerCase()}</p>
+                                        <p className="text-sm text-slate-500 mt-1">{filterLabels[dateFilter].toLowerCase()}</p>
                                     </td>
                                 </tr>
                             ) : (

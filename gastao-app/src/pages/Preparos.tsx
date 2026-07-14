@@ -595,7 +595,7 @@ export const Preparos = () => {
                     </div>
                 ) : <div />}
                 <div className="relative w-full sm:w-72">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
                     <input
                         type="text"
                         placeholder="Buscar preparos..."
@@ -608,7 +608,7 @@ export const Preparos = () => {
 
             {/* Lista */}
             {filteredPreparos.length === 0 ? (
-                <div className="py-16 text-center text-slate-400 bg-white border-2 border-dashed border-slate-200 rounded-2xl">
+                <div className="py-16 text-center text-slate-500 bg-white border-2 border-dashed border-slate-200 rounded-2xl">
                     <ChefHat className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                     <p className="font-medium">Nenhum preparo cadastrado.</p>
                     <p className="text-sm mt-1">Crie preparos como "Molho de Tomate Base", "Ragu", "Molho Rosé".</p>
@@ -648,11 +648,12 @@ export const Preparos = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="text-right">
-                                            <p className="text-xs text-slate-400">Custo / {preparo.unit_type || 'un'}</p>
+                                            <p className="text-xs text-slate-500">Custo / {preparo.unit_type || 'un'}</p>
                                             <p className="text-base font-bold text-amber-600">{fmtMoney(perUnit)}</p>
                                         </div>
                                         <button
                                             onClick={() => handleDelete(preparo.id)}
+                                            aria-label={`Excluir ${preparo.product_name}`}
                                             className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -663,7 +664,7 @@ export const Preparos = () => {
                                 {/* Composição */}
                                 <div className="px-5 py-4">
                                     {items.length === 0 && subItems.length === 0 ? (
-                                        <p className="text-sm text-slate-400 italic">Sem composição. Clique em "Editar" para compor.</p>
+                                        <p className="text-sm text-slate-500 italic">Sem composição. Clique em "Editar" para compor.</p>
                                     ) : (
                                         <ul className="space-y-2">
                                             {subItems.map(sub => {
@@ -727,7 +728,7 @@ export const Preparos = () => {
                         <div className="bg-white w-full sm:rounded-2xl sm:max-w-xl flex flex-col shadow-2xl">
                             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                                 <h2 className="text-lg font-bold text-slate-900">Novo Preparo</h2>
-                                <button onClick={() => { setShowNewModal(false); setNewItems([]); setNewSubItems([]); }} className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg">
+                                <button onClick={() => { setShowNewModal(false); setNewItems([]); setNewSubItems([]); }} className="text-slate-500 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
@@ -755,7 +756,7 @@ export const Preparos = () => {
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Rendimento</label>
                                         <DecimalInput value={newYield} onChange={setNewYield} placeholder='1' className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none text-sm" />
-                                        <p className="text-xs text-slate-400 mt-1">Quantas unidades produz</p>
+                                        <p className="text-xs text-slate-500 mt-1">Quantas unidades produz</p>
                                     </div>
                                 </div>
                             </div>
@@ -781,11 +782,11 @@ export const Preparos = () => {
                                                 }}
                                                 className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-right text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
                                             />
-                                            <span className="text-xs text-slate-400 w-8 font-medium">{item.sub_recipe.unit_type}</span>
+                                            <span className="text-xs text-slate-500 w-8 font-medium">{item.sub_recipe.unit_type}</span>
                                             <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                                 {fmtMoney((costMap[item.sub_recipe_id]?.perUnit ?? 0) * item.quantity_needed)}
                                             </span>
-                                            <button onClick={() => setNewSubItems(newSubItems.filter((_, i) => i !== idx))} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+                                            <button onClick={() => setNewSubItems(newSubItems.filter((_, i) => i !== idx))} aria-label="Remover item" className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
@@ -794,7 +795,7 @@ export const Preparos = () => {
                                     <div className="flex flex-col gap-2">
                                         <div className="relative">
                                             <div className="flex items-center gap-2 px-3 py-2 border border-indigo-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-indigo-400">
-                                                <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                                                <Search className="w-4 h-4 text-slate-500 shrink-0" />
                                                 <input
                                                     type="text"
                                                     placeholder={newSelSubId ? preparos.find(p => p.id === newSelSubId)?.product_name : 'Buscar preparo para usar como base...'}
@@ -805,7 +806,7 @@ export const Preparos = () => {
                                                     className="flex-1 outline-none text-sm text-slate-700 bg-transparent min-w-0"
                                                 />
                                                 {newSelSubId && (
-                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setNewSelSubId(''); setNewSubSearch(''); }} className="text-slate-400 hover:text-slate-600">
+                                                    <button onMouseDown={e => e.preventDefault()} onClick={() => { setNewSelSubId(''); setNewSubSearch(''); }} className="text-slate-500 hover:text-slate-600">
                                                         <X className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
@@ -813,7 +814,7 @@ export const Preparos = () => {
                                             {newSubDropdown && !newSelSubId && (
                                                 <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-indigo-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
                                                     {filteredNewSubDropdown.length === 0
-                                                        ? <p className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum preparo disponível.</p>
+                                                        ? <p className="px-4 py-3 text-sm text-slate-500 text-center">Nenhum preparo disponível.</p>
                                                         : filteredNewSubDropdown.map(p => (
                                                             <div key={p.id} onMouseDown={e => e.preventDefault()} onClick={() => { setNewSelSubId(p.id); setNewSubSearch(''); setNewSubDropdown(false); }} className="px-4 py-2.5 hover:bg-indigo-50 cursor-pointer flex justify-between items-center border-b border-slate-50 last:border-0">
                                                                 <span className="text-sm font-medium text-slate-700">{p.product_name}</span>
@@ -826,7 +827,7 @@ export const Preparos = () => {
                                         </div>
                                         <div className="flex gap-2">
                                             <DecimalInput value={newSelSubQty} onChange={setNewSelSubQty} placeholder="Qtd" className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-indigo-400 outline-none" />
-                                            <button onClick={handleAddNewSubItem} disabled={!newSelSubId || newSelSubQty === '' || Number(newSelSubQty) <= 0} className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
+                                            <button onClick={handleAddNewSubItem} disabled={!newSelSubId || newSelSubQty === '' || Number(newSelSubQty) <= 0} className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
                                                 + Add sub-preparo
                                             </button>
                                         </div>
@@ -836,9 +837,9 @@ export const Preparos = () => {
 
                             {/* Insumos */}
                             <div className="px-6 py-4 space-y-2">
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Insumos</p>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Insumos</p>
                                 {newItems.length === 0 ? (
-                                    <div className="text-center py-6 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl text-sm">
+                                    <div className="text-center py-6 text-slate-500 border-2 border-dashed border-slate-200 rounded-xl text-sm">
                                         Nenhum insumo adicionado ainda.
                                     </div>
                                 ) : newItems.map((item, idx) => (
@@ -854,11 +855,11 @@ export const Preparos = () => {
                                             }}
                                             className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-right text-sm focus:ring-2 focus:ring-amber-400 outline-none"
                                         />
-                                        <span className="text-xs text-slate-400 w-6 font-medium">{item.ingredients.unit_type}</span>
+                                        <span className="text-xs text-slate-500 w-6 font-medium">{item.ingredients.unit_type}</span>
                                         <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                             {fmtMoney((item.ingredients.avg_cost_per_unit / (item.ingredients.aproveitamento || 1)) * item.quantity_needed)}
                                         </span>
-                                        <button onClick={() => setNewItems(newItems.filter((_, i) => i !== idx))} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+                                        <button onClick={() => setNewItems(newItems.filter((_, i) => i !== idx))} aria-label="Remover item" className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
@@ -870,7 +871,7 @@ export const Preparos = () => {
                                 <div className="flex flex-col gap-2">
                                     <div className="relative">
                                         <div className="flex items-center gap-2 px-3 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-amber-400">
-                                            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                                            <Search className="w-4 h-4 text-slate-500 shrink-0" />
                                             <input
                                                 type="text"
                                                 placeholder={newSelIngId ? ingredients.find(i => i.id === newSelIngId)?.name : 'Buscar insumo...'}
@@ -881,7 +882,7 @@ export const Preparos = () => {
                                                 className="flex-1 outline-none text-sm text-slate-700 bg-transparent min-w-0"
                                             />
                                             {newSelIngId && (
-                                                <button onMouseDown={e => e.preventDefault()} onClick={() => { setNewSelIngId(''); setNewIngSearch(''); }} className="text-slate-400 hover:text-slate-600">
+                                                <button onMouseDown={e => e.preventDefault()} onClick={() => { setNewSelIngId(''); setNewIngSearch(''); }} className="text-slate-500 hover:text-slate-600">
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
@@ -889,7 +890,7 @@ export const Preparos = () => {
                                         {newDropdown && !newSelIngId && (
                                             <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
                                                 {filteredNewDropdown.length === 0
-                                                    ? <p className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum insumo encontrado.</p>
+                                                    ? <p className="px-4 py-3 text-sm text-slate-500 text-center">Nenhum insumo encontrado.</p>
                                                     : filteredNewDropdown.map(ing => (
                                                         <div key={ing.id} onMouseDown={e => e.preventDefault()} onClick={() => { setNewSelIngId(ing.id); setNewIngSearch(''); setNewDropdown(false); }} className="px-4 py-2.5 hover:bg-amber-50 cursor-pointer flex justify-between items-center border-b border-slate-50 last:border-0">
                                                             <span className="text-sm font-medium text-slate-700">{ing.name}</span>
@@ -908,7 +909,7 @@ export const Preparos = () => {
                                                 <button onClick={() => setNewInputUnit('kg')} className={`px-2 py-2 transition-colors ${newInputUnit === 'kg' ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>kg</button>
                                             </div>
                                         )}
-                                        <button onClick={handleAddNewItem} disabled={!newSelIngId || newSelQty === '' || Number(newSelQty) <= 0} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
+                                        <button onClick={handleAddNewItem} disabled={!newSelIngId || newSelQty === '' || Number(newSelQty) <= 0} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
                                             + Add
                                         </button>
                                     </div>
@@ -947,7 +948,7 @@ export const Preparos = () => {
                             <div className="px-6 py-4 border-b border-slate-100 shrink-0">
                                 <div className="flex justify-between items-center mb-3">
                                     <h2 className="text-lg font-bold text-slate-900">Editar Preparo</h2>
-                                    <button onClick={() => setEditingId(null)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                                    <button onClick={() => setEditingId(null)} className="p-2 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
                                         <X className="w-5 h-5" />
                                     </button>
                                 </div>
@@ -960,7 +961,7 @@ export const Preparos = () => {
                                         placeholder="Nome do preparo"
                                     />
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-slate-400 whitespace-nowrap">Rende</span>
+                                        <span className="text-xs text-slate-500 whitespace-nowrap">Rende</span>
                                         <DecimalInput
                                             value={editPreparoYield}
                                             onFocus={e => e.target.select()}
@@ -985,7 +986,7 @@ export const Preparos = () => {
                                     Sub-preparos
                                 </p>
                                 {editSubItems.length === 0 ? (
-                                    <div className="text-center py-3 text-slate-400 text-xs">
+                                    <div className="text-center py-3 text-slate-500 text-xs">
                                         Nenhum sub-preparo. Adicione abaixo se este preparo usa outras receitas.
                                     </div>
                                 ) : editSubItems.map((item, idx) => {
@@ -1004,7 +1005,7 @@ export const Preparos = () => {
                                                 }}
                                                 className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-right text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
                                             />
-                                            <span className="text-xs text-slate-400 w-8 font-medium">{item.sub_recipe.unit_type}</span>
+                                            <span className="text-xs text-slate-500 w-8 font-medium">{item.sub_recipe.unit_type}</span>
                                             <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                                 {fmtMoney(subPerUnit * item.quantity_needed)}
                                             </span>
@@ -1021,7 +1022,7 @@ export const Preparos = () => {
                                 <div className="flex flex-col gap-2 pt-2">
                                     <div className="relative">
                                         <div className="flex items-center gap-2 px-3 py-2 border border-indigo-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-indigo-400">
-                                            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                                            <Search className="w-4 h-4 text-slate-500 shrink-0" />
                                             <input
                                                 type="text"
                                                 placeholder={selectedSubId ? preparos.find(p => p.id === selectedSubId)?.product_name : 'Buscar preparo...'}
@@ -1032,7 +1033,7 @@ export const Preparos = () => {
                                                 className="flex-1 outline-none text-sm text-slate-700 bg-transparent min-w-0"
                                             />
                                             {selectedSubId && (
-                                                <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelectedSubId(''); setSubSearch(''); }} className="text-slate-400 hover:text-slate-600">
+                                                <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelectedSubId(''); setSubSearch(''); }} className="text-slate-500 hover:text-slate-600">
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
@@ -1040,7 +1041,7 @@ export const Preparos = () => {
                                         {subDropdownOpen && !selectedSubId && (
                                             <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-indigo-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
                                                 {filteredSubDropdown.length === 0
-                                                    ? <p className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum preparo disponível (opções que criariam ciclo são ocultadas).</p>
+                                                    ? <p className="px-4 py-3 text-sm text-slate-500 text-center">Nenhum preparo disponível (opções que criariam ciclo são ocultadas).</p>
                                                     : filteredSubDropdown.map(p => (
                                                         <div
                                                             key={p.id}
@@ -1066,7 +1067,7 @@ export const Preparos = () => {
                                         <button
                                             onClick={handleAddSubItem}
                                             disabled={!selectedSubId || selectedSubQty === '' || Number(selectedSubQty) <= 0}
-                                            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+                                            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
                                         >
                                             + Add sub-preparo
                                         </button>
@@ -1076,9 +1077,9 @@ export const Preparos = () => {
 
                             {/* Lista de insumos */}
                             <div className="px-6 py-4 space-y-2 border-t border-slate-100">
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Insumos</p>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Insumos</p>
                                 {editItems.length === 0 ? (
-                                    <div className="text-center py-4 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl text-sm">
+                                    <div className="text-center py-4 text-slate-500 border-2 border-dashed border-slate-200 rounded-xl text-sm">
                                         Nenhum insumo. Adicione abaixo.
                                     </div>
                                 ) : editItems.map((item, idx) => {
@@ -1106,7 +1107,7 @@ export const Preparos = () => {
                                                 <button onClick={() => setEditItemUnits(u => ({ ...u, [item.id]: 'kg' }))} className={`px-1.5 py-1 transition-colors ${displayUnit === 'kg' ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>kg</button>
                                             </div>
                                         ) : (
-                                            <span className="text-xs text-slate-400 w-6 font-medium">{item.ingredients.unit_type}</span>
+                                            <span className="text-xs text-slate-500 w-6 font-medium">{item.ingredients.unit_type}</span>
                                         )}
                                         <span className="text-sm font-semibold text-slate-600 w-20 text-right">
                                             {fmtMoney((item.ingredients.avg_cost_per_unit / (item.ingredients.aproveitamento || 1)) * item.quantity_needed)}
@@ -1127,7 +1128,7 @@ export const Preparos = () => {
                                 <div className="flex flex-col gap-2">
                                     <div className="relative">
                                         <div className="flex items-center gap-2 px-3 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-amber-400 focus-within:border-transparent">
-                                            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                                            <Search className="w-4 h-4 text-slate-500 shrink-0" />
                                             <input
                                                 type="text"
                                                 placeholder={selectedIngId ? ingredients.find(i => i.id === selectedIngId)?.name : 'Buscar insumo base...'}
@@ -1138,7 +1139,7 @@ export const Preparos = () => {
                                                 className="flex-1 outline-none text-sm text-slate-700 bg-transparent min-w-0"
                                             />
                                             {selectedIngId && (
-                                                <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelectedIngId(''); setIngSearch(''); }} className="text-slate-400 hover:text-slate-600">
+                                                <button onMouseDown={e => e.preventDefault()} onClick={() => { setSelectedIngId(''); setIngSearch(''); }} className="text-slate-500 hover:text-slate-600">
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
@@ -1146,7 +1147,7 @@ export const Preparos = () => {
                                         {dropdownOpen && !selectedIngId && (
                                             <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
                                                 {filteredDropdown.length === 0
-                                                    ? <p className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum insumo encontrado.</p>
+                                                    ? <p className="px-4 py-3 text-sm text-slate-500 text-center">Nenhum insumo encontrado.</p>
                                                     : filteredDropdown.map(ing => (
                                                         <div
                                                             key={ing.id}
@@ -1178,7 +1179,7 @@ export const Preparos = () => {
                                         <button
                                             onClick={handleAddItem}
                                             disabled={!selectedIngId || selectedQty === '' || Number(selectedQty) <= 0}
-                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
                                         >
                                             + Add
                                         </button>
@@ -1191,7 +1192,7 @@ export const Preparos = () => {
                                 <div className="text-sm">
                                     <span className="text-slate-500">Custo total: </span>
                                     <strong className="text-slate-900">{fmtMoney(editCosts.total)}</strong>
-                                    <span className="text-slate-400 mx-2">·</span>
+                                    <span className="text-slate-500 mx-2">·</span>
                                     <span className="text-slate-500">Por unidade: </span>
                                     <strong className="text-amber-600">{fmtMoney(editCosts.perUnit)}</strong>
                                 </div>

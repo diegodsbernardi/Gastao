@@ -339,7 +339,7 @@ export const Ingredients = () => {
                     {/* Categorias Insumo Base */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                            <Settings2 className="w-4 h-4 text-slate-400" /> Categorias de Insumo Base
+                            <Settings2 className="w-4 h-4 text-slate-500" /> Categorias de Insumo Base
                         </h3>
                         <div className="flex flex-wrap gap-2 mb-3">
                             {PREDEFINED_CATEGORIAS.map(cat => (
@@ -362,10 +362,10 @@ export const Ingredients = () => {
                     {/* Categorias Item Pronto */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                            <Settings2 className="w-4 h-4 text-slate-400" /> Categorias de Item Pronto
+                            <Settings2 className="w-4 h-4 text-slate-500" /> Categorias de Item Pronto
                         </h3>
                         <div className="flex flex-wrap gap-2 mb-3">
-                            {customCatsDireto.length === 0 && <span className="text-xs text-slate-400">Nenhuma categoria criada ainda.</span>}
+                            {customCatsDireto.length === 0 && <span className="text-xs text-slate-500">Nenhuma categoria criada ainda.</span>}
                             {customCatsDireto.map(cat => (
                                 <span key={cat} className="flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
                                     {cat}
@@ -400,7 +400,7 @@ export const Ingredients = () => {
                         </div>
                         <div className="flex items-center space-x-4 w-full sm:w-auto">
                             <div className="relative w-full sm:w-72">
-                                <Filter className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                                <Filter className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
                                 <input
                                     type="text"
                                     placeholder="Buscar insumos..."
@@ -438,7 +438,7 @@ export const Ingredients = () => {
                                     <span className="px-1.5 py-0.5 bg-slate-100 rounded font-bold border border-slate-200 text-slate-600">
                                         {item.unit_type.toUpperCase()}
                                     </span>
-                                    <span className={item.stock_quantity < 0 ? 'text-red-600 font-semibold' : 'text-slate-400'}>
+                                    <span className={item.stock_quantity < 0 ? 'text-red-600 font-semibold' : 'text-slate-500'}>
                                         {fmtQty(item.stock_quantity, item.unit_type)}
                                     </span>
                                     <span className="text-slate-200">·</span>
@@ -457,19 +457,22 @@ export const Ingredients = () => {
                                         setEditStock(item.stock_quantity);
                                         setEditAproveitamento(Math.round((item.aproveitamento ?? 1) * 100));
                                     }}
-                                    className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                    aria-label={`Editar ${item.name}`}
+                                    className="p-2.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                                 >
                                     <Pencil className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => { setStockEntryIngredient(item); setStockEntryQty(''); setStockEntryCost(''); }}
-                                    className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                    aria-label={`Adicionar estoque de ${item.name}`}
+                                    className="p-2.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                                 >
                                     <PlusCircle className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => handleDeleteIngredient(item.id)}
-                                    className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    aria-label={`Excluir ${item.name}`}
+                                    className="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -546,7 +549,7 @@ export const Ingredients = () => {
                                             </span>
                                         </td>
                                         <td className="p-4 text-right">
-                                            <span className={`font-medium ${item.stock_quantity < 0 ? 'text-red-600' : item.stock_quantity === 0 ? 'text-slate-400' : 'text-slate-900'}`}>
+                                            <span className={`font-medium ${item.stock_quantity < 0 ? 'text-red-600' : item.stock_quantity === 0 ? 'text-slate-500' : 'text-slate-900'}`}>
                                                 {fmtQty(item.stock_quantity, item.unit_type)}
                                             </span>
                                         </td>
@@ -566,22 +569,22 @@ export const Ingredients = () => {
                                                         setEditStock(item.stock_quantity);
                                                         setEditAproveitamento(Math.round((item.aproveitamento ?? 1) * 100));
                                                     }}
-                                                    className="text-slate-400 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors"
-                                                    title="Editar Insumo"
+                                                    className="text-slate-500 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors"
+                                                    aria-label={`Editar ${item.name}`}
                                                 >
                                                     <Pencil className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => { setStockEntryIngredient(item); setStockEntryQty(''); setStockEntryCost(''); }}
-                                                    className="text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors"
-                                                    title="Entrada de Estoque"
+                                                    className="text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors"
+                                                    aria-label={`Adicionar estoque de ${item.name}`}
                                                 >
                                                     <PlusCircle className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteIngredient(item.id)}
-                                                    className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                                                    title="Excluir Insumo"
+                                                    className="text-slate-500 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                                    aria-label={`Excluir ${item.name}`}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -601,7 +604,7 @@ export const Ingredients = () => {
                     <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-slate-900">Novo Insumo</h2>
-                            <button onClick={() => setShowNewModal(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                            <button onClick={() => setShowNewModal(false)} className="text-slate-500 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -671,10 +674,10 @@ export const Ingredients = () => {
                             {Number(newAproveitamento) < 100 && Number(newAproveitamento) > 0 && (
                                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
                                     Custo líquido: {fmtMoney((Number(newCost) || 0) / ((Number(newAproveitamento) || 100) / 100))}/{newUnit}
-                                    <span className="text-slate-400 ml-1">(usado nas receitas)</span>
+                                    <span className="text-slate-500 ml-1">(usado nas receitas)</span>
                                 </p>
                             )}
-                            <p className="text-xs text-slate-400 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                            <p className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                                 {TIPO_OPTIONS.find(t => t.value === newTipo)?.desc}
                             </p>
                         </div>
@@ -698,7 +701,7 @@ export const Ingredients = () => {
                     <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-slate-900">Editar Insumo</h2>
-                            <button onClick={() => setEditingIngredient(null)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                            <button onClick={() => setEditingIngredient(null)} className="text-slate-500 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -767,10 +770,10 @@ export const Ingredients = () => {
                             {Number(editAproveitamento) < 100 && Number(editAproveitamento) > 0 && (
                                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
                                     Custo líquido: {fmtMoney((Number(editCost) || 0) / ((Number(editAproveitamento) || 100) / 100))}/{editUnit}
-                                    <span className="text-slate-400 ml-1">(usado nas receitas)</span>
+                                    <span className="text-slate-500 ml-1">(usado nas receitas)</span>
                                 </p>
                             )}
-                            <p className="text-xs text-slate-400 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                            <p className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                                 {TIPO_OPTIONS.find(t => t.value === editTipo)?.desc}
                             </p>
                         </div>
@@ -797,7 +800,7 @@ export const Ingredients = () => {
                                 <h2 className="text-xl font-bold text-slate-900">Entrada de Estoque</h2>
                                 <p className="text-sm text-slate-500 mt-0.5">{stockEntryIngredient.name}</p>
                             </div>
-                            <button onClick={() => setStockEntryIngredient(null)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
+                            <button onClick={() => setStockEntryIngredient(null)} className="text-slate-500 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -828,7 +831,7 @@ export const Ingredients = () => {
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Custo desta compra (R$/{stockEntryIngredient.unit_type}){' '}
-                                    <span className="text-slate-400 font-normal">(opcional)</span>
+                                    <span className="text-slate-500 font-normal">(opcional)</span>
                                 </label>
                                 <DecimalInput
                                     value={stockEntryCost}
@@ -843,12 +846,12 @@ export const Ingredients = () => {
                                     return (
                                         <p className="mt-2 text-xs text-primary-600">
                                             Novo custo médio: <strong>{fmtMoney(newAvg)}</strong>
-                                            <span className="text-slate-400 ml-1">(era {fmtMoney(stockEntryIngredient.avg_cost_per_unit)})</span>
+                                            <span className="text-slate-500 ml-1">(era {fmtMoney(stockEntryIngredient.avg_cost_per_unit)})</span>
                                         </p>
                                     );
                                 })()}
                                 {stockEntryCost === '' && (
-                                    <p className="mt-1 text-xs text-slate-400">Se não informado, o custo médio atual é mantido.</p>
+                                    <p className="mt-1 text-xs text-slate-500">Se não informado, o custo médio atual é mantido.</p>
                                 )}
                             </div>
                         </div>

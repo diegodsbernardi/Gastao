@@ -95,7 +95,7 @@ function StatusBadgeItem({ status }: { status: NfeItem['status'] }) {
     const map = {
         pendente:    'bg-slate-100 text-slate-500',
         vinculado:   'bg-green-100 text-green-700',
-        ignorado:    'bg-slate-100 text-slate-400',
+        ignorado:    'bg-slate-100 text-slate-500',
         novo_insumo: 'bg-primary-100 text-primary-700',
     };
     const labels = { pendente: 'Pendente', vinculado: 'Vinculado', ignorado: 'Ignorado', novo_insumo: 'Novo insumo' };
@@ -174,7 +174,7 @@ function InsumoDropdown({
         >
             <div className="p-2 border-b border-slate-100">
                 <div className="flex items-center gap-2 px-2 py-1.5 bg-slate-50 rounded-lg">
-                    <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <Search className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                     <input
                         ref={inputRef}
                         className="flex-1 bg-transparent text-sm outline-none placeholder-slate-400"
@@ -186,7 +186,7 @@ function InsumoDropdown({
             </div>
             <ul className="max-h-48 overflow-y-auto">
                 {filtered.length === 0 && (
-                    <li className="px-3 py-2 text-sm text-slate-400">Nenhum resultado</li>
+                    <li className="px-3 py-2 text-sm text-slate-500">Nenhum resultado</li>
                 )}
                 {filtered.map(ing => (
                     <li key={ing.id}>
@@ -195,7 +195,7 @@ function InsumoDropdown({
                             onClick={() => { onSelect(ing.id, ing.name); onClose(); }}
                         >
                             <span className="font-medium text-slate-700">{ing.name}</span>
-                            <span className="text-slate-400 ml-1">({ing.unit_type})</span>
+                            <span className="text-slate-500 ml-1">({ing.unit_type})</span>
                         </button>
                     </li>
                 ))}
@@ -277,7 +277,7 @@ function ModalCriarInsumo({
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
                 <div className="flex items-center justify-between p-5 border-b border-slate-100">
                     <h2 className="text-base font-semibold text-slate-800">Criar novo insumo</h2>
-                    <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button onClick={onClose} className="p-1 text-slate-500 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -438,7 +438,7 @@ function ItemRow({
             <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors hidden md:table-row">
                 <td className="px-4 py-3 text-sm font-medium text-slate-700">
                     <div>{item.descricao_xml}</div>
-                    {item.codigo_produto && <div className="text-xs text-slate-400">{item.codigo_produto}</div>}
+                    {item.codigo_produto && <div className="text-xs text-slate-500">{item.codigo_produto}</div>}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
                     <div>{item.quantidade} {item.unidade}</div>
@@ -468,7 +468,7 @@ function ItemRow({
                     ) : item.insumo_confirmado_id ? (
                         <span className="text-slate-700">{item.insumo_confirmado_nome ?? '—'}</span>
                     ) : (
-                        <span className="text-slate-400 text-xs">Nenhum encontrado</span>
+                        <span className="text-slate-500 text-xs">Nenhum encontrado</span>
                     )}
                 </td>
                 <td className="px-4 py-3">
@@ -517,7 +517,7 @@ function ItemRow({
                             <button
                                 onClick={handleIgnorar}
                                 disabled={isProcessing}
-                                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-400 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-50 transition-colors"
                             >
                                 {loadingAction === 'ignorar'
                                     ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -527,7 +527,7 @@ function ItemRow({
                         </div>
                     )}
                     {!readOnly && item.status !== 'pendente' && (
-                        <span className="text-xs text-slate-400">—</span>
+                        <span className="text-xs text-slate-500">—</span>
                     )}
                 </td>
             </tr>
@@ -537,7 +537,7 @@ function ItemRow({
                 <div className="flex items-start justify-between gap-2">
                     <div>
                         <p className="text-sm font-medium text-slate-800">{item.descricao_xml}</p>
-                        {item.codigo_produto && <p className="text-xs text-slate-400">{item.codigo_produto}</p>}
+                        {item.codigo_produto && <p className="text-xs text-slate-500">{item.codigo_produto}</p>}
                     </div>
                     <StatusBadgeItem status={item.status} />
                 </div>
@@ -604,7 +604,7 @@ function ItemRow({
                         <button
                             onClick={handleIgnorar}
                             disabled={isProcessing}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-400 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-50"
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-50"
                         >
                             {loadingAction === 'ignorar' ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                             Ignorar
@@ -695,17 +695,17 @@ function UploadView({ onUploaded }: { onUploaded: (notaId: string) => void }) {
                     className="hidden"
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
                 />
-                <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-primary-500' : 'text-slate-400'}`} />
+                <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-primary-500' : 'text-slate-500'}`} />
                 {file ? (
                     <div>
                         <p className="font-medium text-slate-700">{file.name}</p>
-                        <p className="text-sm text-slate-400 mt-0.5">{fmtFileSize(file.size)}</p>
+                        <p className="text-sm text-slate-500 mt-0.5">{fmtFileSize(file.size)}</p>
                     </div>
                 ) : (
                     <div>
                         <p className="text-slate-600 font-medium">Arraste o XML da nota fiscal</p>
-                        <p className="text-sm text-slate-400 mt-1">ou clique para selecionar</p>
-                        <p className="text-xs text-slate-400 mt-3">Apenas arquivos .xml até 5 MB</p>
+                        <p className="text-sm text-slate-500 mt-1">ou clique para selecionar</p>
+                        <p className="text-xs text-slate-500 mt-3">Apenas arquivos .xml até 5 MB</p>
                     </div>
                 )}
             </div>
@@ -914,9 +914,9 @@ function BulkUploadView({ onDone, onOpenNota }: { onDone: () => void; onOpenNota
                             className="hidden"
                             onChange={e => { if (e.target.files) addFiles(e.target.files); }}
                         />
-                        <Files className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-primary-500' : 'text-slate-400'}`} />
+                        <Files className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-primary-500' : 'text-slate-500'}`} />
                         <p className="text-slate-600 font-medium">Arraste vários XMLs aqui</p>
-                        <p className="text-sm text-slate-400 mt-1">ou clique pra selecionar (segura Ctrl/Cmd ou Shift)</p>
+                        <p className="text-sm text-slate-500 mt-1">ou clique pra selecionar (segura Ctrl/Cmd ou Shift)</p>
                         {files.length > 0 && (
                             <p className="mt-3 text-sm font-medium text-primary-700">
                                 {files.length} arquivo{files.length !== 1 ? 's' : ''} selecionado{files.length !== 1 ? 's' : ''}
@@ -931,13 +931,13 @@ function BulkUploadView({ onDone, onOpenNota }: { onDone: () => void; onOpenNota
                                 {files.map((f, i) => (
                                     <li key={i} className="flex items-center justify-between py-1.5 text-sm">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                            <FileText className="w-4 h-4 text-slate-500 flex-shrink-0" />
                                             <span className="truncate text-slate-700">{f.name}</span>
-                                            <span className="text-xs text-slate-400 flex-shrink-0">{fmtFileSize(f.size)}</span>
+                                            <span className="text-xs text-slate-500 flex-shrink-0">{fmtFileSize(f.size)}</span>
                                         </div>
                                         <button
                                             onClick={e => { e.stopPropagation(); removeFile(i); }}
-                                            className="text-slate-400 hover:text-red-500 p-1"
+                                            className="text-slate-500 hover:text-red-500 p-1"
                                             title="Remover"
                                         >
                                             <X className="w-4 h-4" />
@@ -1002,12 +1002,12 @@ function BulkUploadView({ onDone, onOpenNota }: { onDone: () => void; onOpenNota
                                     r.status === 'duplicate'  ? 'text-amber-300' :
                                     r.status === 'error'      ? 'text-red-300' :
                                     r.status === 'processing' ? 'text-primary-300' :
-                                                                'text-slate-400'
+                                                                'text-slate-500'
                                 }>
                                     {r.fileName.replace(/^NFe/, 'NFe ')}
                                 </span>
-                                {r.valor !== undefined && <span className="text-slate-400 ml-1">— {fmtCurrency(r.valor)}</span>}
-                                {r.motivo && <span className="text-slate-400 ml-1">— {r.motivo}</span>}
+                                {r.valor !== undefined && <span className="text-slate-500 ml-1">— {fmtCurrency(r.valor)}</span>}
+                                {r.motivo && <span className="text-slate-500 ml-1">— {r.motivo}</span>}
                                 {r.error && <span className="text-red-400 ml-1">— {r.error}</span>}
                                 {r.notaId && (r.status === 'success' || r.status === 'duplicate') && (
                                     <button
@@ -1157,20 +1157,20 @@ function ReviewView({
             {nota && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                        <p className="text-xs text-slate-400">Fornecedor</p>
+                        <p className="text-xs text-slate-500">Fornecedor</p>
                         <p className="text-sm font-medium text-slate-700">{nota.fornecedor_nome ?? '—'}</p>
-                        <p className="text-xs text-slate-400">{nota.fornecedor_cnpj ?? ''}</p>
+                        <p className="text-xs text-slate-500">{nota.fornecedor_cnpj ?? ''}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-slate-400">Número</p>
+                        <p className="text-xs text-slate-500">Número</p>
                         <p className="text-sm font-medium text-slate-700">NF-{nota.numero_nota ?? '—'}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-slate-400">Data emissão</p>
+                        <p className="text-xs text-slate-500">Data emissão</p>
                         <p className="text-sm font-medium text-slate-700">{fmtDate(nota.data_emissao)}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-slate-400">Valor total</p>
+                        <p className="text-xs text-slate-500">Valor total</p>
                         <p className="text-sm font-semibold text-slate-800">{fmtCurrency(nota.valor_total)}</p>
                     </div>
                 </div>
@@ -1182,7 +1182,7 @@ function ReviewView({
                     <span className="text-sm font-medium text-slate-700">
                         {vinculados} de {total} itens vinculados
                     </span>
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-3 text-xs text-slate-500">
                         <span>{pendentes} pendentes</span>
                         <span>{ignorados} ignorados</span>
                     </div>
@@ -1439,7 +1439,7 @@ function ListaView({
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-16 text-center">
                     <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                     <p className="font-medium text-slate-600">Nenhuma nota fiscal importada</p>
-                    <p className="text-sm text-slate-400 mt-1">
+                    <p className="text-sm text-slate-500 mt-1">
                         Importe seu primeiro XML de NF-e para começar.
                     </p>
                     <button
@@ -1469,7 +1469,7 @@ function ListaView({
                                         <p className="font-medium text-slate-800 truncate">
                                             {nota.fornecedor_nome ?? 'Fornecedor desconhecido'}
                                         </p>
-                                        <p className="text-xs text-slate-400 mt-0.5">
+                                        <p className="text-xs text-slate-500 mt-0.5">
                                             NF-{nota.numero_nota ?? '—'} · {fmtDate(nota.data_emissao ?? nota.criado_em)}
                                         </p>
                                     </div>
@@ -1483,7 +1483,7 @@ function ListaView({
                                         onClick={e => { e.stopPropagation(); handleDelete(nota); }}
                                         disabled={deletingId === nota.id}
                                         title="Excluir nota"
-                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                        className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                                     >
                                         {deletingId === nota.id
                                             ? <Loader2 className="w-4 h-4 animate-spin" />

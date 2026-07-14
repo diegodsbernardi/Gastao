@@ -305,7 +305,7 @@ export const Dashboard = () => {
                                                 </div>
                                             )}
                                             {a.fichas_afetadas.length === 0 && (
-                                                <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+                                                <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
                                                     <AlertTriangle className="w-3 h-3" /> Nenhuma ficha usa este insumo ainda.
                                                 </p>
                                             )}
@@ -371,8 +371,8 @@ export const Dashboard = () => {
                     // Classes completas (Tailwind não gera nomes interpolados em build)
                     const iconCls = temAlerta ? 'bg-amber-50 text-amber-600'
                         : usaEstoque ? 'bg-green-50 text-green-600'
-                        : 'bg-slate-100 text-slate-400';
-                    const numCls = temAlerta ? 'text-amber-600' : usaEstoque ? 'text-green-600' : 'text-slate-400';
+                        : 'bg-slate-100 text-slate-500';
+                    const numCls = temAlerta ? 'text-amber-600' : usaEstoque ? 'text-green-600' : 'text-slate-500';
                     return (
                         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
                             <div className="flex items-center justify-between">
@@ -418,7 +418,7 @@ export const Dashboard = () => {
                     <div className="py-12 text-center text-slate-500">
                         <UtensilsCrossed className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                         <p className="font-medium">Nenhuma venda registrada este mês</p>
-                        <p className="text-sm text-slate-400 mt-1">Registre vendas para ver o ranking de produtos.</p>
+                        <p className="text-sm text-slate-500 mt-1">Registre vendas para ver o ranking de produtos.</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-100">
@@ -427,7 +427,7 @@ export const Dashboard = () => {
                                 <div>
                                     <p className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors">{p.product_name}</p>
                                     <p className="text-sm text-slate-500 mt-0.5">
-                                        CMV: <span className={p.sale_price <= 0 ? 'text-slate-400 font-medium' : p.cmv < 30 ? 'text-green-600 font-medium' : p.cmv < 40 ? 'text-amber-600 font-medium' : 'text-red-600 font-medium'}>{p.sale_price > 0 ? `${p.cmv.toFixed(1)}%` : '—'}</span>
+                                        CMV: <span className={p.sale_price <= 0 ? 'text-slate-500 font-medium' : p.cmv < 30 ? 'text-green-600 font-medium' : p.cmv < 40 ? 'text-amber-600 font-medium' : 'text-red-600 font-medium'}>{p.sale_price > 0 ? `${p.cmv.toFixed(1)}%` : '—'}</span>
                                         {' • '}Custo: {fmtMoney(p.food_cost)}
                                         {' • '}{p.total_sold} vendido(s)
                                     </p>

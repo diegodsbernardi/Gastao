@@ -80,7 +80,7 @@ export const Onboarding = () => {
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
                                 CNPJ{' '}
-                                <span className="text-slate-400 font-normal">(opcional)</span>
+                                <span className="text-slate-500 font-normal">(opcional)</span>
                             </label>
                             <input
                                 type="text"
@@ -115,10 +115,10 @@ export const Onboarding = () => {
                 </div>
 
                 <div className="flex flex-col items-center gap-2 mt-6">
-                    <p className="text-xs text-slate-400">{user?.email}</p>
+                    <p className="text-xs text-slate-500">{user?.email}</p>
                     <button
                         onClick={async () => { await supabase.auth.signOut(); navigate('/login'); }}
-                        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                        className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-600 transition-colors"
                     >
                         <LogOut className="w-3.5 h-3.5" />
                         Já tenho conta — fazer login com outro email

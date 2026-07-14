@@ -107,10 +107,10 @@ export const PendingInvite = () => {
                 </div>
 
                 <div className="flex flex-col items-center gap-2 mt-6">
-                    <p className="text-xs text-slate-400">{user?.email}</p>
+                    <p className="text-xs text-slate-500">{user?.email}</p>
                     <button
                         onClick={async () => { await supabase.auth.signOut(); navigate('/login'); }}
-                        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                        className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-600 transition-colors"
                     >
                         <LogOut className="w-3.5 h-3.5" />
                         Sair e entrar com outro email

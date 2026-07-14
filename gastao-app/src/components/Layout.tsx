@@ -115,7 +115,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             <nav className="flex-1 overflow-y-auto py-3 px-2">
                 {navGroups.filter(g => g.show).map(group => (
                     <div key={group.label} className="mb-4">
-                        <p className="px-3 mb-1 text-xs font-bold uppercase tracking-widest text-slate-400 select-none">
+                        <p className="px-3 mb-1 text-xs font-bold uppercase tracking-widest text-slate-500 select-none">
                             {group.label}
                         </p>
                         <ul className="space-y-0.5">
@@ -294,9 +294,9 @@ function RestauranteSwitcher({
                 onClick={() => setOpen(v => !v)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors max-w-[220px]"
             >
-                <Store className="w-4 h-4 text-slate-400 shrink-0" />
+                <Store className="w-4 h-4 text-slate-500 shrink-0" />
                 <span className="truncate">{ativo?.restaurante_nome ?? 'Restaurante'}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             </button>
 
             {open && (
@@ -315,7 +315,7 @@ function RestauranteSwitcher({
                                     />
                                     <span className="flex-1 truncate font-medium text-slate-700">{m.restaurante_nome}</span>
                                     {switching === m.restaurante_id
-                                        ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                                        ? <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
                                         : m.eh_ativo && <Check className="w-4 h-4 text-primary-600" />}
                                 </button>
                             </li>
@@ -384,7 +384,7 @@ function ModalNovoRestaurante({ onClose }: { onClose: () => void }) {
                         placeholder="00.000.000/0000-00"
                     />
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                     Depois de criar, você cai direto na importação da planilha-mãe do cliente.
                 </p>
                 <div className="flex justify-end gap-2">
