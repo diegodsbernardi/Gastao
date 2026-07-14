@@ -262,7 +262,7 @@ export const Dashboard = () => {
                         return (
                             <div
                                 key={a.id}
-                                className={`bg-white rounded-2xl border shadow-sm p-4 sm:p-5 border-l-4 ${subiu ? 'border-l-red-500 border-red-100' : 'border-l-green-500 border-green-100'}`}
+                                className={`rounded-2xl border shadow-sm p-4 sm:p-5 ${subiu ? 'border-red-200 bg-red-50/50' : 'border-green-200 bg-green-50/50'}`}
                             >
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                     <div className="flex items-start gap-3">

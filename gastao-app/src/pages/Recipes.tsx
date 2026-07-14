@@ -822,7 +822,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                         <button
                                                             onClick={() => { setEditingInfoId(ficha.id); setEditInfoName(ficha.product_name); setEditInfoPrice(ficha.sale_price); setEditInfoCategory(ficha.category ?? 'Lanche'); }}
                                                             aria-label={`Editar ${ficha.product_name}`}
-                                                            className="p-1 text-slate-300 hover:text-primary-500 rounded transition-colors mb-1"
+                                                            className="p-2 text-slate-300 hover:text-primary-500 rounded transition-colors"
                                                         >
                                                             <Edit className="w-3.5 h-3.5" />
                                                         </button>
