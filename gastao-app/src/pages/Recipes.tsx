@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2, ArrowDownUp, Copy,
+    UtensilsCrossed, Plus, Trash2, Edit, Search, X, ChefHat, Package, Link2, ArrowDownUp, Copy, Filter,
 } from 'lucide-react';
 import type { Ingredient, Recipe, RecipeIngredient, RecipeSubRecipe } from '../lib/types';
 import { fmtMoney, fmtQty, fmtCategoria } from '../lib/format';
@@ -66,6 +66,10 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     // Sort: nome (default) | CMV asc (mais saudável primeiro) | CMV desc (mais crítico primeiro)
     const [sortMode, setSortMode] = useState<'name' | 'cmv-asc' | 'cmv-desc'>('name');
+    // Filtro por insumo: mostra só fichas que usam este insumo (direto ou via preparo)
+    const [ingFilterId, setIngFilterId] = useState<string | null>(null);
+    const [ingFilterSearch, setIngFilterSearch] = useState('');
+    const [ingFilterOpen, setIngFilterOpen] = useState(false);
 
     // ── modal: nova ficha ─────────────────────────────────────────────────────
     const [showNewModal, setShowNewModal] = useState(false);
@@ -350,6 +354,50 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
         [fichas, customCategories]
     );
 
+    // ─── Filtro por insumo ────────────────────────────────────────────────────
+    // Lista completa de insumos pro picker (insumos + embalagens), ordenada.
+    const allIngredientsForFilter = useMemo(
+        () => [...insumosDiretos, ...embalagens].sort((a, b) => a.name.localeCompare(b.name)),
+        [insumosDiretos, embalagens]
+    );
+
+    // Para cada receita, o conjunto de ingredient_ids que ela consome — resolvido
+    // RECURSIVAMENTE pela árvore Insumo → Preparo → (Preparo)* → Ficha. Sem isso,
+    // "quais fichas usam Alface?" perderia toda ficha que usa Alface via preparo
+    // (ex: "Mix de salada"). Memoiza por receita e trava ciclos com `visiting`.
+    const ingredientIdsByRecipe = useMemo(() => {
+        const memo = new Map<string, Set<string>>();
+        const visiting = new Set<string>();
+
+        const resolve = (recipeId: string): Set<string> => {
+            const cached = memo.get(recipeId);
+            if (cached) return cached;
+            if (visiting.has(recipeId)) return new Set(); // ciclo: corta aqui
+
+            visiting.add(recipeId);
+            const acc = new Set<string>();
+            (fichaIngs[recipeId] ?? []).forEach(i => { if (i.ingredient_id) acc.add(i.ingredient_id); });
+            (preparoIngs[recipeId] ?? []).forEach(i => { if (i.ingredient_id) acc.add(i.ingredient_id); });
+            (fichaSubs[recipeId] ?? []).forEach(s => {
+                resolve(s.sub_recipe_id).forEach(id => acc.add(id));
+            });
+            visiting.delete(recipeId);
+
+            memo.set(recipeId, acc);
+            return acc;
+        };
+
+        fichas.forEach(f => resolve(f.id));
+        return memo;
+    }, [fichas, fichaIngs, preparoIngs, fichaSubs]);
+
+    // Onde o insumo filtrado entra nesta ficha: 'direto' ou o nome do preparo/combo.
+    const origemDoInsumo = (fichaId: string, ingId: string): string | null => {
+        if ((fichaIngs[fichaId] ?? []).some(i => i.ingredient_id === ingId)) return 'direto';
+        const sub = (fichaSubs[fichaId] ?? []).find(s => ingredientIdsByRecipe.get(s.sub_recipe_id)?.has(ingId));
+        return sub ? sub.sub_recipe.product_name : null;
+    };
+
     const filteredFichas = useMemo(() => {
         const list = fichas.filter(f => {
             const matchSearch = f.product_name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -358,7 +406,8 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             const matchCat = categoryFilter
                 ? f.category === categoryFilter
                 : (activeCategories.size === 0 || activeCategories.has(f.category));
-            return matchSearch && matchCat;
+            const matchIng = !ingFilterId || (ingredientIdsByRecipe.get(f.id)?.has(ingFilterId) ?? false);
+            return matchSearch && matchCat && matchIng;
         });
 
         if (sortMode === 'name') {
@@ -379,7 +428,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
             if (cb === null) return -1;
             return sortMode === 'cmv-asc' ? ca - cb : cb - ca;
         });
-    }, [fichas, searchQuery, activeCategories, categoryFilter, sortMode, fichaCostMap]);
+    }, [fichas, searchQuery, activeCategories, categoryFilter, sortMode, fichaCostMap, ingFilterId, ingredientIdsByRecipe]);
 
     // ─── CRUD ────────────────────────────────────────────────────────────────
 
@@ -741,6 +790,58 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                             <option value="cmv-desc">CMV maior primeiro</option>
                         </select>
                     </div>
+                    {/* Filtro por insumo: "quais fichas usam Alface?" */}
+                    <div className="relative">
+                        {ingFilterId ? (
+                            <button
+                                onClick={() => { setIngFilterId(null); setIngFilterSearch(''); }}
+                                title="Limpar filtro de insumo"
+                                className="flex items-center gap-1.5 max-w-[12rem] px-3 py-2 rounded-lg text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100"
+                            >
+                                <Filter className="w-4 h-4 shrink-0" />
+                                <span className="truncate">{allIngredientsForFilter.find(i => i.id === ingFilterId)?.name ?? 'Insumo'}</span>
+                                <X className="w-3.5 h-3.5 shrink-0" />
+                            </button>
+                        ) : (
+                            <>
+                                <Filter className="w-4 h-4 absolute left-2.5 top-2.5 text-slate-500 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar por insumo..."
+                                    value={ingFilterSearch}
+                                    onChange={e => { setIngFilterSearch(e.target.value); setIngFilterOpen(true); }}
+                                    onFocus={() => setIngFilterOpen(true)}
+                                    onBlur={() => setTimeout(() => setIngFilterOpen(false), 150)}
+                                    className="w-48 pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </>
+                        )}
+                        {ingFilterOpen && !ingFilterId && (
+                            <div className="absolute z-20 mt-1 w-64 max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                                {allIngredientsForFilter
+                                    .filter(i => i.name.toLowerCase().includes(ingFilterSearch.toLowerCase()))
+                                    .slice(0, 50)
+                                    .map(i => {
+                                        const usos = fichas.filter(f => ingredientIdsByRecipe.get(f.id)?.has(i.id)).length;
+                                        return (
+                                            <button
+                                                key={i.id}
+                                                onMouseDown={() => { setIngFilterId(i.id); setIngFilterOpen(false); }}
+                                                className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                                            >
+                                                <span className="truncate text-slate-700">{i.name}</span>
+                                                <span className={`shrink-0 text-xs font-medium ${usos > 0 ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                    {usos} ficha{usos === 1 ? '' : 's'}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                {allIngredientsForFilter.filter(i => i.name.toLowerCase().includes(ingFilterSearch.toLowerCase())).length === 0 && (
+                                    <p className="px-3 py-3 text-sm text-slate-500">Nenhum insumo encontrado.</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
                     <div className="relative flex-1 sm:w-72">
                         <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
                         <input
@@ -754,12 +855,34 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                 </div>
             </div>
 
+            {/* Resumo do filtro por insumo */}
+            {ingFilterId && (
+                <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-primary-50 border border-primary-200 rounded-xl text-sm text-primary-800">
+                    <Filter className="w-4 h-4 shrink-0" />
+                    <span>
+                        <strong>{filteredFichas.length}</strong> ficha{filteredFichas.length === 1 ? '' : 's'} usa{filteredFichas.length === 1 ? '' : 'm'}{' '}
+                        <strong>{allIngredientsForFilter.find(i => i.id === ingFilterId)?.name}</strong>
+                        <span className="text-primary-700"> (direto ou dentro de um preparo)</span>
+                    </span>
+                    <button
+                        onClick={() => { setIngFilterId(null); setIngFilterSearch(''); }}
+                        className="ml-auto px-2 py-1 rounded-lg font-medium hover:bg-primary-100"
+                    >
+                        Limpar
+                    </button>
+                </div>
+            )}
+
             {/* Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredFichas.length === 0 ? (
                     <div className="col-span-full py-16 text-center text-slate-500 bg-white border-2 border-dashed border-slate-200 rounded-2xl">
                         <UtensilsCrossed className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                        <p className="font-medium">Nenhuma ficha técnica encontrada.</p>
+                        <p className="font-medium">
+                            {ingFilterId
+                                ? `Nenhuma ficha usa ${allIngredientsForFilter.find(i => i.id === ingFilterId)?.name}.`
+                                : 'Nenhuma ficha técnica encontrada.'}
+                        </p>
                     </div>
                 ) : filteredFichas.map(ficha => {
                     const cost = fichaCostMap[ficha.id] ?? 0;
@@ -822,7 +945,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                         <button
                                                             onClick={() => { setEditingInfoId(ficha.id); setEditInfoName(ficha.product_name); setEditInfoPrice(ficha.sale_price); setEditInfoCategory(ficha.category ?? 'Lanche'); }}
                                                             aria-label={`Editar ${ficha.product_name}`}
-                                                            className="p-2 text-slate-300 hover:text-primary-500 rounded transition-colors"
+                                                            className="p-2 text-slate-500 hover:text-primary-600 rounded transition-colors"
                                                         >
                                                             <Edit className="w-3.5 h-3.5" />
                                                         </button>
@@ -837,6 +960,19 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 {viewMode === 'operacao' && (
                                                     <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{fmtCategoria(ficha.category)}</span>
                                                 )}
+                                                {ingFilterId && (() => {
+                                                    // Mostra por onde o insumo filtrado entra nesta ficha —
+                                                    // sem isso, ficha que usa o insumo via preparo parece
+                                                    // um falso positivo (o nome não aparece na lista abaixo).
+                                                    const origem = origemDoInsumo(ficha.id, ingFilterId);
+                                                    if (!origem) return null;
+                                                    return (
+                                                        <span className="inline-flex items-center gap-1 mt-1.5 mr-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
+                                                            <Filter className="w-3 h-3" />
+                                                            {origem === 'direto' ? 'Insumo direto' : `Via ${origem}`}
+                                                        </span>
+                                                    );
+                                                })()}
                                                 {(usedByMap[ficha.id]?.length ?? 0) > 0 && (
                                                     <span
                                                         title={`Usada em: ${usedByMap[ficha.id].map(d => d.name).join(', ')}`}
@@ -862,12 +998,12 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                         <>
                                             <button
                                                 onClick={() => handleDuplicate(ficha)}
-                                                className="p-2 text-slate-300 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                                className="p-2 text-slate-500 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
                                                 aria-label={`Duplicar ${ficha.product_name}`}
                                             >
                                                 <Copy className="w-4 h-4" />
                                             </button>
-                                            <button onClick={() => handleDelete(ficha.id)} aria-label={`Excluir ${ficha.product_name}`} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                            <button onClick={() => handleDelete(ficha.id)} aria-label={`Excluir ${ficha.product_name}`} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </>
@@ -1072,7 +1208,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </span>
                                                 <button
                                                     onClick={() => setEditSubItems(editSubItems.filter((_, i) => i !== idx))}
-                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
+                                                    className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -1108,7 +1244,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}
-                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
+                                                    className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -1144,7 +1280,7 @@ export const Recipes = ({ categoryFilter }: { categoryFilter?: string } = {}) =>
                                                 </span>
                                                 <button
                                                     onClick={() => setEditIngItems(editIngItems.filter((_, i) => i !== idx))}
-                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
+                                                    className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
