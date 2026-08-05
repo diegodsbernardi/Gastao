@@ -98,8 +98,8 @@
       <dd><em>insumo_base:</em> vai ser usado dentro de preparos (carne moída, farinha). <em>insumo_direto:</em> vai direto na ficha (pão, refrigerante). <em>embalagem:</em> caixa, sacola, descartável.</dd></div>
     <div class="campo"><dt>Unidade <span class="obrig">*</span></dt>
       <dd>kg, g, l, ml, un ou porção. <strong>Use a menor unidade prática:</strong> se a ficha leva 30 g, cadastre em g.</dd></div>
-    <div class="campo"><dt>Preço de Compra <span class="obrig">*</span></dt>
-      <dd>Custo de <strong>uma unidade</strong> da escolhida acima. Cadastrou em g e o quilo custa R$ 25,00? Então 0,025. Aceita formato BR (1.234,56) e EN (1234.56).</dd></div>
+    <div class="campo"><dt>Preço de Compra</dt>
+      <dd>Custo de <strong>uma unidade</strong> da escolhida acima. Cadastrou em g e o quilo custa R$ 25,00? Então 0,025. Aceita formato BR (1.234,56) e EN (1234.56). É só o valor de partida: <strong>as notas fiscais atualizam esse preço sozinhas</strong> depois.</dd></div>
     <div class="campo"><dt>Aproveitamento (%)</dt>
       <dd>De 1 a 100. Quanto sobra depois de limpar. Alface ≈ 70, abacaxi descascado ≈ 53, item sem perda = 100. Em branco, o sistema assume 100.</dd></div>
     <div class="campo"><dt>Observações</dt>
@@ -110,6 +110,12 @@
     <span class="rot">Unidade e preço: o erro que mais acontece</span>
     <p>Cadastrar a unidade em <strong>g</strong> e o preço do <strong>quilo</strong>. O sistema entende que cada grama custa R$ 25,00, e um lanche com 30 g de carne passa a custar R$ 750,00.</p>
     <p>Regra: se a unidade é g, o preço é por grama. Se é kg, é por quilo. Divida por 1000 quando precisar.</p>
+  </div>
+
+  <div class="caixa ok">
+    <span class="rot">Não se preocupe em acertar o preço exato</span>
+    <p>O preço aqui é só o ponto de partida. Assim que as notas fiscais de compra entrarem no sistema, <strong>o custo de cada insumo passa a ser atualizado automaticamente</strong> pelo valor real pago ao fornecedor.</p>
+    <p>Preencha com o que você lembra ou com a última compra. Não vale a pena parar a planilha para caçar preço de tabela.</p>
   </div>
 
   <div class="caixa ok">

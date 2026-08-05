@@ -18,7 +18,7 @@
     <p class="sub">Do primeiro acesso ao restaurante rodando com CMV confiável.</p>
   </div>
   <div class="rodape">
-    <strong>gastao-app.vercel.app</strong>
+    <strong>gastao.vercel.app</strong>
     Plataforma de gestão operacional e CMV para restaurantes
   </div>
 </div>
@@ -115,7 +115,7 @@
   <h3>Se você recebeu um convite</h3>
   <ol class="passos">
     <li class="passo">
-      <h4>Abra gastao-app.vercel.app e clique em "Criar conta"</h4>
+      <h4>Abra gastao.vercel.app e clique em "Criar conta"</h4>
       <p>Use <strong>exatamente o mesmo e-mail</strong> em que o convite chegou. Se usar outro, o convite não aparece, porque é ele que liga você ao restaurante.</p>
     </li>
     <li class="passo">
@@ -174,8 +174,8 @@
 
   <ol class="passos">
     <li class="passo">
-      <h4>Insumos primeiro, todos com custo</h4>
-      <p>Nada funciona sem isso. Um insumo sem custo entra na conta valendo <strong>zero</strong>, e todo CMV calculado a partir dele fica falsamente baixo.</p>
+      <h4>Insumos primeiro</h4>
+      <p>Nada funciona sem isso. O custo pode entrar depois pelas notas fiscais, mas enquanto um insumo estiver com custo <strong>zero</strong> ele conta como se fosse de graça, e todo CMV calculado a partir dele fica falsamente baixo.</p>
     </li>
     <li class="passo">
       <h4>Preparos depois</h4>
@@ -228,8 +228,8 @@
       <dd>Agrupa na listagem. <em>Ex: Hortifruti, Carnes, Descartáveis.</em> Opcional, mas com 100+ insumos faz diferença.</dd>
     </div>
     <div class="campo">
-      <dt>Custo Médio (R$) <span class="obrig">*</span></dt>
-      <dd>Quanto custa <strong>uma unidade</strong> do que você escolheu acima. Se a unidade é grama e o quilo custa R$ 25,00, o custo é 0,025. Depois disso a nota fiscal atualiza sozinha.</dd>
+      <dt>Custo Médio (R$)</dt>
+      <dd>Só a <strong>carga inicial</strong>: quanto custa uma unidade da que você escolheu acima. Se a unidade é grama e o quilo custa R$ 25,00, o custo é 0,025. <strong>Daí em diante você não digita preço:</strong> cada nota fiscal confirmada atualiza este valor sozinha.</dd>
     </div>
     <div class="campo">
       <dt>Aproveitamento (%)</dt>
@@ -248,6 +248,13 @@
   </div>
 
   <div class="caixa ok">
+    <span class="rot">Você não precisa manter preço na mão</span>
+    <p>O preço dos insumos <strong>é puxado e atualizado automaticamente pela entrada das notas fiscais</strong>. Cada nota confirmada regrava o custo do insumo correspondente com o valor que você realmente pagou naquela compra.</p>
+    <p>Ou seja: ninguém precisa sair conferindo tabela de fornecedor nem digitando preço item por item. Preencher na mão serve para dois casos: a carga inicial, para o CMV já nascer com número, e compras sem nota (feira, açougue, produtor).</p>
+    <p>Uma condição, porém: a atualização acontece quando alguém <strong>confirma a nota</strong> e vincula os itens. Nota que fica parada como "pendente" não mexe em custo nenhum.</p>
+  </div>
+
+  <div class="caixa">
     <span class="rot">Confira depois de cadastrar tudo</span>
     <p>Na listagem de Insumos, procure itens com custo <strong>R$ 0,00</strong>. Cada um deles é um buraco no seu CMV: entra como se fosse de graça e faz o produto parecer mais lucrativo do que é.</p>
   </div>
@@ -547,7 +554,7 @@
 
   <div class="fim">
     <strong>Gastão</strong> — Plataforma de gestão operacional e CMV para restaurantes<br>
-    gastao-app.vercel.app
+    gastao.vercel.app
   </div>
 </section>
 
