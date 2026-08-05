@@ -1,4 +1,7 @@
-// Gera public/Gastao_Planilha_Mae_v3.xlsx — versão chef-friendly.
+// Gera public/Gastao_Planilha_Mae.xlsx — a Planilha-Mãe oficial (o que o botão
+// "Baixar Planilha-Mãe" entrega). Versão chef-friendly: além das abas de cadastro,
+// traz Ver_Ficha (confere custo/CMV dentro do Excel) e _Validação (aponta insumo sem
+// preço, preparo sem rendimento e ficha sem preço ANTES de importar).
 //
 // MUDANÇAS DA V3 (relativo à v2):
 //   1. Unidades padronizadas: massa → g, volume → ml, contagem → un.
@@ -18,7 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUT = join(__dirname, '..', 'public', 'Gastao_Planilha_Mae_v3.xlsx');
+const OUT = join(__dirname, '..', 'public', 'Gastao_Planilha_Mae.xlsx');
 
 const MAX_ROWS = 500;
 

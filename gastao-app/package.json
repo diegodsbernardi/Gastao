@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:template && tsc && vite build",
-    "build:template": "node scripts/generate-template.mjs",
+    "build:template": "node scripts/generate-template-v3.mjs",
     "preview": "vite preview",
     "deploy": "node scripts/deploy.mjs"
   },

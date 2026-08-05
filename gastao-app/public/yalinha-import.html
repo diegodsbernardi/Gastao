@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yalinha — Fichas de Montagem: o que mudou e o que verificar</title>
+<style>
+  :root {
+    --laranja: #F26430; --laranja-esc: #D24E1F;
+    --ink: #211C18; --cinza: #6E655D; --cinza-cl: #9A9089;
+    --fundo: #FAF6F1; --card: #FFFFFF; --borda: #ECE3D8;
+    --verde: #1B9E5A; --verde-bg: #E7F5EC; --verde-bd: #C6E7D2;
+    --verm: #C4362B; --verm-bg: #FBEAE7; --verm-bd: #F1C6BF;
+    --ambar: #B0740E; --ambar-bg: #FBF1DF; --ambar-bd: #F0DDB4;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--fundo); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:780px; margin:0 auto; padding:0 20px; }
+  header { padding:56px 0 32px; }
+  .marca { display:inline-flex; align-items:center; gap:9px; font-weight:700; font-size:14px; letter-spacing:.02em; color:var(--laranja-esc); }
+  .marca .chip { width:30px; height:30px; border-radius:9px; background:var(--laranja); color:#fff; display:grid; place-items:center; font-size:17px; }
+  h1 { font-size:clamp(27px,5.5vw,38px); line-height:1.1; letter-spacing:-0.02em; font-weight:800; margin:20px 0 10px; text-wrap:balance; }
+  .sub { font-size:17px; color:var(--cinza); margin:0; max-width:58ch; }
+  .data { font-size:13px; color:var(--cinza-cl); margin-top:14px; }
+  h2 { font-size:22px; letter-spacing:-0.01em; margin:38px 0 14px; font-weight:750; }
+  p { margin:0 0 14px; }
+
+  .feito { background:var(--card); border:1px solid var(--borda); border-radius:16px; padding:22px 24px; }
+  .feito ul { margin:0; padding:0; list-style:none; }
+  .feito li { padding:8px 0 8px 30px; position:relative; }
+  .feito li::before { content:"✓"; position:absolute; left:0; top:8px; color:var(--verde); font-weight:800; }
+  .feito li:not(:last-child){ border-bottom:1px solid var(--borda); }
+
+  /* Blocos de tarefa */
+  .tarefa { background:var(--card); border:1px solid var(--borda); border-radius:16px; padding:0; margin:16px 0; overflow:hidden; }
+  .tarefa .cabeca { display:flex; align-items:center; gap:12px; padding:16px 22px; }
+  .tarefa .num { flex:0 0 34px; height:34px; border-radius:10px; display:grid; place-items:center; font-weight:800; font-size:15px; color:#fff; }
+  .tarefa .titulo { font-weight:700; font-size:17px; }
+  .tarefa .selo { margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 10px; border-radius:999px; }
+  .t1 .num{ background:var(--verm); } .t1 .selo{ color:var(--verm); background:var(--verm-bg); border:1px solid var(--verm-bd); }
+  .t2 .num{ background:var(--ambar); } .t2 .selo{ color:var(--ambar); background:var(--ambar-bg); border:1px solid var(--ambar-bd); }
+  .t3 .num{ background:var(--cinza); } .t3 .selo{ color:var(--cinza); background:#F2ECE4; border:1px solid var(--borda); }
+  .tarefa .corpo { padding:2px 22px 20px; }
+  .tarefa .corpo p { color:var(--cinza); font-size:15px; }
+
+  .tbl-wrap { overflow-x:auto; border:1px solid var(--borda); border-radius:12px; margin-top:6px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; min-width:440px; }
+  th { text-align:left; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--cinza-cl); font-weight:700; padding:10px 14px; border-bottom:1px solid var(--borda); background:#FBF8F4; }
+  td { padding:10px 14px; border-bottom:1px solid var(--borda); vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  td.err { color:var(--verm); font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.ok { color:var(--verde); white-space:nowrap; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; }
+  .chips span { font-size:13px; background:#F2ECE4; border:1px solid var(--borda); border-radius:999px; padding:4px 11px; color:var(--cinza); }
+
+  .como { background:var(--verde-bg); border:1px solid var(--verde-bd); border-radius:14px; padding:16px 20px; margin:26px 0 10px; }
+  .como strong { color:#0F7A45; }
+  .como code { background:#fff; border:1px solid var(--verde-bd); border-radius:6px; padding:1px 7px; font-size:14px; }
+
+  footer { margin:34px 0 56px; padding-top:20px; border-top:1px solid var(--borda); color:var(--cinza-cl); font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="marca"><span class="chip">🍴</span> GASTÃO · YALINHA</span>
+    <h1>Fichas de montagem: o que mudou e o que verificar</h1>
+    <p class="sub">Subimos as fichas de montagem do cardápio no sistema e elas já se ligaram aos preparos de vocês. Faltam alguns ajustes de quantidade que só vocês sabem fazer. Este guia mostra tudo, por ordem de prioridade.</p>
+    <p class="data">Importação de 16/07/2026</p>
+  </header>
+
+  <h2>O que foi feito</h2>
+  <div class="feito">
+    <ul>
+      <li><strong>52 fichas de montagem</strong> novas foram adicionadas, com os produtos do cardápio (sanduíches, kebabs, esfihas, saladas). No app aparecem em <strong>Fichas Técnicas → filtro “Montagem”</strong>.</li>
+      <li>Elas <strong>se ligaram sozinhas aos preparos de produção</strong> que vocês já tinham. Ex.: o Babaganush já aparece como “Base de 4 fichas”. Nada foi duplicado.</li>
+      <li><strong>49 insumos novos</strong> foram criados (os que ainda não existiam no sistema).</li>
+      <li><strong>Nenhuma ficha de produção foi alterada</strong>: só adicionamos por cima, e há backup de segurança de tudo.</li>
+    </ul>
+  </div>
+
+  <h2>O que precisa da conferência de vocês</h2>
+
+  <div class="tarefa t1">
+    <div class="cabeca">
+      <span class="num">1</span>
+      <span class="titulo">Quantidades que estão inflando o custo</span>
+      <span class="selo">Urgente</span>
+    </div>
+    <div class="corpo">
+      <p>Estes ingredientes já existiam <strong>em quilos/litros</strong> no sistema, mas na planilha estavam em “fatias/unidades”. Então o número entrou como kg/L, e isso infla o CMV. Precisam corrigir a quantidade real:</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Ficha</th><th>Ingrediente</th><th>Está como</th><th>Provavelmente é</th></tr></thead>
+          <tbody>
+            <tr><td>Salada Dubai / Yala Yala / Oriente Médio</td><td>Tomate cereja</td><td class="err">8 kg</td><td class="ok">~8 unidades</td></tr>
+            <tr><td>Beirute de Frango / Rosbife (e combos)</td><td>Tomate</td><td class="err">5 kg</td><td class="ok">~5 fatias</td></tr>
+            <tr><td>Kebab de Shawarma (e combo)</td><td>Tomate</td><td class="err">3 kg</td><td class="ok">~3 fatias</td></tr>
+            <tr><td>Sanduba Yalinha</td><td>Tomate</td><td class="err">2 kg</td><td class="ok">~2 fatias</td></tr>
+            <tr><td>Quarteto das Pastas</td><td>Nozes</td><td class="err">3 kg</td><td class="ok">~3 unidades</td></tr>
+            <tr><td>Caldo de Feijão 300ml</td><td>Água</td><td class="err">6 L</td><td class="ok">conferir</td></tr>
+            <tr><td>Caldo de Feijão 300ml</td><td>Feijão argentino</td><td class="err">1 kg</td><td class="ok">conferir</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarefa t2">
+    <div class="cabeca">
+      <span class="num">2</span>
+      <span class="titulo">Ingredientes sem peso definido</span>
+      <span class="selo">Importante</span>
+    </div>
+    <div class="corpo">
+      <p><strong>57 ingredientes</strong> entraram medidos em “fatias / folhas / unidade” (ex.: alface, picles, tomate em fatia, folha de broto). Sem o peso em gramas, eles <strong>não geram custo</strong>, então o CMV dessas fichas fica incompleto até vocês informarem quanto pesa cada porção.</p>
+    </div>
+  </div>
+
+  <div class="tarefa t3">
+    <div class="cabeca">
+      <span class="num">3</span>
+      <span class="titulo">Itens que são preparos, mas entraram como insumo</span>
+      <span class="selo">Quando puderem</span>
+    </div>
+    <div class="corpo">
+      <p>Estes têm receita própria, mas por ora entraram como “insumo simples”. Vale decidir se querem transformar em <strong>preparo</strong>, pra ter a composição completa (e o custo real montado a partir dos ingredientes deles):</p>
+      <div class="chips">
+        <span>Arroz com aletria</span><span>Batata frita</span><span>Cebola fatiada</span><span>Falafel</span><span>Kafta</span><span>Kibe</span><span>Kibe pronto</span><span>Lagarto desfiado</span><span>Maionese</span><span>Massa de esfiha</span><span>Massa falafel</span><span>Molho oriente médio</span><span>Molho pasta de alho</span><span>Molho tahine</span><span>Molho yala yala</span><span>Pesto de azeitona</span><span>Recheio quatro queijos</span><span>Repolho roxo fatiado</span><span>Muhammara</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="como">
+    <p style="margin-bottom:6px"><strong>Como corrigir os itens 1 e 2:</strong></p>
+    <p style="margin:0; color:var(--ink)">No app: <strong>Fichas Técnicas</strong> → abrir a ficha → <code>Editar composição</code> → ajustar a quantidade e a unidade de cada ingrediente → salvar.</p>
+  </div>
+
+  <footer>
+    Dúvida, ou preferem que a gente ajuste em massa? É só passar as quantidades certas pro Diego que fazemos de uma vez. · Gastão · Yalinha
+  </footer>
+</div>
+</body>
+</html>

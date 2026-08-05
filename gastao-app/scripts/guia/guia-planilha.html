@@ -6,6 +6,18 @@
 <style>
 /*FONTS*/
 /*BASE*/
+.cores { margin: 1.2rem 0 1.6rem; }
+.cor {
+  display: grid; grid-template-columns: 1.4rem 6.5rem 1fr; gap: .9rem;
+  align-items: center; padding: .6rem 0; border-bottom: 1px solid var(--borda);
+}
+.cor:first-child { border-top: 1px solid var(--borda); }
+.bolinha { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); }
+.cor .qual { font-weight: 600; font-size: .95rem; }
+.cor .oque { color: var(--cinza); font-size: .93rem; }
+/* Campos calculados: marca visual pra não competirem com os que o usuário preenche */
+.campo dd.auto { color: var(--verde-esc); }
+.campo dd.auto strong { color: var(--verde-esc); }
 </style>
 </head>
 <body>
@@ -30,55 +42,106 @@
   <p class="secao-intro">Uma planilha só, com todas as abas, que carrega o cardápio inteiro para dentro do Gastão numa única importação.</p>
   <hr class="regua">
 
-  <p>Cadastrar 120 insumos e 40 fichas na mão leva um dia inteiro. Pela planilha, leva o tempo de preencher, e você trabalha no Excel, que é onde a maioria dos restaurantes já tem o cardápio.</p>
+  <p>Cadastrar 120 insumos e 40 fichas na mão leva um dia inteiro. Pela planilha leva o tempo de preencher, e você trabalha no Excel, que é onde a maioria dos restaurantes já tem o cardápio.</p>
 
   <h3>Onde baixar</h3>
-  <p>Dentro do sistema: menu <strong>Importar Planilha</strong>, botão <strong>Baixar Planilha-Mãe</strong>. É sempre a versão mais atual, com os dropdowns e as fórmulas já montados.</p>
+  <p>Dentro do sistema: menu <strong>Importar Planilha</strong>, botão <strong>Baixar Planilha-Mãe</strong>. É sempre a versão mais atual, com os cálculos e as conferências já montados.</p>
 
   <div class="caixa">
-    <span class="rot">A primeira coisa a fazer</span>
-    <p>A planilha vem com <strong>linhas de exemplo preenchidas</strong> (Carne Moída, X-Burger Duplo, Molho de Tomate Base). Elas existem para mostrar o formato.</p>
-    <p><strong>Apague todas antes de enviar</strong>, ou esses itens fictícios vão ser importados junto com os seus. Apague o conteúdo das linhas, nunca as colunas nem o cabeçalho.</p>
+    <span class="rot">Duas coisas antes de tudo</span>
+    <p><strong>1. Abra o arquivo no Excel</strong> (ou Planilhas Google) e trabalhe nele. A planilha calcula sozinha várias colunas, e esses cálculos só acontecem com o arquivo aberto num programa de planilha. Enviar o arquivo sem nunca ter aberto faz os valores calculados chegarem vazios.</p>
+    <p><strong>2. Apague as linhas de exemplo</strong> (Carne Moída, X-Burger Duplo, Molho de Tomate Base). Elas existem só para mostrar o formato. Se ficarem, entram no sistema junto com os seus itens. Apague o conteúdo das linhas, nunca as colunas nem o cabeçalho.</p>
   </div>
+
+  <h3>O código de cores</h3>
+  <p>A planilha se explica pela cor da célula. Isso responde quase toda dúvida de "preencho ou não preencho":</p>
+
+  <div class="cores">
+    <div class="cor"><span class="bolinha" style="background:#FFE9A8"></span><span class="qual">Amarelo</span><span class="oque">Você preenche aqui.</span></div>
+    <div class="cor"><span class="bolinha" style="background:#C8E6C9"></span><span class="qual">Verde</span><span class="oque">O sistema calcula sozinho. Não mexa, não apague.</span></div>
+    <div class="cor"><span class="bolinha" style="background:#E4E4E4"></span><span class="qual">Cinza</span><span class="oque">Opcional. Preencha se quiser.</span></div>
+    <div class="cor"><span class="bolinha" style="background:#FFCDD2"></span><span class="qual">Vermelho</span><span class="oque">Tem erro. Confira a aba _Validação.</span></div>
+  </div>
+
+  <p>Toda coluna marcada como <strong>(auto)</strong> é verde: ela se preenche a partir do que você digitou nas amarelas.</p>
 
   <h3>As abas, na ordem de preenchimento</h3>
   <table>
-    <thead><tr><th style="width:30%">Aba</th><th>O que vai nela</th></tr></thead>
+    <thead><tr><th style="width:32%">Aba</th><th>O que vai nela</th></tr></thead>
     <tbody>
-      <tr><td>_Categorias</td><td>Todas as categorias que você vai usar, antes de tudo. Os dropdowns das outras abas puxam daqui.</td></tr>
-      <tr><td>Insumos</td><td>Matéria-prima e embalagem, com custo.</td></tr>
-      <tr><td>Preparos</td><td>Sub-receitas: molhos, massas, bases.</td></tr>
-      <tr><td>Fichas</td><td>Produtos do cardápio, com preço de venda.</td></tr>
+      <tr><td>_Categorias</td><td>Todas as categorias que você vai usar, antes de tudo. Os menus suspensos das outras abas puxam daqui.</td></tr>
+      <tr><td>Insumos</td><td>Tudo que você compra: matéria-prima, item pronto e embalagem.</td></tr>
+      <tr><td>Preparos</td><td>As mini-receitas da cozinha: molhos, bases, massas.</td></tr>
+      <tr><td>Fichas</td><td>Os pratos vendidos no cardápio, com preço.</td></tr>
       <tr><td>Composicao_Preparos</td><td>O que entra dentro de cada preparo.</td></tr>
       <tr><td>Composicao_Fichas</td><td>O que entra dentro de cada ficha.</td></tr>
-      <tr><td>_Leia-me e _ref_itens</td><td>Instruções e apoio interno. Não mexa.</td></tr>
+      <tr><td>Ver_Ficha</td><td>Confere uma ficha pronta: custo e CMV, sem sair do Excel.</td></tr>
+      <tr><td>_Validação</td><td>Lista os erros antes de você enviar. A última parada.</td></tr>
     </tbody>
   </table>
 
-  <p>A ordem importa: não dá para montar a composição de um preparo cujos insumos ainda não existem na aba Insumos, porque o dropdown vai estar vazio.</p>
+  <p>A ordem importa: não dá para montar a composição de um preparo cujos insumos ainda não existem na aba Insumos, porque o menu suspenso vai estar vazio.</p>
+</section>
+
+<!-- ══════════════════ REGRA DE OURO ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">A regra que evita 90% dos erros</div>
+  <h2>Unidades e preço</h2>
+  <p class="secao-intro">Se você ler só uma página deste guia, que seja esta.</p>
+  <hr class="regua">
+
+  <h3>Sempre a mesma unidade</h3>
+  <table>
+    <thead><tr><th style="width:34%">Tipo de item</th><th>Unidade a usar</th></tr></thead>
+    <tbody>
+      <tr><td>Peso</td><td>sempre <strong>gramas (g)</strong>, nunca quilo</td></tr>
+      <tr><td>Volume</td><td>sempre <strong>mililitros (ml)</strong>, nunca litro</td></tr>
+      <tr><td>Contagem</td><td><strong>un</strong> (pão, garrafa, embalagem)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Você não calcula preço por grama</h3>
+  <p>Este é o ponto onde a maioria das planilhas de custo se perde. Aqui você <strong>cadastra do jeito que compra</strong>, e a planilha faz a divisão:</p>
+
+  <table>
+    <thead><tr><th>Você compra</th><th>Embalagem (qtd)</th><th>Unidade</th><th>Preço</th></tr></thead>
+    <tbody>
+      <tr><td>Bacon, pacote de 1 kg por R$ 43</td><td>1000</td><td>g</td><td>43,00</td></tr>
+      <tr><td>Azeite, garrafa de 750 ml por R$ 30</td><td>750</td><td>ml</td><td>30,00</td></tr>
+      <tr><td>Pão, unidade a R$ 1,80</td><td>1</td><td>un</td><td>1,80</td></tr>
+    </tbody>
+  </table>
+
+  <p>A coluna <strong>Custo / un (auto)</strong> mostra o resultado: R$ 0,043 por grama de bacon. Você não digita esse número em lugar nenhum.</p>
+
+  <div class="caixa ok">
+    <span class="rot">E depois da importação?</span>
+    <p>O preço que você colocar aqui é só o <strong>ponto de partida</strong>. Assim que as notas fiscais de compra entrarem no Gastão, o custo de cada insumo passa a ser atualizado sozinho pelo valor real pago ao fornecedor.</p>
+    <p>Ou seja: não pare a planilha para caçar preço de tabela. Coloque a última compra que você lembra e siga.</p>
+  </div>
 </section>
 
 <!-- ══════════════════ CATEGORIAS ══════════════════ -->
 <section class="pagina">
   <div class="secao-num">Aba 1</div>
   <h2>_Categorias</h2>
-  <p class="secao-intro">A primeira a preencher. Alimenta os dropdowns de todas as outras.</p>
+  <p class="secao-intro">A primeira a preencher. Alimenta os menus suspensos de todas as outras.</p>
   <hr class="regua">
 
   <dl class="campos">
     <div class="campo"><dt>Tipo de Item <span class="obrig">*</span></dt>
       <dd>Para qual aba serve a categoria: <em>insumo</em>, <em>preparo</em> ou <em>ficha</em>.</dd></div>
     <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
-      <dd>O nome do grupo. <em>Ex: Hortifruti, Molhos Base, Lanches.</em></dd></div>
+      <dd>O nome do grupo. <em>Ex: Hortifruti, Molhos &amp; Caldos, Pratos Principais.</em></dd></div>
     <div class="campo"><dt>Descrição</dt>
       <dd>Só para você lembrar do critério. Não vai para o sistema.</dd></div>
   </dl>
 
-  <p>A mesma palavra pode existir nos três tipos, se fizer sentido. "Sobremesas" pode ser categoria de ficha e de preparo ao mesmo tempo, e são registros diferentes.</p>
+  <p>A mesma palavra pode existir nos três tipos. "Sobremesas" pode ser categoria de ficha e de preparo ao mesmo tempo, e são registros diferentes.</p>
 
   <div class="caixa">
-    <span class="rot">Se a categoria não aparece no dropdown</span>
-    <p>É porque ela não está cadastrada aqui com o <strong>tipo certo</strong>. Uma categoria cadastrada como <em>insumo</em> não aparece no dropdown da aba Fichas.</p>
+    <span class="rot">Se a categoria não aparece no menu suspenso</span>
+    <p>É porque não está cadastrada aqui com o <strong>tipo certo</strong>. Uma categoria cadastrada como <em>insumo</em> não aparece na aba Fichas.</p>
   </div>
 </section>
 
@@ -93,34 +156,63 @@
     <div class="campo"><dt>Nome <span class="obrig">*</span></dt>
       <dd>Como você chama no dia a dia. É a <strong>chave</strong>: as abas de composição referenciam este texto. Escreva por extenso, sem abreviar.</dd></div>
     <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
-      <dd>Dropdown vindo de _Categorias (tipo <em>insumo</em>).</dd></div>
+      <dd>Menu suspenso vindo de _Categorias (tipo <em>insumo</em>).</dd></div>
     <div class="campo"><dt>Tipo <span class="obrig">*</span></dt>
       <dd><em>insumo_base:</em> vai ser usado dentro de preparos (carne moída, farinha). <em>insumo_direto:</em> vai direto na ficha (pão, refrigerante). <em>embalagem:</em> caixa, sacola, descartável.</dd></div>
-    <div class="campo"><dt>Unidade <span class="obrig">*</span></dt>
-      <dd>kg, g, l, ml, un ou porção. <strong>Use a menor unidade prática:</strong> se a ficha leva 30 g, cadastre em g.</dd></div>
-    <div class="campo"><dt>Preço de Compra</dt>
-      <dd>Custo de <strong>uma unidade</strong> da escolhida acima. Cadastrou em g e o quilo custa R$ 25,00? Então 0,025. Aceita formato BR (1.234,56) e EN (1234.56). É só o valor de partida: <strong>as notas fiscais atualizam esse preço sozinhas</strong> depois.</dd></div>
+    <div class="campo"><dt>Embalagem (qtd) <span class="obrig">*</span></dt>
+      <dd>Quanto vem na embalagem que você compra, <strong>em g, ml ou un</strong>. Pacote de 1 kg? 1000. Garrafa de 750 ml? 750.</dd></div>
+    <div class="campo"><dt>Embalagem (unidade) <span class="obrig">*</span></dt>
+      <dd>g, ml ou un. Só essas três.</dd></div>
+    <div class="campo"><dt>Preço Embalagem (R$) <span class="obrig">*</span></dt>
+      <dd>Quanto você paga pela embalagem inteira descrita acima. O preço do pacote, não do grama.</dd></div>
     <div class="campo"><dt>Aproveitamento (%)</dt>
-      <dd>De 1 a 100. Quanto sobra depois de limpar. Alface ≈ 70, abacaxi descascado ≈ 53, item sem perda = 100. Em branco, o sistema assume 100.</dd></div>
+      <dd>Quanto sobra depois de limpar, drenar ou cozinhar. Se não souber, deixe 100. Tabela de referência na página seguinte.</dd></div>
+    <div class="campo"><dt>Densidade (g/ml)</dt>
+      <dd>Opcional. Só para quem compra por volume e usa por peso (ou o contrário). Em branco funciona para quase tudo.</dd></div>
+    <div class="campo"><dt>Unidade Canônica (auto)</dt>
+      <dd class="auto"><strong>Verde, não mexa.</strong> A unidade que o sistema vai usar.</dd></div>
+    <div class="campo"><dt>Custo / un (auto)</dt>
+      <dd class="auto"><strong>Verde, não mexa.</strong> O preço por grama, ml ou unidade, calculado a partir da embalagem.</dd></div>
     <div class="campo"><dt>Observações</dt>
       <dd>Anotação sua. Não vai para o sistema.</dd></div>
   </dl>
 
-  <div class="caixa">
-    <span class="rot">Unidade e preço: o erro que mais acontece</span>
-    <p>Cadastrar a unidade em <strong>g</strong> e o preço do <strong>quilo</strong>. O sistema entende que cada grama custa R$ 25,00, e um lanche com 30 g de carne passa a custar R$ 750,00.</p>
-    <p>Regra: se a unidade é g, o preço é por grama. Se é kg, é por quilo. Divida por 1000 quando precisar.</p>
-  </div>
-
   <div class="caixa ok">
-    <span class="rot">Não se preocupe em acertar o preço exato</span>
-    <p>O preço aqui é só o ponto de partida. Assim que as notas fiscais de compra entrarem no sistema, <strong>o custo de cada insumo passa a ser atualizado automaticamente</strong> pelo valor real pago ao fornecedor.</p>
-    <p>Preencha com o que você lembra ou com a última compra. Não vale a pena parar a planilha para caçar preço de tabela.</p>
+    <span class="rot">Por que este formato acaba com o erro mais caro</span>
+    <p>Na planilha antiga era preciso informar o custo já dividido: R$ 0,025 por grama. Quem escrevia R$ 25,00 (o preço do quilo) fazia um lanche com 30 g de carne custar R$ 750,00.</p>
+    <p>Agora você informa 1000 g por R$ 25,00, e a divisão é da planilha. O erro deixou de ser possível.</p>
   </div>
+</section>
 
-  <div class="caixa ok">
-    <span class="rot">Por que preencher aproveitamento</span>
-    <p>Você paga por 1 kg de alface, mas usa 700 g. Os R$ 10,00 foram gastos mesmo assim, então o custo real do que vai no prato é R$ 14,28/kg. O aproveitamento faz essa correção sozinho em toda ficha que usa o item.</p>
+<!-- ══════════════════ APROVEITAMENTO ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Aba 2, continuação</div>
+  <h2>Aproveitamento</h2>
+  <p class="secao-intro">O campo que separa custo de verdade de custo de papel.</p>
+  <hr class="regua">
+
+  <p>Aproveitamento é <strong>quanto sobra do peso original</strong> depois de limpar, drenar ou cozinhar. Você pagou pelo item inteiro, mas só uma parte dele chega ao prato.</p>
+
+  <p>Se você compra 1 kg de bacon por R$ 43 e depois de frito sobram 300 g, o que foi para o prato custou R$ 143 por quilo, não R$ 43. Preenchendo 30 no aproveitamento, a planilha faz essa correção em toda ficha que usa bacon. Deixando 100, você subestima o custo em todo produto com perda.</p>
+
+  <h3>Referência rápida</h3>
+  <table>
+    <thead><tr><th style="width:62%">Item</th><th>Aproveitamento típico</th></tr></thead>
+    <tbody>
+      <tr><td>Bacon cru → frito</td><td>30%</td></tr>
+      <tr><td>Filé de peixe inteiro → limpo, sem espinha</td><td>50 a 60%</td></tr>
+      <tr><td>Camarão com casca → limpo</td><td>60%</td></tr>
+      <tr><td>Tomate pelado em lata → peso drenado</td><td>60%</td></tr>
+      <tr><td>Carne crua → assada ou grelhada</td><td>65 a 75%</td></tr>
+      <tr><td>Tomate fresco → sem casca e semente</td><td>80%</td></tr>
+      <tr><td>Cebola → descascada</td><td>90%</td></tr>
+      <tr><td>Item sem perda (pão, refrigerante, embalagem)</td><td>100%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="caixa neutra">
+    <span class="rot">Não trave nisso</span>
+    <p>Aproveitamento é estimativa, e estimativa razoável já melhora muito o número. Se não souber, deixe 100 e ajuste depois, quando pesar de verdade na cozinha.</p>
   </div>
 </section>
 
@@ -128,56 +220,67 @@
 <section class="pagina">
   <div class="secao-num">Aba 3</div>
   <h2>Preparos</h2>
-  <p class="secao-intro">As sub-receitas. Aqui você só cadastra o cabeçalho; o conteúdo vem na aba de composição.</p>
+  <p class="secao-intro">As mini-receitas da cozinha. Aqui vai só o cabeçalho; o conteúdo vem na aba de composição.</p>
   <hr class="regua">
 
   <dl class="campos">
     <div class="campo"><dt>Nome <span class="obrig">*</span></dt>
-      <dd><em>Ex: Molho de Tomate Base, Maionese Verde.</em> Também é chave: não repita nome usado em Insumos.</dd></div>
+      <dd><em>Ex: Molho de Tomate Base, Maionese Verde.</em> Também é chave: não repita nome já usado em Insumos.</dd></div>
     <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
-      <dd>Dropdown de _Categorias (tipo <em>preparo</em>).</dd></div>
+      <dd>Menu suspenso de _Categorias (tipo <em>preparo</em>).</dd></div>
     <div class="campo"><dt>Rendimento (qtd) <span class="obrig">*</span></dt>
-      <dd>Quanto <strong>uma receita cheia</strong> produz. Uma panela que rende 2 kg de molho: 2 se a unidade for kg, 2000 se for g.</dd></div>
+      <dd>Quanto <strong>uma receita cheia</strong> produz, em g ou ml. Uma panela que rende 2,4 kg de molho: 2400.</dd></div>
     <div class="campo"><dt>Rendimento (unidade) <span class="obrig">*</span></dt>
-      <dd>A unidade em que esse preparo vai ser usado nas fichas.</dd></div>
-    <div class="campo"><dt>Observações</dt>
-      <dd>Anotação sua.</dd></div>
+      <dd>g, ml ou un.</dd></div>
+    <div class="campo"><dt>Custo Total (auto)</dt>
+      <dd class="auto"><strong>Verde, não mexa.</strong> Soma dos ingredientes da receita cheia.</dd></div>
+    <div class="campo"><dt>Custo / un (auto)</dt>
+      <dd class="auto"><strong>Verde, não mexa.</strong> Custo Total dividido pelo rendimento. É o número que as fichas usam.</dd></div>
+    <div class="campo"><dt>Procedimento</dt>
+      <dd>O modo de preparo, para a equipe da cozinha. Opcional e bem-vindo.</dd></div>
   </dl>
 
   <div class="caixa">
     <span class="rot">O campo que mais gera CMV absurdo</span>
-    <p>Esquecer o rendimento (ou deixar 1) faz o sistema entender que a receita inteira rende uma unidade. Uma ficha que pede 30 g passa a carregar o custo de <strong>30 panelas cheias</strong>.</p>
-    <p>Sintoma: lanche com CMV de 300%. Se aparecer, confira o rendimento antes de qualquer outra coisa.</p>
+    <p>Esquecer o rendimento faz a planilha entender que a receita inteira rende uma unidade só. Uma ficha que pede 30 g passa a carregar o custo de <strong>30 panelas cheias</strong>.</p>
+    <p>Sintoma: prato com CMV de 300%. Se aparecer, confira o rendimento antes de qualquer outra coisa.</p>
   </div>
 
   <h3>Preparo dentro de preparo</h3>
-  <p>Permitido e sem limite de profundidade. Molho Rosé usa Ragu, que usa Molho de Tomate Base. O importador resolve a ordem sozinho. A única regra: <strong>não faça ciclo</strong> — se A usa B, B não pode usar A.</p>
+  <p>Permitido e sem limite de profundidade. Molho Rosé usa Ragu, que usa Molho de Tomate Base. A planilha e o sistema resolvem a ordem sozinhos. Regra única: <strong>não faça ciclo</strong> — se A usa B, B não pode usar A.</p>
 </section>
 
 <!-- ══════════════════ FICHAS ══════════════════ -->
 <section class="pagina">
   <div class="secao-num">Aba 4</div>
   <h2>Fichas</h2>
-  <p class="secao-intro">Os produtos que o cliente compra. É onde entra o preço de venda.</p>
+  <p class="secao-intro">Os pratos que o cliente compra. É onde entra o preço de venda e aparece o CMV.</p>
   <hr class="regua">
 
   <dl class="campos">
     <div class="campo"><dt>Nome <span class="obrig">*</span></dt>
       <dd>Como está no cardápio. Chave para a aba de composição.</dd></div>
     <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
-      <dd>Dropdown de _Categorias (tipo <em>ficha</em>).</dd></div>
-    <div class="campo"><dt>Preço de Venda <span class="obrig">*</span></dt>
-      <dd>O que o cliente paga. <strong>Sem isso não existe CMV</strong> — a ficha entra, mas aparece sem percentual.</dd></div>
-    <div class="campo"><dt>Unidade de Venda <span class="obrig">*</span></dt>
-      <dd>Quase sempre <em>un</em>. Use porção ou kg quando vender por peso.</dd></div>
+      <dd>Menu suspenso de _Categorias (tipo <em>ficha</em>).</dd></div>
+    <div class="campo"><dt>Preço de Venda (R$) <span class="obrig">*</span></dt>
+      <dd>O que o cliente paga. <strong>Sem isso não existe CMV.</strong></dd></div>
+    <div class="campo"><dt>Custo Total (auto)</dt>
+      <dd class="auto"><strong>Verde, não mexa.</strong> Soma de tudo que está na composição da ficha.</dd></div>
+    <div class="campo"><dt>CMV % (auto)</dt>
+      <dd class="auto"><strong>Verde, não mexa.</strong> Custo dividido pelo preço. Já dá para julgar o prato aqui, antes de importar.</dd></div>
     <div class="campo"><dt>Observações</dt>
       <dd>Anotação sua.</dd></div>
   </dl>
 
+  <div class="caixa ok">
+    <span class="rot">Como ler o CMV que a planilha mostra</span>
+    <p><strong>Abaixo de 30%:</strong> margem saudável. <strong>De 30% a 40%:</strong> atenção, revise porção ou preço. <strong>Acima de 40%:</strong> o prato está consumindo a margem. <strong>Acima de 100%:</strong> não é o prato, é erro de preenchimento — quase sempre rendimento de preparo.</p>
+  </div>
+
   <div class="caixa neutra">
     <span class="rot">Nomes repetidos entre abas</span>
-    <p>Se o mesmo nome existir em mais de uma aba, o sistema resolve na ordem <strong>insumo &gt; preparo &gt; ficha</strong>, e você pode acabar com uma composição apontando para o item errado.</p>
-    <p>Diferencie: "Molho Barbecue" (insumo comprado pronto) e "Molho Barbecue da Casa" (preparo).</p>
+    <p>Se o mesmo nome existir em mais de uma aba, o sistema resolve na ordem <strong>insumo &gt; preparo &gt; ficha</strong>, e a composição pode apontar para o item errado.</p>
+    <p>Diferencie: "Molho Barbecue" (comprado pronto) e "Molho Barbecue da Casa" (preparo).</p>
   </div>
 </section>
 
@@ -192,58 +295,93 @@
 
   <dl class="campos">
     <div class="campo"><dt>Preparo / Ficha <span class="obrig">*</span></dt>
-      <dd>Qual receita você está montando. Dropdown vindo da aba correspondente.</dd></div>
-    <div class="campo"><dt>Componente (auto)</dt>
-      <dd><strong>Não preencha.</strong> Aparece sozinho quando você escolhe o Item: insumo, preparo ou ficha.</dd></div>
+      <dd>Qual receita você está montando. Menu suspenso vindo da aba correspondente.</dd></div>
     <div class="campo"><dt>Item <span class="obrig">*</span></dt>
-      <dd>O que entra. Em Composicao_Preparos o dropdown traz insumos e preparos. Em Composicao_Fichas traz insumos, preparos <strong>e fichas</strong> (para combos).</dd></div>
+      <dd>O que entra. Em Composicao_Preparos o menu traz insumos e preparos. Em Composicao_Fichas traz insumos, preparos <strong>e fichas</strong> (para combos).</dd></div>
     <div class="campo"><dt>Quantidade <span class="obrig">*</span></dt>
-      <dd>Em Fichas: o que vai em <strong>uma porção</strong>, a que sai para um cliente. Em Preparos: o que a <strong>receita cheia</strong> consome, coerente com o rendimento declarado.</dd></div>
-    <div class="campo"><dt>Unidade (auto)</dt>
-      <dd><strong>Não preencha.</strong> Vem do cadastro do item.</dd></div>
+      <dd>Em g, ml ou un. Nas Fichas: o que vai em <strong>uma porção</strong>. Nos Preparos: o que a <strong>receita cheia</strong> consome.</dd></div>
+    <div class="campo"><dt>Componente, Unidade, Aprov%, Custo/un, Custo Linha <span class="obrig">(auto)</span></dt>
+      <dd class="auto"><strong>Todas verdes, não mexa.</strong> Saem do cadastro do item escolhido. O Custo Linha mostra quanto aquele ingrediente pesa no custo da receita.</dd></div>
+    <div class="campo"><dt>Notas</dt>
+      <dd>Anotação sua.</dd></div>
   </dl>
 
   <div class="caixa">
     <span class="rot">A distinção que muda o resultado</span>
-    <p>Em <strong>Composicao_Preparos</strong>, a quantidade é da receita inteira: 2 kg de tomate para a panela que rende 2 kg de molho.</p>
-    <p>Em <strong>Composicao_Fichas</strong>, é de uma unidade vendida: 80 g de molho no prato, não a produção do dia.</p>
+    <p>Em <strong>Composicao_Preparos</strong> a quantidade é da receita inteira: 2000 g de tomate para a panela que rende 2400 g de molho.</p>
+    <p>Em <strong>Composicao_Fichas</strong> é de uma porção vendida: 80 g de molho no prato, não a produção do dia.</p>
     <p>Trocar as duas é o segundo erro mais comum, e o custo sai multiplicado.</p>
   </div>
 
   <h3>Combos</h3>
-  <p>Em Composicao_Fichas, escolha outra ficha como Item. Um combo de lanche + porção + refrigerante são três linhas apontando para fichas que já existem. O custo soma sozinho, sem redigitar nada. Vale a mesma regra: sem ciclo.</p>
+  <p>Em Composicao_Fichas, escolha outra ficha como Item. Um combo de lanche, porção e refrigerante são três linhas apontando para fichas que já existem. O custo soma sozinho. Vale a mesma regra: sem ciclo.</p>
 
-  <h3>Se o dropdown estiver vazio</h3>
-  <p>O item ainda não foi cadastrado na aba de origem. Volte, cadastre e retorne. Digitar o nome na mão funciona, mas qualquer diferença de grafia cria um item novo em vez de ligar ao existente.</p>
+  <h3>Se o menu suspenso estiver vazio</h3>
+  <p>O item ainda não foi cadastrado na aba de origem. Volte, cadastre e retorne. Digitar o nome na mão até funciona, mas qualquer diferença de grafia cria um item novo em vez de ligar ao existente.</p>
+</section>
+
+<!-- ══════════════════ CONFERIR ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Abas 7 e 8</div>
+  <h2>Conferir antes de enviar</h2>
+  <p class="secao-intro">Duas abas existem só para você não importar erro. Use as duas.</p>
+  <hr class="regua">
+
+  <h3>Ver_Ficha</h3>
+  <p>Escolha uma ficha no campo do topo e a aba mostra tudo dela: categoria, preço de venda, custo total, CMV e a lista de ingredientes com o quanto cada um custa.</p>
+  <p>Serve para o teste de realidade. Você conhece seu cardápio: se o X-Burger aparece custando R$ 2,00 ou R$ 90,00, tem erro de preenchimento atrás disso. Confira dois ou três pratos que você sabe de cabeça quanto custam, e a planilha inteira ganha credibilidade.</p>
+
+  <h3>_Validação</h3>
+  <p>A última parada antes de enviar. Ela varre a planilha e lista o que está faltando:</p>
+
+  <table>
+    <thead><tr><th style="width:46%">O que ela acusa</th><th>Por que importa</th></tr></thead>
+    <tbody>
+      <tr><td>Insumos sem preço</td><td>Entram valendo zero e fazem o prato parecer mais lucrativo do que é.</td></tr>
+      <tr><td>Preparos sem rendimento</td><td>Causa número um de CMV absurdo.</td></tr>
+      <tr><td>Fichas sem preço de venda</td><td>Sem preço não há CMV: a ficha entra muda.</td></tr>
+      <tr><td>Item da composição não encontrado</td><td>Nome digitado diferente do cadastro. O ingrediente não vai ligar.</td></tr>
+      <tr><td>Preparos ou fichas sem composição</td><td>Receita vazia, custo zero.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="caixa ok">
+    <span class="rot">Vale mais do que parece</span>
+    <p>Cada linha resolvida aqui é um problema que você não vai caçar depois dentro do sistema, com o cardápio já cadastrado e o CMV errado na tela. Cinco minutos nesta aba economizam horas.</p>
+  </div>
 </section>
 
 <!-- ══════════════════ ENVIAR ══════════════════ -->
 <section class="pagina">
   <div class="secao-num">Última etapa</div>
-  <h2>Enviar e conferir</h2>
+  <h2>Enviar</h2>
   <p class="secao-intro">A importação mostra uma prévia antes de gravar. Use essa tela.</p>
   <hr class="regua">
 
   <ol class="passos">
+    <li class="passo">
+      <h4>Resolva o que a aba _Validação apontou</h4>
+      <p>Cada erro ali vira um problema dentro do sistema depois.</p>
+    </li>
     <li class="passo">
       <h4>Apague as linhas de exemplo</h4>
       <p>Nas seis abas de conteúdo. Só o cabeçalho fica.</p>
     </li>
     <li class="passo">
       <h4>Salve como .xlsx</h4>
-      <p>Não use .csv nem .ods: as fórmulas e os dropdowns se perdem.</p>
+      <p>Não use .csv nem .ods: as fórmulas e os menus suspensos se perdem. Salvar pelo Excel também grava os valores calculados, que é o que o sistema vai ler.</p>
     </li>
     <li class="passo">
       <h4>Menu Importar Planilha e envie o arquivo</h4>
       <p>O sistema lê todas as abas e interpreta o conteúdo, inclusive quando você mudou algum título de coluna.</p>
     </li>
     <li class="passo">
-      <h4>Revise a prévia com atenção</h4>
+      <h4>Revise a prévia</h4>
       <p>Aparecem os insumos, preparos e fichas encontrados, com aviso de <strong>possível duplicado</strong> quando o nome parece com algo já cadastrado. Desmarque o que não quer importar.</p>
     </li>
     <li class="passo">
       <h4>Confirme e confira o resultado</h4>
-      <p>Abra Insumos e procure custo <strong>R$ 0,00</strong>, depois Fichas e procure CMV fora da faixa de 25% a 35%. São os dois sintomas de erro de preenchimento.</p>
+      <p>Abra Insumos e procure custo <strong>R$ 0,00</strong>; depois Fichas e procure CMV fora da faixa de 25% a 35%. São os dois sintomas de erro que passaram batido.</p>
     </li>
   </ol>
 
