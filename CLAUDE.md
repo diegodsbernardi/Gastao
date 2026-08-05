@@ -2,7 +2,11 @@
 
 **Gastão** é um SaaS multi-tenant de gestão operacional e CMV para restaurantes.
 O app real vive em **`gastao-app/`** (Vite + React 19 + TS + Tailwind + Supabase).
-Deploy: `gastao.vercel.app` (a partir de `gastao-app/`, tem `vercel.json` próprio).
+Deploy: **`gastao-app.vercel.app`** (a partir de `gastao-app/`, tem `vercel.json` próprio).
+
+> ⚠️ Existe um projeto Vercel **`gastao`** separado, dono do domínio `gastao.vercel.app`
+> e parado desde ~maio/2026. Ele NÃO recebe nossos deploys e não tem as features novas.
+> Nunca validar deploy por `gastao.vercel.app` — o domínio responde 200 servindo o app velho.
 
 > Histórico: este repo nasceu de um fork do framework "Opensquad". Todo esse
 > scaffold foi removido — se aparecer referência a Opensquad em algum lugar, é
