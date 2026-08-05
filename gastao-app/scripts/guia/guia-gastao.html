@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Gastão — Guia de Uso</title>
+<style>
+/*FONTS*/
+
+:root {
+  --laranja:      #FF6B35;
+  --laranja-esc:  #BF4A1A;
+  --laranja-fundo:#FFF4EE;
+  --laranja-borda:#FFE2D1;
+  --verde:        #4CAF50;
+  --verde-esc:    #388E3C;
+  --verde-fundo:  #E8F5E9;
+  --ink:          #2C2C2C;
+  --cinza:        #6B6B6B;
+  --bege:         #D4A574;
+  --creme:        #FAF6EE;
+  --branco:       #FFFFFF;
+  --borda:        #E8DFD0;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 15px; }
+
+body {
+  margin: 0;
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--branco);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Página e impressão ─────────────────────────────────────────────── */
+@page { size: A4; margin: 18mm 16mm; }
+@page :first { margin: 0; }
+
+.pagina { page-break-after: always; }
+.pagina:last-child { page-break-after: auto; }
+h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+.passo, .caixa, .campo, table { page-break-inside: avoid; break-inside: avoid; }
+
+/* ─── Capa ───────────────────────────────────────────────────────────── */
+.capa {
+  height: 297mm;
+  background: var(--laranja);
+  color: var(--branco);
+  padding: 30mm 20mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  page-break-after: always;
+}
+.capa .marca {
+  font-size: 1.05rem; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.capa h1 {
+  font-size: 4.2rem; line-height: 1.02; font-weight: 700;
+  margin: 0 0 1.5rem; letter-spacing: -0.035em; text-wrap: balance;
+}
+.capa .sub { font-size: 1.35rem; font-weight: 400; max-width: 26ch; opacity: .95; }
+.capa .rodape { font-size: .85rem; opacity: .85; }
+.capa .rodape strong { display: block; font-size: 1rem; opacity: 1; margin-bottom: .2rem; }
+
+/* ─── Tipografia ─────────────────────────────────────────────────────── */
+h2 {
+  font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;
+  margin: 0 0 .3rem; color: var(--ink); text-wrap: balance;
+}
+.secao-num {
+  font-size: .8rem; font-weight: 700; color: var(--laranja);
+  letter-spacing: .1em; text-transform: uppercase; margin-bottom: .1rem;
+}
+.secao-intro { font-size: 1.05rem; color: var(--cinza); margin: 0 0 1.6rem; max-width: 62ch; }
+h3 {
+  font-size: 1.12rem; font-weight: 600; margin: 1.8rem 0 .6rem;
+  letter-spacing: -0.01em;
+}
+p { margin: 0 0 .85rem; max-width: 68ch; }
+strong { font-weight: 600; }
+a { color: var(--laranja-esc); }
+
+hr.regua { border: 0; border-top: 2px solid var(--laranja-borda); margin: 0 0 1.4rem; }
+
+/* ─── Sumário ────────────────────────────────────────────────────────── */
+.sumario { list-style: none; padding: 0; margin: 0; max-width: 60ch; }
+.sumario li {
+  display: flex; align-items: baseline; gap: .8rem;
+  padding: .55rem 0; border-bottom: 1px solid var(--borda);
+}
+.sumario .n {
+  font-weight: 700; color: var(--laranja); min-width: 1.6rem; font-size: .95rem;
+}
+.sumario .t { font-weight: 600; }
+.sumario .d { color: var(--cinza); font-size: .9rem; margin-left: auto; text-align: right; }
+
+/* ─── Passo a passo ──────────────────────────────────────────────────── */
+.passos { counter-reset: passo; margin: 1rem 0 1.5rem; padding: 0; list-style: none; }
+.passo {
+  counter-increment: passo;
+  position: relative;
+  padding: 0 0 1.1rem 3rem;
+  margin: 0;
+}
+.passo::before {
+  content: counter(passo);
+  position: absolute; left: 0; top: -.1rem;
+  width: 2rem; height: 2rem; border-radius: 50%;
+  background: var(--laranja); color: var(--branco);
+  font-weight: 700; font-size: .95rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.passo h4 { margin: .2rem 0 .3rem; font-size: 1rem; font-weight: 600; }
+.passo p { margin: 0 0 .4rem; }
+
+/* ─── Campos de formulário ───────────────────────────────────────────── */
+.campos { margin: .8rem 0 1.4rem; }
+.campo {
+  display: grid; grid-template-columns: 13rem 1fr; gap: 1rem;
+  padding: .7rem 0; border-bottom: 1px solid var(--borda);
+  align-items: baseline;
+}
+.campo:first-child { border-top: 1px solid var(--borda); }
+.campo dt { font-weight: 600; font-size: .95rem; }
+.campo dt .obrig { color: var(--laranja); font-weight: 700; }
+.campo dd { margin: 0; color: var(--cinza); font-size: .95rem; }
+.campo dd em { color: var(--ink); font-style: normal; font-weight: 600; }
+
+/* ─── Caixas ─────────────────────────────────────────────────────────── */
+.caixa {
+  background: var(--laranja-fundo);
+  border: 1px solid var(--laranja-borda);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin: 1.2rem 0;
+}
+.caixa .rot {
+  font-size: .78rem; font-weight: 700; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--laranja-esc);
+  display: block; margin-bottom: .35rem;
+}
+.caixa p { margin: 0; max-width: none; }
+.caixa p + p { margin-top: .5rem; }
+
+.caixa.ok { background: var(--verde-fundo); border-color: #C8E6C9; }
+.caixa.ok .rot { color: var(--verde-esc); }
+
+.caixa.neutra { background: var(--creme); border-color: var(--borda); }
+.caixa.neutra .rot { color: var(--cinza); }
+
+/* ─── Tabelas ────────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: .92rem; }
+th {
+  text-align: left; font-weight: 600; font-size: .78rem;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--cinza);
+  padding: .5rem .7rem; border-bottom: 2px solid var(--laranja-borda);
+}
+td { padding: .6rem .7rem; border-bottom: 1px solid var(--borda); vertical-align: top; }
+td:first-child { font-weight: 600; }
+.sim { color: var(--verde-esc); font-weight: 700; }
+.nao { color: var(--cinza); }
+
+/* ─── A escada de custo ──────────────────────────────────────────────── */
+.escada { margin: 1.4rem 0 1.8rem; }
+.degrau {
+  display: grid; grid-template-columns: 3.2rem 1fr; gap: 1rem;
+  padding: .85rem 1rem; margin-bottom: .5rem;
+  background: var(--creme); border: 1px solid var(--borda); border-radius: 10px;
+  align-items: center;
+}
+.degrau .ico {
+  width: 2.2rem; height: 2.2rem; border-radius: 50%;
+  background: var(--laranja); color: var(--branco);
+  font-weight: 700; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto;
+}
+.degrau .nome { font-weight: 700; font-size: 1rem; }
+.degrau .desc { color: var(--cinza); font-size: .9rem; }
+.degrau.final { background: var(--laranja-fundo); border-color: var(--laranja-borda); }
+
+/* ─── Rodapé de página ───────────────────────────────────────────────── */
+.fim {
+  margin-top: 2.5rem; padding-top: 1rem;
+  border-top: 2px solid var(--laranja-borda);
+  font-size: .85rem; color: var(--cinza);
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ CAPA ══════════════════ -->
+<div class="capa">
+  <div class="marca">Gastão</div>
+  <div>
+    <h1>Guia de Uso</h1>
+    <p class="sub">Do primeiro acesso ao restaurante rodando com CMV confiável.</p>
+  </div>
+  <div class="rodape">
+    <strong>gastao.vercel.app</strong>
+    Plataforma de gestão operacional e CMV para restaurantes
+  </div>
+</div>
+
+<!-- ══════════════════ SUMÁRIO ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Índice</div>
+  <h2>O que tem neste guia</h2>
+  <p class="secao-intro">As seções 1 a 4 são obrigatórias para o sistema funcionar. Da 5 em diante, use conforme a necessidade do restaurante.</p>
+  <hr class="regua">
+  <ol class="sumario">
+    <li><span class="n">1</span><span class="t">Como o Gastão pensa</span><span class="d">a escada do custo</span></li>
+    <li><span class="n">2</span><span class="t">Primeiro acesso</span><span class="d">conta, convite, perfis</span></li>
+    <li><span class="n">3</span><span class="t">A ordem de preenchimento</span><span class="d">leia antes de cadastrar</span></li>
+    <li><span class="n">4</span><span class="t">Insumos</span><span class="d">a despensa</span></li>
+    <li><span class="n">5</span><span class="t">Preparos</span><span class="d">sub-receitas</span></li>
+    <li><span class="n">6</span><span class="t">Fichas técnicas</span><span class="d">os produtos do cardápio</span></li>
+    <li><span class="n">7</span><span class="t">Notas fiscais</span><span class="d">custo entrando sozinho</span></li>
+    <li><span class="n">8</span><span class="t">Vendas e Dashboard</span><span class="d">o resultado</span></li>
+    <li><span class="n">9</span><span class="t">Equipe</span><span class="d">convites e permissões</span></li>
+    <li><span class="n">10</span><span class="t">Checklists e Feedbacks</span><span class="d">rotina e pessoas</span></li>
+    <li><span class="n">11</span><span class="t">Problemas comuns</span><span class="d">e como resolver</span></li>
+    <li><span class="n">12</span><span class="t">Glossário</span><span class="d">termos do sistema</span></li>
+  </ol>
+
+  <div class="caixa neutra">
+    <span class="rot">Quanto tempo leva</span>
+    <p>Um restaurante com cardápio de 40 produtos leva de <strong>4 a 8 horas</strong> para ficar 100% cadastrado — quase tudo em Insumos e Fichas. Depois disso, a manutenção é de minutos por semana, porque o custo passa a entrar sozinho pelas notas.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ 1. COMO PENSA ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 1</div>
+  <h2>Como o Gastão pensa</h2>
+  <p class="secao-intro">Entender esta página economiza horas de retrabalho depois. É a lógica que sustenta o sistema inteiro.</p>
+  <hr class="regua">
+
+  <p>O Gastão responde uma pergunta: <strong>quanto custa de verdade cada prato que você vende, e quanto sobra depois de pagar o ingrediente?</strong></p>
+
+  <p>Para responder isso, o custo sobe em camadas, como uma escada. Cada degrau usa o de baixo:</p>
+
+  <div class="escada">
+    <div class="degrau">
+      <div class="ico">1</div>
+      <div>
+        <div class="nome">Insumo</div>
+        <div class="desc">A matéria-prima crua, do jeito que você compra. Alface, carne, pão, embalagem.</div>
+      </div>
+    </div>
+    <div class="degrau">
+      <div class="ico">2</div>
+      <div>
+        <div class="nome">Preparo</div>
+        <div class="desc">Uma sub-receita que você produz e reaproveita em vários produtos. Maionese verde, molho pomodoro, cebola caramelizada.</div>
+      </div>
+    </div>
+    <div class="degrau">
+      <div class="ico">3</div>
+      <div>
+        <div class="nome">Ficha Técnica</div>
+        <div class="desc">O produto que vai no cardápio e tem preço. Montado com insumos, preparos, ou os dois.</div>
+      </div>
+    </div>
+    <div class="degrau final">
+      <div class="ico">4</div>
+      <div>
+        <div class="nome">CMV</div>
+        <div class="desc">Quanto do preço de venda vai embora só em ingrediente. Sai da divisão custo ÷ preço.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Por que separar Preparo de Ficha</h3>
+  <p>Porque o preparo é onde o custo se esconde. Se a mostarda subir de preço, ela não está em nenhuma ficha diretamente — está na maionese verde, que está em oito hambúrgueres. Cadastrando o preparo uma vez, o sistema propaga o custo para todos eles sozinho.</p>
+  <p>Sem essa camada, você teria que lançar mostarda em cada ficha, e atualizar oito lugares toda vez que o preço mudasse.</p>
+
+  <div class="caixa">
+    <span class="rot">A regra que resume tudo</span>
+    <p>Se um ingrediente aparece em <strong>mais de um produto</strong> e passa por algum preparo antes de ir para o prato, ele merece virar um <strong>Preparo</strong>. Se vai cru direto no produto, entra como <strong>Insumo</strong> na ficha.</p>
+  </div>
+
+  <h3>O que é CMV, na prática</h3>
+  <p>Se um lanche vende a R$ 40,00 e os ingredientes dele custam R$ 12,00, o CMV é 30%. Em hamburgueria, a faixa saudável costuma ficar entre <strong>25% e 35%</strong>. Acima de 40%, o produto está sangrando margem: ou o preço está baixo, ou a ficha está pesada demais.</p>
+</section>
+
+<!-- ══════════════════ 2. PRIMEIRO ACESSO ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 2</div>
+  <h2>Primeiro acesso</h2>
+  <p class="secao-intro">Criar a conta, entrar no restaurante certo e entender o que você enxerga.</p>
+  <hr class="regua">
+
+  <h3>Se você recebeu um convite</h3>
+  <ol class="passos">
+    <li class="passo">
+      <h4>Abra gastao.vercel.app e clique em "Criar conta"</h4>
+      <p>Use <strong>exatamente o mesmo e-mail</strong> em que o convite chegou. Se usar outro, o convite não aparece, porque é ele que liga você ao restaurante.</p>
+    </li>
+    <li class="passo">
+      <h4>Preencha nome, e-mail e senha</h4>
+      <p>A senha precisa ser segura. Anote em lugar seguro; a recuperação é por e-mail.</p>
+    </li>
+    <li class="passo">
+      <h4>Aceite o convite na tela que aparece</h4>
+      <p>Ao entrar, o sistema mostra o convite pendente. Um único aceite libera <strong>todos</strong> os restaurantes que convidaram o seu e-mail.</p>
+    </li>
+  </ol>
+
+  <h3>Se você está criando um restaurante do zero</h3>
+  <ol class="passos">
+    <li class="passo">
+      <h4>Crie a conta e siga para o Onboarding</h4>
+      <p>Sem convite pendente, o sistema leva você direto para a tela de cadastro do restaurante.</p>
+    </li>
+    <li class="passo">
+      <h4>Informe nome e CNPJ</h4>
+      <p>O nome é o que aparece no topo do sistema. O CNPJ é usado no cruzamento das notas fiscais, então vale preencher certo desde já.</p>
+    </li>
+  </ol>
+
+  <h3>Trocar de restaurante</h3>
+  <p>Quem acompanha mais de uma operação (contador, BPO, sócio de vários) troca pelo seletor no topo. Tudo na tela muda junto: fichas, insumos, notas, dashboard. Cada restaurante é isolado: ninguém enxerga o dado do outro.</p>
+
+  <h3>Perfis: o que cada um pode fazer</h3>
+  <table>
+    <thead>
+      <tr><th>Ação</th><th>Dono</th><th>Gerente</th><th>Funcionário</th><th>BPO</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Ver fichas e preparos</td><td class="sim">Sim</td><td class="sim">Sim</td><td class="sim">Sim</td><td class="sim">Sim</td></tr>
+      <tr><td>Ver custos e CMV</td><td class="sim">Sim</td><td class="sim">Sim</td><td class="nao">Não</td><td class="sim">Sim</td></tr>
+      <tr><td>Criar e editar cadastros</td><td class="sim">Sim</td><td class="sim">Sim</td><td class="nao">Não</td><td class="sim">Sim</td></tr>
+      <tr><td>Convidar equipe</td><td class="sim">Sim</td><td class="nao">Não</td><td class="nao">Não</td><td class="nao">Não</td></tr>
+      <tr><td>Vários restaurantes</td><td class="nao">Não</td><td class="nao">Não</td><td class="nao">Não</td><td class="sim">Sim</td></tr>
+    </tbody>
+  </table>
+
+  <div class="caixa neutra">
+    <span class="rot">Por que o funcionário não vê custo</span>
+    <p>O perfil de funcionário existe para a operação usar ficha técnica na cozinha (quantidade e modo de montar) sem expor margem, preço de compra e fornecedor. É proposital.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ 3. ORDEM ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 3</div>
+  <h2>A ordem de preenchimento</h2>
+  <p class="secao-intro">A parte que mais gera retrabalho quando é ignorada. Cadastrar fora de ordem obriga a voltar e refazer.</p>
+  <hr class="regua">
+
+  <p>O sistema é uma escada: cada degrau só existe se o de baixo estiver pronto. Siga nesta ordem:</p>
+
+  <ol class="passos">
+    <li class="passo">
+      <h4>Insumos primeiro, todos com custo</h4>
+      <p>Nada funciona sem isso. Um insumo sem custo entra na conta valendo <strong>zero</strong>, e todo CMV calculado a partir dele fica falsamente baixo.</p>
+    </li>
+    <li class="passo">
+      <h4>Preparos depois</h4>
+      <p>Precisam dos insumos já cadastrados para montar a composição e calcular o custo por unidade produzida.</p>
+    </li>
+    <li class="passo">
+      <h4>Fichas técnicas por último</h4>
+      <p>Usam insumos e preparos. Só aqui entra o preço de venda e o CMV aparece.</p>
+    </li>
+    <li class="passo">
+      <h4>Notas fiscais em paralelo, sempre</h4>
+      <p>Assim que houver insumo cadastrado, ligue a entrada de notas. É o que mantém o custo vivo daí para frente.</p>
+    </li>
+  </ol>
+
+  <div class="caixa">
+    <span class="rot">O erro mais caro</span>
+    <p>Cadastrar as fichas antes dos insumos terem custo. O sistema aceita, mostra CMV, e o número está errado — o que é pior que não ter número nenhum, porque decisão de preço é tomada em cima dele.</p>
+    <p>Se você já fez isso: não precisa refazer as fichas. Basta preencher o custo dos insumos que o CMV se recalcula sozinho.</p>
+  </div>
+
+  <h3>Atalho: importação por planilha</h3>
+  <p>Para cardápio grande, a tela <strong>Importar Ficha Técnica</strong> aceita uma planilha e cria insumos, preparos e fichas de uma vez. Baixe o modelo pelo próprio sistema, preencha e suba. A leitura tem apoio de IA para casar nomes parecidos, mas <strong>confira o resultado</strong>: nome ambíguo pode virar insumo duplicado.</p>
+</section>
+
+<!-- ══════════════════ 4. INSUMOS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 4</div>
+  <h2>Insumos</h2>
+  <p class="secao-intro">A despensa do sistema. Toda matéria-prima e embalagem que o restaurante compra.</p>
+  <hr class="regua">
+
+  <p>Menu <strong>Insumos</strong> → botão <strong>Novo Insumo</strong>. Os campos:</p>
+
+  <dl class="campos">
+    <div class="campo">
+      <dt>Nome <span class="obrig">*</span></dt>
+      <dd>Como você chama no dia a dia. <em>Ex: Alface Americana.</em> Evite abreviação — o casamento automático com a nota fiscal usa esse texto.</dd>
+    </div>
+    <div class="campo">
+      <dt>Tipo <span class="obrig">*</span></dt>
+      <dd><em>Insumo Base:</em> matéria-prima crua que vira preparo. <em>Item Pronto:</em> vai direto na ficha sem passar por preparo. <em>Embalagem:</em> caixa, saco ou copo, que entra no custo mas aparece separado.</dd>
+    </div>
+    <div class="campo">
+      <dt>Unidade <span class="obrig">*</span></dt>
+      <dd>g, kg, ml, L ou un. <strong>Escolha a menor unidade prática</strong> (grama em vez de quilo): a ficha vai pedir 30 g de alface, não 0,03 kg.</dd>
+    </div>
+    <div class="campo">
+      <dt>Categoria</dt>
+      <dd>Agrupa na listagem. <em>Ex: Hortifruti, Carnes, Descartáveis.</em> Opcional, mas com 100+ insumos faz diferença.</dd>
+    </div>
+    <div class="campo">
+      <dt>Custo Médio (R$) <span class="obrig">*</span></dt>
+      <dd>Quanto custa <strong>uma unidade</strong> do que você escolheu acima. Se a unidade é grama e o quilo custa R$ 25,00, o custo é 0,025. Depois disso a nota fiscal atualiza sozinha.</dd>
+    </div>
+    <div class="campo">
+      <dt>Aproveitamento (%)</dt>
+      <dd>Quanto sobra depois de limpar. Alface com 70% significa que 30% vai fora no talo. O sistema divide o custo por esse fator. Deixe 100 quando não há perda.</dd>
+    </div>
+    <div class="campo">
+      <dt>Estoque Inicial</dt>
+      <dd>Quantidade em casa hoje. Opcional; serve para os alertas de estoque.</dd>
+    </div>
+  </dl>
+
+  <div class="caixa">
+    <span class="rot">Aproveitamento, na prática</span>
+    <p>Você compra 1 kg de alface por R$ 10,00, mas joga 300 g fora no talo. Os 700 g que sobram foi você quem pagou R$ 10,00 — então o custo real é <strong>R$ 14,28/kg</strong>, não R$ 10,00.</p>
+    <p>Preenchendo 70 no aproveitamento, o Gastão faz essa correção sozinho em toda ficha que usa alface. Ignorar esse campo é subestimar o custo em todo produto com perda de limpeza: carne, folha, legume.</p>
+  </div>
+
+  <div class="caixa ok">
+    <span class="rot">Confira depois de cadastrar tudo</span>
+    <p>Na listagem de Insumos, procure itens com custo <strong>R$ 0,00</strong>. Cada um deles é um buraco no seu CMV: entra como se fosse de graça e faz o produto parecer mais lucrativo do que é.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ 5. PREPAROS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 5</div>
+  <h2>Preparos</h2>
+  <p class="secao-intro">As sub-receitas: o que a cozinha produz para usar em vários produtos.</p>
+  <hr class="regua">
+
+  <p>Menu <strong>Preparos</strong> → <strong>Novo Preparo</strong>.</p>
+
+  <dl class="campos">
+    <div class="campo">
+      <dt>Nome do Preparo <span class="obrig">*</span></dt>
+      <dd><em>Ex: Maionese Verde, Molho Pomodoro, Cebola Caramelizada.</em></dd>
+    </div>
+    <div class="campo">
+      <dt>Unidade de saída <span class="obrig">*</span></dt>
+      <dd>Em que unidade o preparo é usado nas fichas. Molho geralmente em <strong>g</strong> ou <strong>ml</strong>.</dd>
+    </div>
+    <div class="campo">
+      <dt>Rendimento <span class="obrig">*</span></dt>
+      <dd>Quanto <strong>uma receita inteira</strong> produz. Se a maionese rende 2 kg e a unidade é g, o rendimento é 2000.</dd>
+    </div>
+  </dl>
+
+  <p>Criado o preparo, clique em <strong>Editar</strong> para montar a composição: adicione os insumos com a quantidade que a receita cheia consome. O sistema divide pelo rendimento e chega ao <strong>custo por unidade</strong>, e é esse número que as fichas usam.</p>
+
+  <div class="caixa">
+    <span class="rot">O erro clássico do rendimento</span>
+    <p>Lançar os insumos da receita cheia e esquecer de preencher o rendimento (ou deixar 1). O sistema entende que a receita inteira rende 1 unidade, e cada ficha que pedir 30 g vai carregar o custo de <strong>30 receitas completas</strong>.</p>
+    <p>Sintoma: um lanche com CMV de 400%. Se vir isso, confira o rendimento do preparo antes de qualquer outra coisa.</p>
+  </div>
+
+  <h3>Preparo dentro de preparo</h3>
+  <p>É permitido e comum: um molho que leva outro molho como base. O Gastão resolve a cadeia inteira sozinho e detecta referência circular (A usa B, B usa A) sem travar.</p>
+</section>
+
+<!-- ══════════════════ 6. FICHAS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 6</div>
+  <h2>Fichas técnicas</h2>
+  <p class="secao-intro">Os produtos do cardápio — onde o CMV finalmente aparece.</p>
+  <hr class="regua">
+
+  <p>Menu <strong>Fichas Técnicas</strong> → <strong>Nova Ficha</strong>.</p>
+
+  <dl class="campos">
+    <div class="campo">
+      <dt>Nome do Produto <span class="obrig">*</span></dt>
+      <dd>Como aparece no cardápio. <em>Ex: X-Salada, Combo Duplo.</em></dd>
+    </div>
+    <div class="campo">
+      <dt>Categoria</dt>
+      <dd>Lanche, Porção, Sobremesa, Combo, Bebida ou uma que você criar.</dd>
+    </div>
+    <div class="campo">
+      <dt>Preço de Venda (R$) <span class="obrig">*</span></dt>
+      <dd>O preço cobrado do cliente. <strong>Sem ele não existe CMV</strong>: a ficha aparece com "CMV indefinido".</dd>
+    </div>
+  </dl>
+
+  <h3>Montar a composição</h3>
+  <p>Clique em <strong>Editar composição</strong>. Três abas:</p>
+  <ul>
+    <li><strong>Preparo</strong> — adiciona uma sub-receita (ou outra ficha, no caso de combo).</li>
+    <li><strong>Insumo</strong> — matéria-prima direta, sem preparo. A alface do hambúrguer.</li>
+    <li><strong>Embalagem</strong> — caixa, saco, guardanapo. Some no custo e aparece em bloco separado.</li>
+  </ul>
+  <p>Em cada item, informe a quantidade <strong>de uma porção</strong>: o que sai para um cliente, não a produção do dia.</p>
+
+  <h3>Combos</h3>
+  <p>Uma ficha pode conter outra ficha. Para um combo de lanche + batata + refri, crie a ficha do combo e adicione as três fichas pela aba Preparo. O custo vem somado, sem redigitar nada.</p>
+
+  <h3>Filtrar por insumo</h3>
+  <p>No topo da tela, o campo <strong>Filtrar por insumo</strong> responde "quais fichas usam Alface?". Ele enxerga o uso <strong>direto e indireto</strong>: se a alface está dentro de um preparo que está na ficha, a ficha aparece assim mesmo, marcada com <strong>"Via [nome do preparo]"</strong>.</p>
+  <p>É a ferramenta para medir impacto: quando um fornecedor sobe o preço, você vê na hora quantos produtos do cardápio foram atingidos.</p>
+
+  <div class="caixa ok">
+    <span class="rot">Como ler a cor do CMV</span>
+    <p><strong>Verde (abaixo de 30%)</strong>: margem saudável. <strong>Âmbar (30% a 40%)</strong>: atenção, revise porção ou preço. <strong>Vermelho (acima de 40%)</strong>: o produto está consumindo a margem; ou o preço subiu pouco, ou a ficha está pesada.</p>
+  </div>
+
+  <p>A ordenação por <strong>CMV maior primeiro</strong> coloca os produtos problemáticos no topo da lista. É por onde começar uma revisão de cardápio.</p>
+</section>
+
+<!-- ══════════════════ 7. NOTAS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 7</div>
+  <h2>Notas fiscais</h2>
+  <p class="secao-intro">A automação que mantém o custo vivo sem ninguém digitar preço.</p>
+  <hr class="regua">
+
+  <p>Sem isso, o custo cadastrado envelhece e o CMV vira ficção em poucas semanas. Há três formas de a nota entrar:</p>
+
+  <h3>1. Automático pelo Google Drive (recomendado)</h3>
+  <p>Uma pasta do Drive é configurada por restaurante. Todo XML de NF-e que cair lá é importado sozinho, <strong>duas vezes por dia</strong> (08h e 17h). Nota repetida é ignorada pela chave de acesso — pode subir o mesmo arquivo duas vezes sem medo.</p>
+  <p>Na prática: o restaurante joga os XMLs do fornecedor na pasta e não faz mais nada. O botão <strong>Buscar do Drive</strong> força a busca na hora, sem esperar o horário.</p>
+
+  <h3>2. Upload manual</h3>
+  <p>Tela <strong>Notas Fiscais</strong> → <strong>Importar NF-e</strong>. Arraste o XML (até 5 MB). Também há <strong>upload em lote</strong> para vários de uma vez.</p>
+
+  <h3>3. Cadastro manual do custo</h3>
+  <p>Sempre possível editar o custo direto no insumo, para compra sem nota, feira ou açougue local.</p>
+
+  <h3>Vincular os itens (a parte que exige gente)</h3>
+  <p>A nota chega com status <strong>pendente</strong>. O fornecedor escreve "ALF AMER CX 10KG" e o sistema não tem como adivinhar sozinho que isso é a sua "Alface Americana". Então ele sugere, e alguém confirma:</p>
+
+  <ol class="passos">
+    <li class="passo">
+      <h4>Abra a nota pendente</h4>
+      <p>Cada item traz a descrição original do XML e uma sugestão de insumo, com o grau de confiança do casamento.</p>
+    </li>
+    <li class="passo">
+      <h4>Confirme, corrija ou crie</h4>
+      <p>Se a sugestão está certa, confirme. Se está errada, busque o insumo correto. Se é item novo, use <strong>Criar novo insumo</strong> ali mesmo, sem sair da tela.</p>
+    </li>
+    <li class="passo">
+      <h4>Confirme a nota</h4>
+      <p>É esse clique que <strong>atualiza o custo dos insumos</strong>. Enquanto a nota estiver pendente, nada muda no CMV.</p>
+    </li>
+  </ol>
+
+  <div class="caixa">
+    <span class="rot">Vincular uma vez basta</span>
+    <p>O vínculo entre o código do fornecedor e o seu insumo fica guardado. Na próxima nota do mesmo fornecedor, aquele item já vem casado automaticamente. O trabalho é grande na primeira nota de cada fornecedor e quase zero depois.</p>
+  </div>
+
+  <h3>Alertas de CMV</h3>
+  <p>Quando um custo sobe além do limite configurado, o sistema gera um alerta apontando <strong>quais fichas foram afetadas</strong>. Ele aparece no Dashboard. É o aviso de que um produto pode ter saído da margem sem ninguém perceber.</p>
+
+  <h3>Atualizar custos</h3>
+  <p>A tela <strong>Atualizar custos</strong> revisa os preços com uma <strong>prévia antes de aplicar</strong>: você vê o de/para de cada insumo e decide. Nada muda sem confirmação.</p>
+</section>
+
+<!-- ══════════════════ 8. VENDAS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 8</div>
+  <h2>Vendas e Dashboard</h2>
+  <p class="secao-intro">Onde o cadastro vira resultado.</p>
+  <hr class="regua">
+
+  <h3>Registrar vendas</h3>
+  <p>Menu <strong>Vendas</strong> → <strong>Registrar Nova Venda</strong>. Escolha o produto (busca por nome), a quantidade e o preço unitário — que vem preenchido com o preço da ficha e pode ser alterado para promoção.</p>
+  <p>É o lançamento de venda que cruza <strong>o que saiu</strong> com <strong>quanto custou</strong>. Sem ele, o Gastão sabe o CMV de cada ficha isolada, mas não o CMV real do mês — que depende do <em>mix</em>: vender muito do produto de margem apertada muda o resultado.</p>
+
+  <div class="caixa neutra">
+    <span class="rot">Se você tem PDV</span>
+    <p>Restaurantes com PDV integrado não precisam lançar venda a venda, porque a importação cobre. O lançamento manual serve para operação sem integração ou para complementar um período específico.</p>
+  </div>
+
+  <h3>Dashboard</h3>
+  <p>A primeira tela ao entrar, com a leitura do mês:</p>
+  <ul>
+    <li><strong>CMV do mês</strong>: o percentual real, considerando o que foi efetivamente vendido.</li>
+    <li><strong>Receita do mês</strong>: total faturado no período.</li>
+    <li><strong>Alertas</strong>: insumos que subiram de preço e as fichas atingidas.</li>
+    <li><strong>Ranking de produtos</strong>: o que mais vende.</li>
+  </ul>
+  <p>Hábito que faz diferença: abrir no começo do dia e olhar os alertas. É onde o aumento de custo aparece antes de virar prejuízo no fim do mês.</p>
+</section>
+
+<!-- ══════════════════ 9. EQUIPE ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 9</div>
+  <h2>Equipe</h2>
+  <p class="secao-intro">Convidar pessoas e definir o que cada uma enxerga.</p>
+  <hr class="regua">
+
+  <ol class="passos">
+    <li class="passo">
+      <h4>Menu Equipe → convidar</h4>
+      <p>Informe o e-mail e escolha o perfil. Só o <strong>dono</strong> pode convidar.</p>
+    </li>
+    <li class="passo">
+      <h4>A pessoa cria a conta com esse mesmo e-mail</h4>
+      <p>O convite só aparece se o e-mail do cadastro for idêntico ao convidado. É a causa nº 1 de "não recebi o convite".</p>
+    </li>
+    <li class="passo">
+      <h4>Ela aceita ao entrar</h4>
+      <p>Um aceite libera todos os convites pendentes daquele e-mail de uma vez.</p>
+    </li>
+  </ol>
+
+  <p>Escolha do perfil, resumida: <strong>Gerente</strong> para quem toca o operacional e precisa ver custo. <strong>Funcionário</strong> para a cozinha usar ficha sem ver margem. <strong>BPO</strong> para o escritório de contabilidade que acompanha vários restaurantes.</p>
+</section>
+
+<!-- ══════════════════ 10. CHECKLISTS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 10</div>
+  <h2>Checklists e Feedbacks</h2>
+  <p class="secao-intro">Os módulos de rotina e de gente. Opcionais: o CMV funciona sem eles.</p>
+  <hr class="regua">
+
+  <h3>Checklists</h3>
+  <p>Rotinas que se repetem: abertura, fechamento, limpeza, conferência de estoque.</p>
+  <ol class="passos">
+    <li class="passo">
+      <h4>Crie o modelo</h4>
+      <p>Menu <strong>Checklists</strong> → <strong>Novo checklist</strong>. Dê nome (<em>ex: Abertura do bar</em>), descrição opcional e a <strong>frequência</strong> (diário, semanal, mensal).</p>
+    </li>
+    <li class="passo">
+      <h4>Liste os itens</h4>
+      <p>Um por tarefa. Marque <strong>requer nota</strong> quando a pessoa precisar escrever algo — temperatura da câmara, número do lacre.</p>
+    </li>
+    <li class="passo">
+      <h4>A equipe executa e marca</h4>
+      <p>Cada item guarda <strong>quem</strong> marcou e <strong>quando</strong>. É o registro de que a rotina aconteceu.</p>
+    </li>
+  </ol>
+
+  <h3>Feedbacks</h3>
+  <p>Conversa estruturada de desempenho com cada pessoa da equipe. Registra um período avaliado e três campos: <strong>pontos positivos</strong>, <strong>pontos de melhoria</strong> e <strong>plano de ação</strong>, ou seja, o que foi combinado concretamente. Dá para marcar a data do próximo encontro e a pessoa confirma a leitura.</p>
+  <p>Serve para que a conversa de desenvolvimento não dependa da memória de ninguém e tenha histórico.</p>
+</section>
+
+<!-- ══════════════════ 11. PROBLEMAS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 11</div>
+  <h2>Problemas comuns</h2>
+  <p class="secao-intro">O que costuma dar errado, e o que olhar primeiro.</p>
+  <hr class="regua">
+
+  <table>
+    <thead><tr><th style="width:34%">Sintoma</th><th>Causa provável e solução</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Ficha aparece com "CMV —"</td>
+        <td>Falta preço de venda, ou a ficha está sem composição. Preencha o preço e monte a composição.</td>
+      </tr>
+      <tr>
+        <td>CMV baixo demais (5%, 10%)</td>
+        <td>Insumos com custo zerado entrando como grátis. Vá em Insumos e procure R$ 0,00.</td>
+      </tr>
+      <tr>
+        <td>CMV altíssimo (200%, 400%)</td>
+        <td>Rendimento do preparo errado ou em branco. Confira quanto a receita cheia produz.</td>
+      </tr>
+      <tr>
+        <td>Custo não muda depois da nota</td>
+        <td>A nota ficou <strong>pendente</strong>. Abra, vincule os itens e confirme. É a confirmação que aplica o custo.</td>
+      </tr>
+      <tr>
+        <td>Nota não chegou do Drive</td>
+        <td>Arquivo não é XML de NF-e, ou caiu em pasta diferente da configurada. Note que a busca automática roda 08h e 17h — use "Buscar do Drive" para forçar.</td>
+      </tr>
+      <tr>
+        <td>Convite não aparece</td>
+        <td>A conta foi criada com e-mail diferente do convidado. Crie com o e-mail exato, ou peça novo convite.</td>
+      </tr>
+      <tr>
+        <td>Não consigo editar nada</td>
+        <td>Perfil de funcionário é somente leitura, por desenho. Peça ao dono para mudar o perfil.</td>
+      </tr>
+      <tr>
+        <td>Insumo duplicado</td>
+        <td>Geralmente vem de importação ou de "criar insumo" durante a nota. Padronize o nome e exclua o repetido. O sistema avisa se ele estiver em uso.</td>
+      </tr>
+      <tr>
+        <td>Não consigo excluir uma ficha</td>
+        <td>Ela é base de outra (combo). O aviso mostra quais. Remova a referência antes.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="caixa">
+    <span class="rot">Rotina mínima para o dado não morrer</span>
+    <p><strong>Diário:</strong> olhar alertas no Dashboard. <strong>Semanal:</strong> confirmar as notas pendentes. <strong>Mensal:</strong> revisar as fichas com CMV vermelho e conferir se algum insumo está sem custo.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ 12. GLOSSÁRIO ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Seção 12</div>
+  <h2>Glossário</h2>
+  <p class="secao-intro">Os termos que aparecem nas telas.</p>
+  <hr class="regua">
+
+  <dl class="campos">
+    <div class="campo"><dt>CMV</dt><dd>Custo da Mercadoria Vendida. Quanto do preço de venda vai embora em ingrediente, em percentual.</dd></div>
+    <div class="campo"><dt>Insumo</dt><dd>Matéria-prima ou embalagem comprada pelo restaurante.</dd></div>
+    <div class="campo"><dt>Insumo Base</dt><dd>Matéria-prima que costuma passar por um preparo antes de chegar ao prato.</dd></div>
+    <div class="campo"><dt>Item Pronto</dt><dd>Insumo que vai direto na ficha, sem preparo.</dd></div>
+    <div class="campo"><dt>Preparo</dt><dd>Sub-receita produzida na casa e reutilizada em vários produtos.</dd></div>
+    <div class="campo"><dt>Ficha Técnica</dt><dd>O produto vendido, com preço e composição completa.</dd></div>
+    <div class="campo"><dt>Combo</dt><dd>Ficha técnica composta por outras fichas técnicas.</dd></div>
+    <div class="campo"><dt>Rendimento</dt><dd>Quanto uma receita cheia de preparo produz, na unidade de saída.</dd></div>
+    <div class="campo"><dt>Aproveitamento</dt><dd>Percentual que sobra depois da limpeza. Corrige o custo real do que é usado.</dd></div>
+    <div class="campo"><dt>NF-e / XML</dt><dd>Nota fiscal eletrônica. O XML é o arquivo que o sistema lê para atualizar custos.</dd></div>
+    <div class="campo"><dt>Vincular item</dt><dd>Dizer ao sistema que um produto da nota do fornecedor corresponde a um insumo seu.</dd></div>
+    <div class="campo"><dt>Nota pendente</dt><dd>Nota importada mas ainda não confirmada; não afetou custo nenhum.</dd></div>
+    <div class="campo"><dt>BPO</dt><dd>Escritório que cuida da gestão administrativa e acompanha vários restaurantes.</dd></div>
+  </dl>
+
+  <div class="fim">
+    <strong>Gastão</strong> — Plataforma de gestão operacional e CMV para restaurantes<br>
+    gastao.vercel.app
+  </div>
+</section>
+
+</body>
+</html>
