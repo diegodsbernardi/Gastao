@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "npm run build:template && tsc && vite build",
     "build:template": "node scripts/generate-template.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",

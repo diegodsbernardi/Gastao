@@ -2,11 +2,18 @@
 
 **Gastão** é um SaaS multi-tenant de gestão operacional e CMV para restaurantes.
 O app real vive em **`gastao-app/`** (Vite + React 19 + TS + Tailwind + Supabase).
-Deploy: **`gastao-app.vercel.app`** (a partir de `gastao-app/`, tem `vercel.json` próprio).
+Domínio oficial (é o que o cliente acessa): **`gastao.vercel.app`**.
 
-> ⚠️ Existe um projeto Vercel **`gastao`** separado, dono do domínio `gastao.vercel.app`
-> e parado desde ~maio/2026. Ele NÃO recebe nossos deploys e não tem as features novas.
-> Nunca validar deploy por `gastao.vercel.app` — o domínio responde 200 servindo o app velho.
+> ⚠️ **Deploy: use sempre `npm run deploy`**, nunca `vercel --prod` sozinho.
+>
+> `gastao.vercel.app` não é o subdomínio nativo deste projeto — ele nasceu no projeto
+> hoje chamado `gastao-legacy` (parado desde ~maio/2026), e a Vercel não transfere
+> subdomínio `.vercel.app` em rename. O domínio só chega no deploy novo via
+> `vercel alias set`. Publicar sem apontar o alias deixa o domínio oficial servindo a
+> versão anterior **sem erro nenhum** — falha silenciosa. `scripts/deploy.mjs` faz as
+> duas etapas juntas e confere o resultado.
+>
+> `gastao-app.vercel.app` é o subdomínio nativo e também funciona, mas não é o divulgado.
 
 > Histórico: este repo nasceu de um fork do framework "Opensquad". Todo esse
 > scaffold foi removido — se aparecer referência a Opensquad em algum lugar, é
