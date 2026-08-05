@@ -36,6 +36,10 @@ if (!RESTAURANTE_ID) {
 function unidadesPorEmbalagem(desc) {
     const d = String(desc).toUpperCase();
     let m;
+    // "10X1KG" = 10 pacotes de 1 kg. Devolve o fator em quilos, e a conversão
+    // kg→g cuida do resto. Padrão inequívoco em arroz, feijão e açúcar.
+    if ((m = d.match(/\b(\d{1,3})\s*X\s*([\d.,]+)\s*KG\b/)))
+        return { fator: +m[1] * parseFloat(m[2].replace(',', '.')), via: `${m[1]}x${m[2]}kg`, unidade: 'kg' };
     if ((m = d.match(/C\/\s*(\d{1,3})\b/)))        return { fator: +m[1], via: `C/${m[1]}` };
     if ((m = d.match(/\bLT\s*(\d{1,3})\b/)))       return { fator: +m[1], via: `LT${m[1]}` };
     if ((m = d.match(/\b(\d{1,3})\s*U\b/)))        return { fator: +m[1], via: `${m[1]}U` };
@@ -44,6 +48,22 @@ function unidadesPorEmbalagem(desc) {
     if (/\bSIX\s*PACK\b/.test(d))                  return { fator: 6, via: 'SIX PACK' };
     if (/\bFARDO\b/.test(d) && (m = d.match(/\b(\d{1,3})\b/))) return { fator: +m[1], via: `FARDO ${m[1]}` };
     return null;
+}
+
+// Converte a unidade da NOTA para a unidade do INSUMO. Fornecedor fatura em kg
+// e a ficha usa grama: sem isso a picanha entra a R$ 77,90 POR GRAMA. Retorna
+// null quando a conversão não é segura (ex.: nota em "un", insumo em "g" — não
+// dá pra saber quanto pesa a unidade).
+function fatorUnidade(unNota, unInsumo) {
+    const a = String(unNota ?? '').toLowerCase().replace(/[^a-z]/g, '');
+    const b = String(unInsumo ?? '').toLowerCase();
+    const peso = { kg: 1000, g: 1, kilo: 1000, quilo: 1000 };
+    const vol  = { l: 1000, lt: 1000, litro: 1000, ml: 1 };
+    if (peso[a] && peso[b]) return peso[a] / peso[b];
+    if (vol[a] && vol[b])   return vol[a] / vol[b];
+    const cont = ['un', 'und', 'unid', 'pc', 'pct', 'cx', 'fd', 'fardo', 'pack', 'dz'];
+    if (cont.includes(a) && (b === 'un' || cont.includes(b))) return 1;
+    return null;   // incompatível: não aplica
 }
 
 const ENV = path.join(os.homedir(), '.gastao-supabase.env');
@@ -59,9 +79,14 @@ try {
                i.id, i.name, i.unit_type, i.avg_cost_per_unit AS custo_atual,
                ni.id AS item_id, ni.descricao_xml, ni.unidade, ni.quantidade, ni.valor_unitario,
                nf.data_emissao, nf.fornecedor_nome,
-               (SELECT MIN(r.sale_price) FROM recipes r
+               (SELECT r.sale_price FROM recipes r
                   JOIN recipe_ingredients ri ON ri.recipe_id = r.id
-                 WHERE ri.ingredient_id = i.id AND r.sale_price > 0) AS menor_venda
+                 WHERE ri.ingredient_id = i.id AND r.sale_price > 0
+                 ORDER BY r.sale_price LIMIT 1) AS menor_venda,
+               (SELECT ri.quantity_needed FROM recipes r
+                  JOIN recipe_ingredients ri ON ri.recipe_id = r.id
+                 WHERE ri.ingredient_id = i.id AND r.sale_price > 0
+                 ORDER BY r.sale_price LIMIT 1) AS qtd_na_ficha
           FROM nfe_itens ni
           JOIN ingredients i ON i.id = ni.insumo_sugerido_id
           JOIN notas_fiscais nf ON nf.id = ni.nota_fiscal_id
@@ -80,20 +105,40 @@ try {
             continue;
         }
         const fator = emb?.fator ?? 1;
-        const custoUnit = Number(r.valor_unitario) / fator;
-        const venda = r.menor_venda ? Number(r.menor_venda) : null;
-
-        if (venda && custoUnit >= venda) {
-            pulados.push({ ...r, motivo: `custo R$ ${custoUnit.toFixed(2)} ficaria acima do preço de venda R$ ${venda.toFixed(2)}` });
+        // Quando o fardo já é expresso em quilos ("10X1KG"), o divisor entrega
+        // quilos — a unidade que vale para a conversão é kg, não o "FD" da nota.
+        const fUn = fatorUnidade(emb?.unidade ?? r.unidade, r.unit_type);
+        if (fUn === null) {
+            pulados.push({ ...r, motivo: `nota em "${r.unidade}" e insumo em "${r.unit_type}": conversão insegura` });
             continue;
         }
-        aplicar.push({ ...r, fator, via: emb?.via ?? 'unidade', custoUnit, venda });
+        const custoUnit = Number(r.valor_unitario) / fator / fUn;
+        const venda = r.menor_venda ? Number(r.menor_venda) : null;
+        const qtdFicha = r.qtd_na_ficha ? Number(r.qtd_na_ficha) : 1;
+        const custoAtual = Number(r.custo_atual) || 0;
+
+        // O custo NA FICHA é o que importa: comparar o preço de 1 grama com o
+        // preço do prato não pega erro de unidade nenhum.
+        if (venda && custoUnit * qtdFicha >= venda) {
+            pulados.push({ ...r, motivo: `${qtdFicha} ${r.unit_type} custariam R$ ${(custoUnit * qtdFicha).toFixed(2)} num prato de R$ ${venda.toFixed(2)}` });
+            continue;
+        }
+        // Salto grande contra o custo da planilha do cliente é erro de leitura,
+        // não variação de mercado.
+        if (custoAtual > 0) {
+            const salto = custoUnit > custoAtual ? custoUnit / custoAtual : custoAtual / custoUnit;
+            if (salto > 5) {
+                pulados.push({ ...r, motivo: `custo saltaria ${salto.toFixed(0)}x (R$ ${custoAtual.toFixed(4)} → R$ ${custoUnit.toFixed(4)})` });
+                continue;
+            }
+        }
+        aplicar.push({ ...r, fator, via: emb?.via ?? (fUn !== 1 ? `${r.unidade}→${r.unit_type}` : 'unidade'), custoUnit, venda, qtdFicha });
     }
 
     console.log(`\n═══ ${APLICAR ? 'APLICANDO' : 'DRY-RUN'} — custo de NF-e (tipo: ${TIPO}) ═══\n`);
     console.log(`Insumo                 de        para      fardo        CMV depois`);
     for (const a of aplicar) {
-        const cmv = a.venda ? `${(a.custoUnit / a.venda * 100).toFixed(0)}%` : '—';
+        const cmv = a.venda ? `${(a.custoUnit * a.qtdFicha / a.venda * 100).toFixed(0)}%` : '—';
         console.log(`  ${a.name.padEnd(20)} R$ ${String(Number(a.custo_atual).toFixed(2)).padStart(6)}  ` +
                     `R$ ${a.custoUnit.toFixed(2).padStart(6)}  ${a.via.padEnd(10)} ${cmv.padStart(5)}`);
     }
