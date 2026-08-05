@@ -5,191 +5,7 @@
 <title>Gastão — Guia de Uso</title>
 <style>
 /*FONTS*/
-
-:root {
-  --laranja:      #FF6B35;
-  --laranja-esc:  #BF4A1A;
-  --laranja-fundo:#FFF4EE;
-  --laranja-borda:#FFE2D1;
-  --verde:        #4CAF50;
-  --verde-esc:    #388E3C;
-  --verde-fundo:  #E8F5E9;
-  --ink:          #2C2C2C;
-  --cinza:        #6B6B6B;
-  --bege:         #D4A574;
-  --creme:        #FAF6EE;
-  --branco:       #FFFFFF;
-  --borda:        #E8DFD0;
-}
-
-* { box-sizing: border-box; }
-
-html { font-size: 15px; }
-
-body {
-  margin: 0;
-  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-  color: var(--ink);
-  background: var(--branco);
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ─── Página e impressão ─────────────────────────────────────────────── */
-@page { size: A4; margin: 18mm 16mm; }
-@page :first { margin: 0; }
-
-.pagina { page-break-after: always; }
-.pagina:last-child { page-break-after: auto; }
-h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
-.passo, .caixa, .campo, table { page-break-inside: avoid; break-inside: avoid; }
-
-/* ─── Capa ───────────────────────────────────────────────────────────── */
-.capa {
-  height: 297mm;
-  background: var(--laranja);
-  color: var(--branco);
-  padding: 30mm 20mm;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  page-break-after: always;
-}
-.capa .marca {
-  font-size: 1.05rem; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase;
-}
-.capa h1 {
-  font-size: 4.2rem; line-height: 1.02; font-weight: 700;
-  margin: 0 0 1.5rem; letter-spacing: -0.035em; text-wrap: balance;
-}
-.capa .sub { font-size: 1.35rem; font-weight: 400; max-width: 26ch; opacity: .95; }
-.capa .rodape { font-size: .85rem; opacity: .85; }
-.capa .rodape strong { display: block; font-size: 1rem; opacity: 1; margin-bottom: .2rem; }
-
-/* ─── Tipografia ─────────────────────────────────────────────────────── */
-h2 {
-  font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;
-  margin: 0 0 .3rem; color: var(--ink); text-wrap: balance;
-}
-.secao-num {
-  font-size: .8rem; font-weight: 700; color: var(--laranja);
-  letter-spacing: .1em; text-transform: uppercase; margin-bottom: .1rem;
-}
-.secao-intro { font-size: 1.05rem; color: var(--cinza); margin: 0 0 1.6rem; max-width: 62ch; }
-h3 {
-  font-size: 1.12rem; font-weight: 600; margin: 1.8rem 0 .6rem;
-  letter-spacing: -0.01em;
-}
-p { margin: 0 0 .85rem; max-width: 68ch; }
-strong { font-weight: 600; }
-a { color: var(--laranja-esc); }
-
-hr.regua { border: 0; border-top: 2px solid var(--laranja-borda); margin: 0 0 1.4rem; }
-
-/* ─── Sumário ────────────────────────────────────────────────────────── */
-.sumario { list-style: none; padding: 0; margin: 0; max-width: 60ch; }
-.sumario li {
-  display: flex; align-items: baseline; gap: .8rem;
-  padding: .55rem 0; border-bottom: 1px solid var(--borda);
-}
-.sumario .n {
-  font-weight: 700; color: var(--laranja); min-width: 1.6rem; font-size: .95rem;
-}
-.sumario .t { font-weight: 600; }
-.sumario .d { color: var(--cinza); font-size: .9rem; margin-left: auto; text-align: right; }
-
-/* ─── Passo a passo ──────────────────────────────────────────────────── */
-.passos { counter-reset: passo; margin: 1rem 0 1.5rem; padding: 0; list-style: none; }
-.passo {
-  counter-increment: passo;
-  position: relative;
-  padding: 0 0 1.1rem 3rem;
-  margin: 0;
-}
-.passo::before {
-  content: counter(passo);
-  position: absolute; left: 0; top: -.1rem;
-  width: 2rem; height: 2rem; border-radius: 50%;
-  background: var(--laranja); color: var(--branco);
-  font-weight: 700; font-size: .95rem;
-  display: flex; align-items: center; justify-content: center;
-}
-.passo h4 { margin: .2rem 0 .3rem; font-size: 1rem; font-weight: 600; }
-.passo p { margin: 0 0 .4rem; }
-
-/* ─── Campos de formulário ───────────────────────────────────────────── */
-.campos { margin: .8rem 0 1.4rem; }
-.campo {
-  display: grid; grid-template-columns: 13rem 1fr; gap: 1rem;
-  padding: .7rem 0; border-bottom: 1px solid var(--borda);
-  align-items: baseline;
-}
-.campo:first-child { border-top: 1px solid var(--borda); }
-.campo dt { font-weight: 600; font-size: .95rem; }
-.campo dt .obrig { color: var(--laranja); font-weight: 700; }
-.campo dd { margin: 0; color: var(--cinza); font-size: .95rem; }
-.campo dd em { color: var(--ink); font-style: normal; font-weight: 600; }
-
-/* ─── Caixas ─────────────────────────────────────────────────────────── */
-.caixa {
-  background: var(--laranja-fundo);
-  border: 1px solid var(--laranja-borda);
-  border-radius: 12px;
-  padding: 1rem 1.2rem;
-  margin: 1.2rem 0;
-}
-.caixa .rot {
-  font-size: .78rem; font-weight: 700; letter-spacing: .09em;
-  text-transform: uppercase; color: var(--laranja-esc);
-  display: block; margin-bottom: .35rem;
-}
-.caixa p { margin: 0; max-width: none; }
-.caixa p + p { margin-top: .5rem; }
-
-.caixa.ok { background: var(--verde-fundo); border-color: #C8E6C9; }
-.caixa.ok .rot { color: var(--verde-esc); }
-
-.caixa.neutra { background: var(--creme); border-color: var(--borda); }
-.caixa.neutra .rot { color: var(--cinza); }
-
-/* ─── Tabelas ────────────────────────────────────────────────────────── */
-table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: .92rem; }
-th {
-  text-align: left; font-weight: 600; font-size: .78rem;
-  text-transform: uppercase; letter-spacing: .07em; color: var(--cinza);
-  padding: .5rem .7rem; border-bottom: 2px solid var(--laranja-borda);
-}
-td { padding: .6rem .7rem; border-bottom: 1px solid var(--borda); vertical-align: top; }
-td:first-child { font-weight: 600; }
-.sim { color: var(--verde-esc); font-weight: 700; }
-.nao { color: var(--cinza); }
-
-/* ─── A escada de custo ──────────────────────────────────────────────── */
-.escada { margin: 1.4rem 0 1.8rem; }
-.degrau {
-  display: grid; grid-template-columns: 3.2rem 1fr; gap: 1rem;
-  padding: .85rem 1rem; margin-bottom: .5rem;
-  background: var(--creme); border: 1px solid var(--borda); border-radius: 10px;
-  align-items: center;
-}
-.degrau .ico {
-  width: 2.2rem; height: 2.2rem; border-radius: 50%;
-  background: var(--laranja); color: var(--branco);
-  font-weight: 700; font-size: 1rem;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto;
-}
-.degrau .nome { font-weight: 700; font-size: 1rem; }
-.degrau .desc { color: var(--cinza); font-size: .9rem; }
-.degrau.final { background: var(--laranja-fundo); border-color: var(--laranja-borda); }
-
-/* ─── Rodapé de página ───────────────────────────────────────────────── */
-.fim {
-  margin-top: 2.5rem; padding-top: 1rem;
-  border-top: 2px solid var(--laranja-borda);
-  font-size: .85rem; color: var(--cinza);
-}
+/*BASE*/
 </style>
 </head>
 <body>
@@ -202,7 +18,7 @@ td:first-child { font-weight: 600; }
     <p class="sub">Do primeiro acesso ao restaurante rodando com CMV confiável.</p>
   </div>
   <div class="rodape">
-    <strong>gastao.vercel.app</strong>
+    <strong>gastao-app.vercel.app</strong>
     Plataforma de gestão operacional e CMV para restaurantes
   </div>
 </div>
@@ -299,7 +115,7 @@ td:first-child { font-weight: 600; }
   <h3>Se você recebeu um convite</h3>
   <ol class="passos">
     <li class="passo">
-      <h4>Abra gastao.vercel.app e clique em "Criar conta"</h4>
+      <h4>Abra gastao-app.vercel.app e clique em "Criar conta"</h4>
       <p>Use <strong>exatamente o mesmo e-mail</strong> em que o convite chegou. Se usar outro, o convite não aparece, porque é ele que liga você ao restaurante.</p>
     </li>
     <li class="passo">
@@ -731,7 +547,7 @@ td:first-child { font-weight: 600; }
 
   <div class="fim">
     <strong>Gastão</strong> — Plataforma de gestão operacional e CMV para restaurantes<br>
-    gastao.vercel.app
+    gastao-app.vercel.app
   </div>
 </section>
 

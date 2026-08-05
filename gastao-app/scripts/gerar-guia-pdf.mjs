@@ -12,9 +12,22 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 
 const AQUI = import.meta.dirname;
-const HTML_IN = path.join(AQUI, 'guia', 'guia-gastao.html');
 const FONT_DIR = path.join(AQUI, 'guia', 'fonts');
-const PDF_OUT = path.resolve(process.argv[2] ?? path.join(AQUI, '..', 'public', 'Guia-Gastao.pdf'));
+
+// Os dois guias compartilham o CSS (guia/base.css) e as fontes; só o conteúdo muda.
+const GUIAS = {
+    uso:      { html: 'guia-gastao.html',  pdf: 'Guia-Gastao.pdf' },
+    planilha: { html: 'guia-planilha.html', pdf: 'Guia-Planilha-Mae.pdf' },
+};
+
+const alvo = process.argv[2] ?? 'todos';
+const selecionados = alvo === 'todos' ? Object.keys(GUIAS) : [alvo];
+for (const s of selecionados) {
+    if (!GUIAS[s]) {
+        console.error(`Guia desconhecido: "${s}". Use: ${Object.keys(GUIAS).join(' | ')} | todos`);
+        process.exit(2);
+    }
+}
 
 // puppeteer vive em ~/tools/pdfgen pra não entrar no package.json do app
 // (Chromium são ~170 MB que nada têm a ver com o build do front).
@@ -40,7 +53,7 @@ const faces = [400, 600, 700].map(peso => {
            `src:url(data:font/woff2;base64,${b64}) format('woff2');}`;
 }).join('\n');
 
-const html = fs.readFileSync(HTML_IN, 'utf8').replace('/*FONTS*/', faces);
+const baseCss = fs.readFileSync(path.join(AQUI, 'guia', 'base.css'), 'utf8');
 
 // ─── renderiza ───────────────────────────────────────────────────────────────
 const browser = await puppeteer.launch({
@@ -49,29 +62,42 @@ const browser = await puppeteer.launch({
 });
 
 try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
-    await page.evaluateHandle('document.fonts.ready'); // sem isso o PDF sai com fallback
+    for (const chave of selecionados) {
+        const { html: arqHtml, pdf: arqPdf } = GUIAS[chave];
+        const htmlIn = path.join(AQUI, 'guia', arqHtml);
+        const pdfOut = path.join(AQUI, '..', 'public', arqPdf);
 
-    fs.mkdirSync(path.dirname(PDF_OUT), { recursive: true });
-    await page.pdf({
-        path: PDF_OUT,
-        format: 'A4',
-        printBackground: true,   // a capa laranja e as caixas dependem disso
-        preferCSSPageSize: true, // respeita o @page do documento
-        displayHeaderFooter: true,
-        headerTemplate: '<div></div>',
-        footerTemplate: `
-          <div style="width:100%;font-size:8px;color:#6B6B6B;padding:0 16mm;
-                      font-family:sans-serif;display:flex;justify-content:space-between;">
-            <span>Gastão · Guia de Uso</span>
-            <span class="pageNumber"></span>
-          </div>`,
-        margin: { top: '18mm', bottom: '16mm', left: '0', right: '0' },
-    });
+        const html = fs.readFileSync(htmlIn, 'utf8')
+            .replace('/*FONTS*/', faces)
+            .replace('/*BASE*/', baseCss);
 
-    const kb = (fs.statSync(PDF_OUT).size / 1024).toFixed(0);
-    console.log(`PDF gerado: ${PDF_OUT} (${kb} KB)`);
+        const titulo = (html.match(/<title>(.*?)<\/title>/) ?? [, 'Gastão'])[1];
+
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'load' });
+        await page.evaluateHandle('document.fonts.ready'); // sem isso o PDF sai com fallback
+
+        fs.mkdirSync(path.dirname(pdfOut), { recursive: true });
+        await page.pdf({
+            path: pdfOut,
+            format: 'A4',
+            printBackground: true,   // a capa laranja e as caixas dependem disso
+            preferCSSPageSize: true, // respeita o @page do documento
+            displayHeaderFooter: true,
+            headerTemplate: '<div></div>',
+            footerTemplate: `
+              <div style="width:100%;font-size:8px;color:#6B6B6B;padding:0 16mm;
+                          font-family:sans-serif;display:flex;justify-content:space-between;">
+                <span>${titulo.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>
+                <span class="pageNumber"></span>
+              </div>`,
+            margin: { top: '18mm', bottom: '16mm', left: '0', right: '0' },
+        });
+        await page.close();
+
+        const kb = (fs.statSync(pdfOut).size / 1024).toFixed(0);
+        console.log(`PDF gerado: ${path.relative(process.cwd(), pdfOut)} (${kb} KB)`);
+    }
 } finally {
     await browser.close();
 }

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Gastão — Guia da Planilha-Mãe</title>
+<style>
+/*FONTS*/
+/*BASE*/
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ CAPA ══════════════════ -->
+<div class="capa">
+  <div class="marca">Gastão</div>
+  <div>
+    <h1>Planilha-Mãe</h1>
+    <p class="sub">Como preencher para importar o cardápio inteiro de uma vez.</p>
+  </div>
+  <div class="rodape">
+    <strong>Guia de preenchimento</strong>
+    Insumos, Preparos, Fichas e Composições
+  </div>
+</div>
+
+<!-- ══════════════════ VISÃO GERAL ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Antes de começar</div>
+  <h2>O que é a Planilha-Mãe</h2>
+  <p class="secao-intro">Uma planilha só, com todas as abas, que carrega o cardápio inteiro para dentro do Gastão numa única importação.</p>
+  <hr class="regua">
+
+  <p>Cadastrar 120 insumos e 40 fichas na mão leva um dia inteiro. Pela planilha, leva o tempo de preencher, e você trabalha no Excel, que é onde a maioria dos restaurantes já tem o cardápio.</p>
+
+  <h3>Onde baixar</h3>
+  <p>Dentro do sistema: menu <strong>Importar Planilha</strong>, botão <strong>Baixar Planilha-Mãe</strong>. É sempre a versão mais atual, com os dropdowns e as fórmulas já montados.</p>
+
+  <div class="caixa">
+    <span class="rot">A primeira coisa a fazer</span>
+    <p>A planilha vem com <strong>linhas de exemplo preenchidas</strong> (Carne Moída, X-Burger Duplo, Molho de Tomate Base). Elas existem para mostrar o formato.</p>
+    <p><strong>Apague todas antes de enviar</strong>, ou esses itens fictícios vão ser importados junto com os seus. Apague o conteúdo das linhas, nunca as colunas nem o cabeçalho.</p>
+  </div>
+
+  <h3>As abas, na ordem de preenchimento</h3>
+  <table>
+    <thead><tr><th style="width:30%">Aba</th><th>O que vai nela</th></tr></thead>
+    <tbody>
+      <tr><td>_Categorias</td><td>Todas as categorias que você vai usar, antes de tudo. Os dropdowns das outras abas puxam daqui.</td></tr>
+      <tr><td>Insumos</td><td>Matéria-prima e embalagem, com custo.</td></tr>
+      <tr><td>Preparos</td><td>Sub-receitas: molhos, massas, bases.</td></tr>
+      <tr><td>Fichas</td><td>Produtos do cardápio, com preço de venda.</td></tr>
+      <tr><td>Composicao_Preparos</td><td>O que entra dentro de cada preparo.</td></tr>
+      <tr><td>Composicao_Fichas</td><td>O que entra dentro de cada ficha.</td></tr>
+      <tr><td>_Leia-me e _ref_itens</td><td>Instruções e apoio interno. Não mexa.</td></tr>
+    </tbody>
+  </table>
+
+  <p>A ordem importa: não dá para montar a composição de um preparo cujos insumos ainda não existem na aba Insumos, porque o dropdown vai estar vazio.</p>
+</section>
+
+<!-- ══════════════════ CATEGORIAS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Aba 1</div>
+  <h2>_Categorias</h2>
+  <p class="secao-intro">A primeira a preencher. Alimenta os dropdowns de todas as outras.</p>
+  <hr class="regua">
+
+  <dl class="campos">
+    <div class="campo"><dt>Tipo de Item <span class="obrig">*</span></dt>
+      <dd>Para qual aba serve a categoria: <em>insumo</em>, <em>preparo</em> ou <em>ficha</em>.</dd></div>
+    <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
+      <dd>O nome do grupo. <em>Ex: Hortifruti, Molhos Base, Lanches.</em></dd></div>
+    <div class="campo"><dt>Descrição</dt>
+      <dd>Só para você lembrar do critério. Não vai para o sistema.</dd></div>
+  </dl>
+
+  <p>A mesma palavra pode existir nos três tipos, se fizer sentido. "Sobremesas" pode ser categoria de ficha e de preparo ao mesmo tempo, e são registros diferentes.</p>
+
+  <div class="caixa">
+    <span class="rot">Se a categoria não aparece no dropdown</span>
+    <p>É porque ela não está cadastrada aqui com o <strong>tipo certo</strong>. Uma categoria cadastrada como <em>insumo</em> não aparece no dropdown da aba Fichas.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ INSUMOS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Aba 2</div>
+  <h2>Insumos</h2>
+  <p class="secao-intro">A aba mais longa e a que mais decide se o seu CMV vai sair certo.</p>
+  <hr class="regua">
+
+  <dl class="campos">
+    <div class="campo"><dt>Nome <span class="obrig">*</span></dt>
+      <dd>Como você chama no dia a dia. É a <strong>chave</strong>: as abas de composição referenciam este texto. Escreva por extenso, sem abreviar.</dd></div>
+    <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
+      <dd>Dropdown vindo de _Categorias (tipo <em>insumo</em>).</dd></div>
+    <div class="campo"><dt>Tipo <span class="obrig">*</span></dt>
+      <dd><em>insumo_base:</em> vai ser usado dentro de preparos (carne moída, farinha). <em>insumo_direto:</em> vai direto na ficha (pão, refrigerante). <em>embalagem:</em> caixa, sacola, descartável.</dd></div>
+    <div class="campo"><dt>Unidade <span class="obrig">*</span></dt>
+      <dd>kg, g, l, ml, un ou porção. <strong>Use a menor unidade prática:</strong> se a ficha leva 30 g, cadastre em g.</dd></div>
+    <div class="campo"><dt>Preço de Compra <span class="obrig">*</span></dt>
+      <dd>Custo de <strong>uma unidade</strong> da escolhida acima. Cadastrou em g e o quilo custa R$ 25,00? Então 0,025. Aceita formato BR (1.234,56) e EN (1234.56).</dd></div>
+    <div class="campo"><dt>Aproveitamento (%)</dt>
+      <dd>De 1 a 100. Quanto sobra depois de limpar. Alface ≈ 70, abacaxi descascado ≈ 53, item sem perda = 100. Em branco, o sistema assume 100.</dd></div>
+    <div class="campo"><dt>Observações</dt>
+      <dd>Anotação sua. Não vai para o sistema.</dd></div>
+  </dl>
+
+  <div class="caixa">
+    <span class="rot">Unidade e preço: o erro que mais acontece</span>
+    <p>Cadastrar a unidade em <strong>g</strong> e o preço do <strong>quilo</strong>. O sistema entende que cada grama custa R$ 25,00, e um lanche com 30 g de carne passa a custar R$ 750,00.</p>
+    <p>Regra: se a unidade é g, o preço é por grama. Se é kg, é por quilo. Divida por 1000 quando precisar.</p>
+  </div>
+
+  <div class="caixa ok">
+    <span class="rot">Por que preencher aproveitamento</span>
+    <p>Você paga por 1 kg de alface, mas usa 700 g. Os R$ 10,00 foram gastos mesmo assim, então o custo real do que vai no prato é R$ 14,28/kg. O aproveitamento faz essa correção sozinho em toda ficha que usa o item.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ PREPAROS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Aba 3</div>
+  <h2>Preparos</h2>
+  <p class="secao-intro">As sub-receitas. Aqui você só cadastra o cabeçalho; o conteúdo vem na aba de composição.</p>
+  <hr class="regua">
+
+  <dl class="campos">
+    <div class="campo"><dt>Nome <span class="obrig">*</span></dt>
+      <dd><em>Ex: Molho de Tomate Base, Maionese Verde.</em> Também é chave: não repita nome usado em Insumos.</dd></div>
+    <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
+      <dd>Dropdown de _Categorias (tipo <em>preparo</em>).</dd></div>
+    <div class="campo"><dt>Rendimento (qtd) <span class="obrig">*</span></dt>
+      <dd>Quanto <strong>uma receita cheia</strong> produz. Uma panela que rende 2 kg de molho: 2 se a unidade for kg, 2000 se for g.</dd></div>
+    <div class="campo"><dt>Rendimento (unidade) <span class="obrig">*</span></dt>
+      <dd>A unidade em que esse preparo vai ser usado nas fichas.</dd></div>
+    <div class="campo"><dt>Observações</dt>
+      <dd>Anotação sua.</dd></div>
+  </dl>
+
+  <div class="caixa">
+    <span class="rot">O campo que mais gera CMV absurdo</span>
+    <p>Esquecer o rendimento (ou deixar 1) faz o sistema entender que a receita inteira rende uma unidade. Uma ficha que pede 30 g passa a carregar o custo de <strong>30 panelas cheias</strong>.</p>
+    <p>Sintoma: lanche com CMV de 300%. Se aparecer, confira o rendimento antes de qualquer outra coisa.</p>
+  </div>
+
+  <h3>Preparo dentro de preparo</h3>
+  <p>Permitido e sem limite de profundidade. Molho Rosé usa Ragu, que usa Molho de Tomate Base. O importador resolve a ordem sozinho. A única regra: <strong>não faça ciclo</strong> — se A usa B, B não pode usar A.</p>
+</section>
+
+<!-- ══════════════════ FICHAS ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Aba 4</div>
+  <h2>Fichas</h2>
+  <p class="secao-intro">Os produtos que o cliente compra. É onde entra o preço de venda.</p>
+  <hr class="regua">
+
+  <dl class="campos">
+    <div class="campo"><dt>Nome <span class="obrig">*</span></dt>
+      <dd>Como está no cardápio. Chave para a aba de composição.</dd></div>
+    <div class="campo"><dt>Categoria <span class="obrig">*</span></dt>
+      <dd>Dropdown de _Categorias (tipo <em>ficha</em>).</dd></div>
+    <div class="campo"><dt>Preço de Venda <span class="obrig">*</span></dt>
+      <dd>O que o cliente paga. <strong>Sem isso não existe CMV</strong> — a ficha entra, mas aparece sem percentual.</dd></div>
+    <div class="campo"><dt>Unidade de Venda <span class="obrig">*</span></dt>
+      <dd>Quase sempre <em>un</em>. Use porção ou kg quando vender por peso.</dd></div>
+    <div class="campo"><dt>Observações</dt>
+      <dd>Anotação sua.</dd></div>
+  </dl>
+
+  <div class="caixa neutra">
+    <span class="rot">Nomes repetidos entre abas</span>
+    <p>Se o mesmo nome existir em mais de uma aba, o sistema resolve na ordem <strong>insumo &gt; preparo &gt; ficha</strong>, e você pode acabar com uma composição apontando para o item errado.</p>
+    <p>Diferencie: "Molho Barbecue" (insumo comprado pronto) e "Molho Barbecue da Casa" (preparo).</p>
+  </div>
+</section>
+
+<!-- ══════════════════ COMPOSIÇÕES ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Abas 5 e 6</div>
+  <h2>As composições</h2>
+  <p class="secao-intro">Onde você monta cada receita. As duas abas funcionam igual.</p>
+  <hr class="regua">
+
+  <p>Uma linha por ingrediente. Uma receita com oito itens ocupa oito linhas, repetindo o nome dela na primeira coluna.</p>
+
+  <dl class="campos">
+    <div class="campo"><dt>Preparo / Ficha <span class="obrig">*</span></dt>
+      <dd>Qual receita você está montando. Dropdown vindo da aba correspondente.</dd></div>
+    <div class="campo"><dt>Componente (auto)</dt>
+      <dd><strong>Não preencha.</strong> Aparece sozinho quando você escolhe o Item: insumo, preparo ou ficha.</dd></div>
+    <div class="campo"><dt>Item <span class="obrig">*</span></dt>
+      <dd>O que entra. Em Composicao_Preparos o dropdown traz insumos e preparos. Em Composicao_Fichas traz insumos, preparos <strong>e fichas</strong> (para combos).</dd></div>
+    <div class="campo"><dt>Quantidade <span class="obrig">*</span></dt>
+      <dd>Em Fichas: o que vai em <strong>uma porção</strong>, a que sai para um cliente. Em Preparos: o que a <strong>receita cheia</strong> consome, coerente com o rendimento declarado.</dd></div>
+    <div class="campo"><dt>Unidade (auto)</dt>
+      <dd><strong>Não preencha.</strong> Vem do cadastro do item.</dd></div>
+  </dl>
+
+  <div class="caixa">
+    <span class="rot">A distinção que muda o resultado</span>
+    <p>Em <strong>Composicao_Preparos</strong>, a quantidade é da receita inteira: 2 kg de tomate para a panela que rende 2 kg de molho.</p>
+    <p>Em <strong>Composicao_Fichas</strong>, é de uma unidade vendida: 80 g de molho no prato, não a produção do dia.</p>
+    <p>Trocar as duas é o segundo erro mais comum, e o custo sai multiplicado.</p>
+  </div>
+
+  <h3>Combos</h3>
+  <p>Em Composicao_Fichas, escolha outra ficha como Item. Um combo de lanche + porção + refrigerante são três linhas apontando para fichas que já existem. O custo soma sozinho, sem redigitar nada. Vale a mesma regra: sem ciclo.</p>
+
+  <h3>Se o dropdown estiver vazio</h3>
+  <p>O item ainda não foi cadastrado na aba de origem. Volte, cadastre e retorne. Digitar o nome na mão funciona, mas qualquer diferença de grafia cria um item novo em vez de ligar ao existente.</p>
+</section>
+
+<!-- ══════════════════ ENVIAR ══════════════════ -->
+<section class="pagina">
+  <div class="secao-num">Última etapa</div>
+  <h2>Enviar e conferir</h2>
+  <p class="secao-intro">A importação mostra uma prévia antes de gravar. Use essa tela.</p>
+  <hr class="regua">
+
+  <ol class="passos">
+    <li class="passo">
+      <h4>Apague as linhas de exemplo</h4>
+      <p>Nas seis abas de conteúdo. Só o cabeçalho fica.</p>
+    </li>
+    <li class="passo">
+      <h4>Salve como .xlsx</h4>
+      <p>Não use .csv nem .ods: as fórmulas e os dropdowns se perdem.</p>
+    </li>
+    <li class="passo">
+      <h4>Menu Importar Planilha e envie o arquivo</h4>
+      <p>O sistema lê todas as abas e interpreta o conteúdo, inclusive quando você mudou algum título de coluna.</p>
+    </li>
+    <li class="passo">
+      <h4>Revise a prévia com atenção</h4>
+      <p>Aparecem os insumos, preparos e fichas encontrados, com aviso de <strong>possível duplicado</strong> quando o nome parece com algo já cadastrado. Desmarque o que não quer importar.</p>
+    </li>
+    <li class="passo">
+      <h4>Confirme e confira o resultado</h4>
+      <p>Abra Insumos e procure custo <strong>R$ 0,00</strong>, depois Fichas e procure CMV fora da faixa de 25% a 35%. São os dois sintomas de erro de preenchimento.</p>
+    </li>
+  </ol>
+
+  <div class="caixa ok">
+    <span class="rot">Dá para importar em partes</span>
+    <p>Não precisa mandar tudo de uma vez. Um bloco por categoria funciona, e o sistema avisa quando um nome já existe. Para cardápio grande, importar por partes facilita achar onde errou.</p>
+  </div>
+
+  <h3>Depois da importação</h3>
+  <p>O nome vira a identidade do item. Renomear no sistema depois não quebra nada, mas reenviar a planilha com o nome antigo cria um item duplicado. Se for reimportar, use os nomes atuais.</p>
+
+  <div class="fim">
+    <strong>Gastão</strong> — Guia de preenchimento da Planilha-Mãe<br>
+    Complemento do Guia de Uso
+  </div>
+</section>
+
+</body>
+</html>
