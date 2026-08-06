@@ -4,8 +4,7 @@ import { toast } from 'sonner';
 import {
     Menu, Home, ShoppingBag, LogOut, Package, Users, X,
     FileText, UtensilsCrossed, ChefHat, BarChart3, ClipboardList, MessageCircle, FileSpreadsheet,
-    Check, ChevronDown, Loader2, Plus, Store,
-} from 'lucide-react';
+    Check, ChevronDown, Loader2, Plus, Store, Bike } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 
@@ -27,6 +26,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 { to: '/',              Icon: BarChart3,   label: 'Dashboard',    show: true },
                 { to: '/sales',         Icon: ShoppingBag, label: 'Vendas',       show: canViewSales },
                 { to: '/notas-fiscais', Icon: FileText,    label: 'Notas Fiscais', show: true },
+                { to: '/ifood',         Icon: Bike,        label: 'iFood',        show: isDonoOrGerente },
             ],
         },
         {

@@ -17,6 +17,7 @@ import { NotasFiscais } from './pages/NotasFiscais';
 import { Preparos } from './pages/Preparos';
 import { Checklists } from './pages/Checklists';
 import { Feedbacks } from './pages/Feedbacks';
+import { Ifood } from './pages/Ifood';
 import { AuthProvider, useAuth, Perfil } from './contexts/AuthContext';
 import { ConfirmProvider } from './components/ConfirmDialog';
 import { Loader2 } from 'lucide-react';
@@ -158,6 +159,14 @@ function AppRoutes() {
                                 element={
                                     <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
                                         <Sales />
+                                    </RoleRoute>
+                                }
+                            />
+                            <Route
+                                path="/ifood"
+                                element={
+                                    <RoleRoute allowed={['dono', 'gerente', 'bpo']}>
+                                        <Ifood />
                                     </RoleRoute>
                                 }
                             />
