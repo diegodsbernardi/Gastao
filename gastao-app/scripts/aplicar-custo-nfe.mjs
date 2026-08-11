@@ -66,6 +66,70 @@ function fatorUnidade(unNota, unInsumo) {
     return null;   // incompatível: não aplica
 }
 
+// Quanto a embalagem FATURADA contém, na unidade do insumo.
+//
+// As descrições de NF-e seguem "peso unitário (embalagem coletiva)":
+//   "REQUEIJAO ... 1,5 KG (CX 12 BIS)"   faturado em BIS  → 1,5 kg
+//   "FARINHA ... 5 KG (FDO 25 KG)"       faturado em FD   → 25 kg
+//   "LEITE ... 1 L (CX 12 UN)"           faturado em CX   → 12 L
+//   "PAO ... 42G CX 48 UNID"             faturado em CX, insumo em un → 48 un
+//
+// A unidade da nota decide qual das duas vale: BIS/PC/PCT/UN/GL são a
+// embalagem individual; CX/FD/FDO são a coletiva. Sem peso declarado
+// (hortifruti tipo "COUVE MANTEIGA" em maço) devolve null e o item é recusado —
+// não dá pra adivinhar quanto pesa um maço.
+function conteudoDaEmbalagem(desc, unNota, unInsumo) {
+    const d = String(desc).toUpperCase().replace(',', '.').replace(/(\d),(\d)/g, '$1.$2');
+    const un = String(unNota ?? '').toUpperCase().replace(/[^A-Z]/g, '');
+    const alvo = String(unInsumo ?? '').toLowerCase();
+
+    // massa/volume declarados no texto → converte pra unidade do insumo
+    const pesoEm = (txt) => {
+        const m = txt.match(/(\d+(?:[.,]\d+)?)\s*(KG|G|ML|L)\b/);
+        if (!m) return null;
+        const v = parseFloat(m[1].replace(',', '.'));
+        const u = m[2];
+        const emKg = u === 'KG' ? v : u === 'G' ? v / 1000 : null;
+        const emL  = u === 'L'  ? v : u === 'ML' ? v / 1000 : null;
+        if (['kg', 'g'].includes(alvo) && emKg != null) return alvo === 'kg' ? emKg : emKg * 1000;
+        if (['l', 'ml'].includes(alvo) && emL  != null) return alvo === 'l'  ? emL  : emL * 1000;
+        return null;
+    };
+
+    const abre = d.indexOf('(');
+    const fora = abre >= 0 ? d.slice(0, abre) : d;
+    const dentro = abre >= 0 ? d.slice(abre) : '';
+
+    const individual = ['BIS', 'PC', 'PCT', 'UN', 'UND', 'UNID', 'GL', 'BLD', 'FR', 'PT'];
+    const coletiva = ['CX', 'FD', 'FDO', 'CAIXA', 'FARDO'];
+
+    // insumo contado por unidade: o que importa é quantas peças vêm na caixa.
+    // Nota faturada em PESO/VOLUME não serve aqui: não dá pra saber quantas
+    // unidades tem 1 kg sem conhecer o peso da peça.
+    if (alvo === 'un') {
+        if (['KG', 'G', 'L', 'ML'].includes(un)) return null;
+        if (coletiva.includes(un)) {
+            const m = d.match(/(?:CX|FDO?|C\/)\s*(\d{1,3})\s*(?:UN|UNID|UNIDADES?|PCT|PC)?\b/);
+            return m ? +m[1] : null;
+        }
+        return 1;
+    }
+
+    const pesoUnit = pesoEm(fora) ?? pesoEm(d);
+    if (individual.includes(un)) return pesoUnit;
+
+    if (coletiva.includes(un)) {
+        // o parêntese pode trazer o peso do fardo inteiro ("FDO 25 KG")
+        const pesoColetivo = dentro ? pesoEm(dentro) : null;
+        if (pesoColetivo && (!pesoUnit || pesoColetivo > pesoUnit)) return pesoColetivo;
+        // ou a contagem de peças ("CX 12 UN")
+        const m = dentro.match(/(\d{1,3})\s*(?:UN|UNID|PCT|PC|BIS|GL|FR)\b/) || dentro.match(/C\/\s*(\d{1,3})/);
+        if (m && pesoUnit) return pesoUnit * +m[1];
+        return pesoUnit;
+    }
+    return null;
+}
+
 const ENV = path.join(os.homedir(), '.gastao-supabase.env');
 const m = fs.readFileSync(ENV, 'utf8').match(/^SUPABASE_DB_URL=(.+)$/m);
 const { default: pg } = await import('pg');
@@ -107,12 +171,21 @@ try {
         const fator = emb?.fator ?? 1;
         // Quando o fardo já é expresso em quilos ("10X1KG"), o divisor entrega
         // quilos — a unidade que vale para a conversão é kg, não o "FD" da nota.
+        let custoUnit = null, viaConteudo = null;
         const fUn = fatorUnidade(emb?.unidade ?? r.unidade, r.unit_type);
-        if (fUn === null) {
-            pulados.push({ ...r, motivo: `nota em "${r.unidade}" e insumo em "${r.unit_type}": conversão insegura` });
-            continue;
+        if (fUn !== null) {
+            custoUnit = Number(r.valor_unitario) / fator / fUn;
+        } else {
+            // Unidade da nota é embalagem (BIS, CX, FD...): tenta descobrir o
+            // conteúdo pela descrição antes de desistir.
+            const conteudo = conteudoDaEmbalagem(r.descricao_xml, r.unidade, r.unit_type);
+            if (!conteudo || conteudo <= 0) {
+                pulados.push({ ...r, motivo: `nota em "${r.unidade}" e insumo em "${r.unit_type}", e a descrição não declara o conteúdo` });
+                continue;
+            }
+            custoUnit = Number(r.valor_unitario) / conteudo;
+            viaConteudo = `${r.unidade}=${conteudo}${r.unit_type}`;
         }
-        const custoUnit = Number(r.valor_unitario) / fator / fUn;
         const venda = r.menor_venda ? Number(r.menor_venda) : null;
         const qtdFicha = r.qtd_na_ficha ? Number(r.qtd_na_ficha) : 1;
         const custoAtual = Number(r.custo_atual) || 0;
@@ -132,7 +205,7 @@ try {
                 continue;
             }
         }
-        aplicar.push({ ...r, fator, via: emb?.via ?? (fUn !== 1 ? `${r.unidade}→${r.unit_type}` : 'unidade'), custoUnit, venda, qtdFicha });
+        aplicar.push({ ...r, fator, via: viaConteudo ?? emb?.via ?? (fUn !== 1 ? `${r.unidade}→${r.unit_type}` : 'unidade'), custoUnit, venda, qtdFicha });
     }
 
     console.log(`\n═══ ${APLICAR ? 'APLICANDO' : 'DRY-RUN'} — custo de NF-e (tipo: ${TIPO}) ═══\n`);
